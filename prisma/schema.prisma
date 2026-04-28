@@ -1,0 +1,560 @@
+// Text RPG MVP schema
+// Default provider is SQLite for zero-config local dev. To use Postgres, set
+// DATABASE_URL accordingly and change provider to "postgresql".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  isAdmin      Boolean  @default(false)
+  isBanned     Boolean  @default(false)
+  characterSlots Int    @default(3)
+  createdAt    DateTime @default(now())
+  characters   Character[]
+  sessions     Session[]
+  reportsMade  Report[] @relation("Reporter")
+  mutes        Mute[]
+  bans         Ban[]
+  payments     PaymentTransaction[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Character {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String   @unique
+  level           Int      @default(1)
+  exp             Int      @default(0)
+  gold            Int      @default(100)
+  hp              Int      @default(30)
+  maxHp           Int      @default(30)
+  mp              Int      @default(10)
+  maxMp           Int      @default(10)
+  atk             Int      @default(8)
+  def             Int      @default(4)
+  mat             Int      @default(6)
+  mdf             Int      @default(4)
+  spd             Int      @default(6)
+  luk             Int      @default(5)
+  currentTownId   String?
+  currentJobId    String?
+  isCursed        Boolean  @default(false)
+  cosmeticOutfit  String?  // free-form JSON in future
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inventory       InventoryItem[]
+  jobHistory      CharacterJobHistory[]
+  jobMastery      JobMastery[]
+  partyMembers    PartyMember[]
+  battleParticipants BattleParticipant[]
+  guildMember     GuildMember?
+  chatMessages    ChatMessage[]
+  characterQuests CharacterQuest[]
+  tradesA         Trade[] @relation("TradeA")
+  tradesB         Trade[] @relation("TradeB")
+  auctionListings AuctionListing[]
+  auctionBids     AuctionBid[]
+  duelsA          Duel[] @relation("DuelA")
+  duelsB          Duel[] @relation("DuelB")
+}
+
+model Job {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  category     String  // warrior/mage/rogue/cleric/craft/support/heretic/rare/cursed
+  rank         String  // beginner/intermediate/advanced/special/legendary/heretic/cursed
+  description  String
+  isCursed     Boolean @default(false)
+  unlockHint   String?
+  baseStats    String  // JSON: {atk, def, mat, mdf, spd, hp, mp}
+  generatedBy  String  @default("template")
+  seasonId     String?
+  createdAt    DateTime @default(now())
+  skills       Skill[]
+  history      CharacterJobHistory[]
+  mastery      JobMastery[]
+  questsRequired JobChangeQuest[]
+}
+
+model Skill {
+  id          String  @id @default(cuid())
+  jobId       String?
+  name        String
+  description String
+  type        String  // attack/heal/buff/debuff/special
+  element     String? // fire/water/earth/wind/light/dark/none
+  power       Int     @default(10)
+  cost        Int     @default(0)
+  cooldown    Int     @default(0)
+  targetType  String  @default("enemy") // enemy/ally/self/all_enemies/all_allies
+  generatedBy String  @default("template")
+  createdAt   DateTime @default(now())
+  job         Job?    @relation(fields: [jobId], references: [id], onDelete: SetNull)
+}
+
+model CharacterJobHistory {
+  id          String   @id @default(cuid())
+  characterId String
+  jobId       String
+  acquiredAt  DateTime @default(now())
+  abandonedAt DateTime?
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@unique([characterId, jobId])
+}
+
+model JobMastery {
+  id          String  @id @default(cuid())
+  characterId String
+  jobId       String
+  mastery     Int     @default(0)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  @@unique([characterId, jobId])
+}
+
+model JobChangeQuest {
+  id          String  @id @default(cuid())
+  characterId String
+  targetJobId String
+  description String
+  goalType    String   // defeat_enemy/visit_town/level/talk_npc
+  goalParam   String?
+  goalCount   Int     @default(1)
+  progress    Int     @default(0)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  targetJob   Job      @relation(fields: [targetJobId], references: [id], onDelete: Cascade)
+}
+
+model Enemy {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  level       Int     @default(1)
+  hp          Int     @default(30)
+  atk         Int     @default(8)
+  def         Int     @default(4)
+  spd         Int     @default(6)
+  element     String? // fire/water/etc
+  weakness    String?
+  expReward   Int     @default(10)
+  goldReward  Int     @default(10)
+  generatedBy String  @default("template")
+  seasonId    String?
+  townId      String?
+  createdAt   DateTime @default(now())
+}
+
+model Town {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  region       String
+  danger       Int     @default(1)
+  economy      Int     @default(50)
+  security     Int     @default(50)
+  innFee       Int     @default(20)
+  rumorTrend   String  @default("neutral")
+  description  String
+  createdAt    DateTime @default(now())
+  rumors       TavernRumor[]
+  npcs         Npc[]
+  quests       Quest[]
+}
+
+model TownState {
+  id        String   @id @default(cuid())
+  townId    String
+  date      String   // YYYY-MM-DD
+  payload   String   // JSON
+  createdAt DateTime @default(now())
+  @@unique([townId, date])
+}
+
+model TavernRumor {
+  id          String  @id @default(cuid())
+  townId      String
+  text        String
+  generatedBy String  @default("template")
+  seasonId    String?
+  createdAt   DateTime @default(now())
+  town        Town    @relation(fields: [townId], references: [id], onDelete: Cascade)
+}
+
+model Npc {
+  id          String  @id @default(cuid())
+  townId      String
+  name        String
+  role        String
+  dialogue    String
+  generatedBy String  @default("template")
+  createdAt   DateTime @default(now())
+  town        Town    @relation(fields: [townId], references: [id], onDelete: Cascade)
+}
+
+model Quest {
+  id          String  @id @default(cuid())
+  townId      String?
+  title       String
+  description String
+  goalType    String   // defeat_enemy/collect_item
+  goalParam   String?
+  goalCount   Int      @default(1)
+  expReward   Int      @default(50)
+  goldReward  Int      @default(50)
+  generatedBy String   @default("template")
+  seasonId    String?
+  createdAt   DateTime @default(now())
+  town        Town?    @relation(fields: [townId], references: [id], onDelete: SetNull)
+  takers      CharacterQuest[]
+}
+
+model CharacterQuest {
+  id          String   @id @default(cuid())
+  characterId String
+  questId     String
+  progress    Int      @default(0)
+  completedAt DateTime?
+  acceptedAt  DateTime @default(now())
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  quest       Quest     @relation(fields: [questId], references: [id], onDelete: Cascade)
+  @@unique([characterId, questId])
+}
+
+model Item {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  slot        String? // weapon/head/body/arm/leg/foot/accessory/charm/null for consumable/material
+  rarity      String  @default("common")
+  category    String  // equip/consumable/material/cosmetic
+  atkBonus    Int     @default(0)
+  defBonus    Int     @default(0)
+  matBonus    Int     @default(0)
+  mdfBonus    Int     @default(0)
+  hpBonus     Int     @default(0)
+  mpBonus     Int     @default(0)
+  tradable    Boolean @default(true)
+  cosmetic    Boolean @default(false)
+  basePrice   Int     @default(10)
+  generatedBy String  @default("template")
+  createdAt   DateTime @default(now())
+  inventory   InventoryItem[]
+}
+
+model InventoryItem {
+  id          String  @id @default(cuid())
+  characterId String
+  itemId      String
+  quantity    Int      @default(1)
+  equipped    Boolean  @default(false)
+  acquiredAt  DateTime @default(now())
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tradeItems  TradeItem[]
+  auctions    AuctionListing[]
+}
+
+model Party {
+  id           String   @id @default(cuid())
+  name         String
+  leaderCharacterId String
+  description  String?
+  isOpen       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  members      PartyMember[]
+  battles      Battle[]
+}
+
+model PartyMember {
+  id          String   @id @default(cuid())
+  partyId     String
+  characterId String   @unique
+  joinedAt    DateTime @default(now())
+  party       Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([partyId, characterId])
+}
+
+model Battle {
+  id          String   @id @default(cuid())
+  partyId     String?
+  status      String   @default("active") // active/ended
+  turn        Int      @default(1)
+  enemyState  String   // JSON array of enemies w/ hp
+  log         String   @default("[]") // JSON array
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  result      String?  // win/lose
+  party       Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  participants BattleParticipant[]
+  actions     BattleAction[]
+}
+
+model BattleParticipant {
+  id          String   @id @default(cuid())
+  battleId    String
+  characterId String
+  hp          Int
+  mp          Int
+  joinedTurn  Int      @default(1)
+  alive       Boolean  @default(true)
+  battle      Battle    @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([battleId, characterId])
+}
+
+model BattleAction {
+  id          String   @id @default(cuid())
+  battleId    String
+  turn        Int
+  characterId String
+  actionType  String   // attack/skill/defend
+  targetIndex Int?     // enemy index
+  skillId     String?
+  resultJson  String?
+  createdAt   DateTime @default(now())
+  battle      Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
+}
+
+model Guild {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  tag         String?  @unique
+  description String   @default("")
+  notice      String   @default("")
+  masterCharacterId String
+  createdAt   DateTime @default(now())
+  members     GuildMember[]
+  castles     CastleOwnership[]
+}
+
+model GuildMember {
+  id          String   @id @default(cuid())
+  guildId     String
+  characterId String   @unique
+  role        String   @default("member") // master/sub/member
+  joinedAt    DateTime @default(now())
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  channel     String   // town:<id>/party:<id>/guild:<id>/dm:<a>:<b>/system
+  characterId String?
+  senderName  String
+  body        String
+  createdAt   DateTime @default(now())
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: SetNull)
+}
+
+model DirectMessage {
+  id          String   @id @default(cuid())
+  fromCharacterId String
+  toCharacterId   String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String
+  targetType  String
+  targetId    String
+  reason      String
+  createdAt   DateTime @default(now())
+  reporter    User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+}
+
+model Mute {
+  id          String   @id @default(cuid())
+  userId      String
+  reason      String?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Ban {
+  id          String   @id @default(cuid())
+  userId      String
+  reason      String?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GeneratedContent {
+  id              String   @id @default(cuid())
+  type            String   // job/skill/enemy/quest/rumor/npc/dungeon/item
+  refId           String?  // related row id once stored
+  title           String
+  body            String
+  structuredJson  String   @default("{}")
+  seed            String?
+  seasonId        String?
+  townId          String?
+  characterId     String?
+  generatedBy     String   @default("template") // ai/template/admin
+  prompt          String?
+  model           String?
+  validationStatus String  @default("ok")
+  disabledAt      DateTime?
+  createdAt       DateTime @default(now())
+}
+
+model Season {
+  id          String   @id @default(cuid())
+  name        String
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  rules       String   @default("{}") // JSON
+  isCurrent   Boolean  @default(false)
+}
+
+model WorldState {
+  id          String   @id @default(cuid())
+  date        String   @unique
+  payload     String   // JSON
+  createdAt   DateTime @default(now())
+}
+
+model Castle {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  region      String
+  description String
+  ownerships  CastleOwnership[]
+  sieges      SiegeEvent[]
+}
+
+model CastleOwnership {
+  id          String   @id @default(cuid())
+  castleId    String
+  guildId     String
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  castle      Castle   @relation(fields: [castleId], references: [id], onDelete: Cascade)
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model SiegeEvent {
+  id          String   @id @default(cuid())
+  castleId    String
+  startsAt    DateTime
+  endedAt     DateTime?
+  result      String?
+  castle      Castle   @relation(fields: [castleId], references: [id], onDelete: Cascade)
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  fromCharacterId String
+  toCharacterId   String
+  status      String   @default("pending") // pending/accepted/cancelled
+  offerGold   Int      @default(0)
+  requestGold Int      @default(0)
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  from        Character @relation("TradeA", fields: [fromCharacterId], references: [id], onDelete: Cascade)
+  to          Character @relation("TradeB", fields: [toCharacterId], references: [id], onDelete: Cascade)
+  items       TradeItem[]
+}
+
+model TradeItem {
+  id              String   @id @default(cuid())
+  tradeId         String
+  side            String   // offer/request
+  inventoryItemId String
+  quantity        Int      @default(1)
+  trade           Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  invItem         InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+}
+
+model AuctionListing {
+  id              String   @id @default(cuid())
+  sellerCharacterId String
+  inventoryItemId String
+  startPrice      Int
+  buyoutPrice     Int?
+  currentBid      Int      @default(0)
+  currentBidderId String?
+  endsAt          DateTime
+  status          String   @default("active") // active/sold/cancelled/expired
+  createdAt       DateTime @default(now())
+  seller          Character @relation(fields: [sellerCharacterId], references: [id], onDelete: Cascade)
+  invItem         InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  bids            AuctionBid[]
+}
+
+model AuctionBid {
+  id          String   @id @default(cuid())
+  listingId   String
+  bidderCharacterId String
+  amount      Int
+  createdAt   DateTime @default(now())
+  listing     AuctionListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  bidder      Character @relation(fields: [bidderCharacterId], references: [id], onDelete: Cascade)
+}
+
+model Duel {
+  id          String   @id @default(cuid())
+  challengerCharacterId String
+  opponentCharacterId   String
+  status      String   @default("pending") // pending/accepted/finished/declined
+  winnerCharacterId String?
+  log         String   @default("[]")
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+  challenger  Character @relation("DuelA", fields: [challengerCharacterId], references: [id], onDelete: Cascade)
+  opponent    Character @relation("DuelB", fields: [opponentCharacterId], references: [id], onDelete: Cascade)
+}
+
+model PaymentTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  currency    String   @default("JPY")
+  productCode String
+  status      String   @default("paid") // paid/refunded
+  metadata    String   @default("{}")
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorType   String   // user/system/admin
+  actorId     String?
+  action      String
+  targetType  String?
+  targetId    String?
+  payload     String   @default("{}")
+  createdAt   DateTime @default(now())
+}

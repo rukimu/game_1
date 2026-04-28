@@ -354,8 +354,16 @@ async function resolveTurn(battleId: string) {
     const aliveParticipants = [...partState.values()].filter(p => p.alive);
     const share = aliveParticipants.length || 1;
     for (const p of aliveParticipants) {
-      const updated = await awardExpAndGold(p.id, Math.ceil(totalExp / share), Math.ceil(totalGold / share));
-      log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}は経験値${Math.ceil(totalExp / share)}とゴールド${Math.ceil(totalGold / share)}を得た。${updated && updated.level !== p_level(p) ? `レベルが上がった！` : ""}` });
+      const before = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
+      const expGain = Math.ceil(totalExp / share);
+      const goldGain = Math.ceil(totalGold / share);
+      const updated = await awardExpAndGold(p.id, expGain, goldGain);
+      const leveledUp = updated && before && updated.level > before.level;
+      log.push({
+        turn: battle.turn,
+        ts: Date.now(),
+        text: `${p.name}は経験値${expGain}とゴールド${goldGain}を得た。${leveledUp ? `レベルが上がった！(Lv${before!.level}→Lv${updated!.level})` : ""}`,
+      });
       // update quest progress for defeat_enemy quests
       const cqs = await prisma.characterQuest.findMany({ where: { characterId: p.id, completedAt: null }, include: { quest: true } });
       for (const cq of cqs) {
@@ -364,11 +372,28 @@ async function resolveTurn(battleId: string) {
           const newProg = cq.progress + inc;
           if (newProg >= cq.quest.goalCount) {
             await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg, completedAt: new Date() } });
-            await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
-            log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！` });
+            const beforeQ = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
+            const updatedQ = await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
+            const leveledQ = updatedQ && beforeQ && updatedQ.level > beforeQ.level;
+            log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！${leveledQ ? `(Lv${beforeQ!.level}→Lv${updatedQ!.level})` : ""}` });
           } else {
             await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
           }
+        }
+      }
+      // update job change quest progress
+      const jcqs = await prisma.jobChangeQuest.findMany({ where: { characterId: p.id, completedAt: null } });
+      for (const jcq of jcqs) {
+        if (jcq.goalType !== "defeat_enemy") continue;
+        const matchCount = jcq.goalParam
+          ? enemies.filter((e) => e.name.includes(jcq.goalParam!) || jcq.goalParam!.includes(e.name)).length || enemies.length
+          : enemies.length;
+        const newProg = jcq.progress + matchCount;
+        if (newProg >= jcq.goalCount) {
+          await prisma.jobChangeQuest.update({ where: { id: jcq.id }, data: { progress: newProg, completedAt: new Date() } });
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}は転職課題を達成した！転職施設で転職可能。` });
+        } else {
+          await prisma.jobChangeQuest.update({ where: { id: jcq.id }, data: { progress: newProg } });
         }
       }
     }

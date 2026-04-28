@@ -57,6 +57,8 @@ model Character {
   currentJobId    String?
   isCursed        Boolean  @default(false)
   cosmeticOutfit  String?  // free-form JSON in future
+  bio             String?  // auto-generated background story
+  quizAnswers     String?  // JSON answers from job quiz
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventory       InventoryItem[]
@@ -73,6 +75,8 @@ model Character {
   auctionBids     AuctionBid[]
   duelsA          Duel[] @relation("DuelA")
   duelsB          Duel[] @relation("DuelB")
+  clues           CharacterClue[]
+  dungeonRuns     DungeonRun[]
 }
 
 model Job {
@@ -294,18 +298,20 @@ model PartyMember {
 }
 
 model Battle {
-  id          String   @id @default(cuid())
-  partyId     String?
-  status      String   @default("active") // active/ended
-  turn        Int      @default(1)
-  enemyState  String   // JSON array of enemies w/ hp
-  log         String   @default("[]") // JSON array
-  startedAt   DateTime @default(now())
-  endedAt     DateTime?
-  result      String?  // win/lose
-  party       Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  id           String   @id @default(cuid())
+  partyId      String?
+  dungeonRunId String?
+  status       String   @default("active") // active/ended
+  turn         Int      @default(1)
+  enemyState   String   // JSON array of enemies w/ hp
+  log          String   @default("[]") // JSON array
+  startedAt    DateTime @default(now())
+  endedAt      DateTime?
+  result       String?  // win/lose
+  party        Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+  dungeonRun   DungeonRun? @relation(fields: [dungeonRunId], references: [id], onDelete: SetNull)
   participants BattleParticipant[]
-  actions     BattleAction[]
+  actions      BattleAction[]
 }
 
 model BattleParticipant {
@@ -423,12 +429,59 @@ model GeneratedContent {
 }
 
 model Season {
+  id                  String   @id @default(cuid())
+  name                String
+  startedAt           DateTime @default(now())
+  endedAt             DateTime?
+  rules               String   @default("{}") // JSON
+  isCurrent           Boolean  @default(false)
+  // Central mystery for the season — players uncover this collectively.
+  mysteryTitle        String?
+  mysteryHint         String?
+  mysterySolvedAt     DateTime?
+  mysterySolverName   String?
+  clues               SeasonClue[]
+}
+
+model SeasonClue {
+  id        String  @id @default(cuid())
+  seasonId  String
+  orderIdx  Int
+  text      String
+  hint      String?
+  isFinal   Boolean @default(false)
+  createdAt DateTime @default(now())
+  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  finds     CharacterClue[]
+}
+
+model CharacterClue {
   id          String   @id @default(cuid())
-  name        String
-  startedAt   DateTime @default(now())
-  endedAt     DateTime?
-  rules       String   @default("{}") // JSON
-  isCurrent   Boolean  @default(false)
+  characterId String
+  clueId      String
+  source      String?  // rumor/battle/dungeon/npc
+  foundAt     DateTime @default(now())
+  character   Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  clue        SeasonClue @relation(fields: [clueId], references: [id], onDelete: Cascade)
+  @@unique([characterId, clueId])
+}
+
+model DungeonRun {
+  id              String   @id @default(cuid())
+  characterId     String
+  partyId         String?
+  name            String
+  totalFloors     Int
+  currentFloor    Int      @default(0)
+  status          String   @default("active") // active/cleared/aborted/dead
+  accumulatedExp  Int      @default(0)
+  accumulatedGold Int      @default(0)
+  rewardLog       String   @default("[]")
+  currentBattleId String?
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  battles         Battle[]
 }
 
 model WorldState {

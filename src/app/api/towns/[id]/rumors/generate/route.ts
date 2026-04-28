@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { getActiveCharacter } from "@/lib/activeCharacter";
 import { getContentGenerationService, generationLabel, logGeneratedContent } from "@/lib/generation/service";
+import { rollClueDiscovery } from "@/lib/mystery";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser().catch((r) => r);
@@ -20,5 +22,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     body: text,
     townId: town.id,
   });
-  return NextResponse.json({ rumor });
+  // 25% chance the rumor leads the active character to a season clue
+  let clue: { id: string; text: string; isFinal: boolean } | null = null;
+  try {
+    const character = await getActiveCharacter();
+    if (character) {
+      clue = await rollClueDiscovery(character.id, "rumor", 0.25);
+    }
+  } catch (e) { /* non-fatal */ }
+  return NextResponse.json({ rumor, clue });
 }

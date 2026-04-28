@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { emitBattle } from "@/lib/socket";
 import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
+import { onDungeonBattleEnded } from "@/lib/dungeon";
+import { rollClueDiscovery } from "@/lib/mystery";
 
 export type EnemyState = {
   id: string;
@@ -64,7 +66,12 @@ export async function startBattleForParty(partyId: string, opts?: { enemyCount?:
   });
   if (!party) throw new Error("party not found");
   if (party.members.length === 0) throw new Error("party empty");
-  const enemyCount = opts?.enemyCount ?? Math.min(party.members.length, 3);
+  // Encounter scales with party size. Solo always faces 1 (still tough).
+  // 2-3 person: 1-3 enemies. Larger: up to 5. Forming a party is a real choice.
+  const partySize = party.members.length;
+  const minE = partySize === 1 ? 1 : Math.max(1, partySize - 1);
+  const maxE = partySize === 1 ? 1 : Math.min(5, partySize + 1);
+  const enemyCount = opts?.enemyCount ?? minE + Math.floor(Math.random() * (maxE - minE + 1));
   const avgLevel = Math.max(1, Math.floor(party.members.reduce((a, m) => a + m.character.level, 0) / party.members.length));
   const level = opts?.level ?? avgLevel;
   const gen = getContentGenerationService();
@@ -353,17 +360,38 @@ async function resolveTurn(battleId: string) {
     const totalGold = enemies.reduce((a, e) => a + e.goldReward, 0);
     const aliveParticipants = [...partState.values()].filter(p => p.alive);
     const share = aliveParticipants.length || 1;
+    const isDungeonBattle = !!battle.dungeonRunId;
     for (const p of aliveParticipants) {
       const before = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
       const expGain = Math.ceil(totalExp / share);
       const goldGain = Math.ceil(totalGold / share);
-      const updated = await awardExpAndGold(p.id, expGain, goldGain);
-      const leveledUp = updated && before && updated.level > before.level;
-      log.push({
-        turn: battle.turn,
-        ts: Date.now(),
-        text: `${p.name}は経験値${expGain}とゴールド${goldGain}を得た。${leveledUp ? `レベルが上がった！(Lv${before!.level}→Lv${updated!.level})` : ""}`,
-      });
+      if (isDungeonBattle) {
+        // dungeon mode: rewards are pooled in DungeonRun, paid out only on retreat or full clear
+        log.push({
+          turn: battle.turn,
+          ts: Date.now(),
+          text: `${p.name}はこの階で経験値${expGain}とゴールド${goldGain}を獲得した（持ち帰るには撤退すること）。`,
+        });
+      } else {
+        const updated = await awardExpAndGold(p.id, expGain, goldGain);
+        const leveledUp = updated && before && updated.level > before.level;
+        log.push({
+          turn: battle.turn,
+          ts: Date.now(),
+          text: `${p.name}は経験値${expGain}とゴールド${goldGain}を得た。${leveledUp ? `レベルが上がった！(Lv${before!.level}→Lv${updated!.level})` : ""}`,
+        });
+        // small chance to discover a season clue from a hard-fought battle
+        try {
+          const clue = await rollClueDiscovery(p.id, "battle", 0.08);
+          if (clue) {
+            log.push({
+              turn: battle.turn,
+              ts: Date.now(),
+              text: `${p.name}は戦いの中で何かに気付いた──「${clue.text}」`,
+            });
+          }
+        } catch (e) { /* non-fatal */ }
+      }
       // update quest progress for defeat_enemy quests
       const cqs = await prisma.characterQuest.findMany({ where: { characterId: p.id, completedAt: null }, include: { quest: true } });
       for (const cq of cqs) {
@@ -397,6 +425,16 @@ async function resolveTurn(battleId: string) {
         }
       }
     }
+    if (isDungeonBattle && battle.dungeonRunId) {
+      try {
+        await onDungeonBattleEnded({
+          runId: battle.dungeonRunId,
+          result: "win",
+          totalExp,
+          totalGold,
+        });
+      } catch (e) { /* non-fatal */ }
+    }
     await prisma.battle.update({
       where: { id: battle.id },
       data: { status: "ended", endedAt: new Date(), result: "win", enemyState: JSON.stringify(enemies), log: JSON.stringify(log) },
@@ -407,6 +445,12 @@ async function resolveTurn(battleId: string) {
   if (allPartyDown) {
     clearTurnTimeout(battle.id);
     log.push({ turn: battle.turn, ts: Date.now(), text: `パーティーは敗北した…。` });
+    if (battle.dungeonRunId) {
+      try {
+        await onDungeonBattleEnded({ runId: battle.dungeonRunId, result: "lose", totalExp: 0, totalGold: 0 });
+        log.push({ turn: battle.turn, ts: Date.now(), text: `ダンジョンの探索は途絶え、累積報酬の半分が霧散した。` });
+      } catch (e) { /* non-fatal */ }
+    }
     // penalties: lose 10% gold, no exp loss for MVP friendliness, revive at 1 HP at inn (next route)
     for (const p of partState.values()) {
       const character = await prisma.character.findUnique({ where: { id: p.id } });

@@ -39,6 +39,7 @@ async function main() {
     { name: "見習い魔導士", category: "mage", rank: "beginner", description: "古き書と詠唱に身を捧げる道。", baseStats: JSON.stringify({ hp: 25, mp: 30, atk: 5, def: 4, mat: 14, mdf: 10, spd: 6 }) },
     { name: "見習い盗賊", category: "rogue", rank: "beginner", description: "影と速さを武器にする道。", baseStats: JSON.stringify({ hp: 28, mp: 12, atk: 11, def: 6, mat: 6, mdf: 6, spd: 12 }) },
     { name: "見習い神官", category: "cleric", rank: "beginner", description: "祈りで仲間を支える道。", baseStats: JSON.stringify({ hp: 32, mp: 24, atk: 7, def: 7, mat: 11, mdf: 12, spd: 6 }) },
+    { name: "見習い吟遊詩人", category: "support", rank: "beginner", description: "歌と機知で仲間を支える道。", baseStats: JSON.stringify({ hp: 28, mp: 22, atk: 6, def: 6, mat: 9, mdf: 10, spd: 9 }) },
   ];
   for (const j of initialJobs) {
     await prisma.job.upsert({ where: { name: j.name }, update: {}, create: j });
@@ -50,6 +51,7 @@ async function main() {
     { jobName: "見習い魔導士", skill: { name: "蒼焔斬", description: "火属性の魔法攻撃。", type: "attack", element: "fire", power: 18, cost: 5, cooldown: 0, targetType: "enemy" } },
     { jobName: "見習い盗賊", skill: { name: "影刃", description: "素早い一撃。", type: "attack", element: "dark", power: 16, cost: 3, cooldown: 0, targetType: "enemy" } },
     { jobName: "見習い神官", skill: { name: "癒しの祈り", description: "味方単体のHPを回復する。", type: "heal", element: null, power: 20, cost: 4, cooldown: 0, targetType: "ally" } },
+    { jobName: "見習い吟遊詩人", skill: { name: "鼓舞の歌", description: "自身の攻撃力を一時的に高める。", type: "buff", element: null, power: 0, cost: 3, cooldown: 0, targetType: "self" } },
   ];
   for (const s of starters) {
     const job = await prisma.job.findUnique({ where: { name: s.jobName } });
@@ -69,16 +71,48 @@ async function main() {
     if (!exists) await prisma.item.create({ data: it });
   }
 
-  // Initial season
-  const currentSeason = await prisma.season.findFirst({ where: { isCurrent: true } });
+  // Initial season w/ central mystery
+  const SEASON1_CLUES = [
+    { idx: 0, text: "灯の年と呼ばれるこのシーズンの始まり、北の空に塔の影が一瞬だけ蘇ったという。", hint: "塔は本当に消えたのか？" },
+    { idx: 1, text: "古い鐘は、もう半世紀も鳴っていない。だが今、子守歌のような音を聞いたという者がいる。", hint: "鐘はいくつあるのか。" },
+    { idx: 2, text: "封印者の家系は途絶えたはずだ。しかし今年、その紋章が再び現れたらしい。", hint: "誰がその紋章を見たのか。" },
+    { idx: 3, text: "禁書の写本が、霧の街ヴェルナで盗まれた。盗まれたのは1冊だけ、しかし誰も読んだことがない頁だった。", hint: "誰も読めない頁とは何か。" },
+    { idx: 4, text: "湖畔の街ミルレの占い師は、毎日同じ夢を見ると言う。塔と、鐘と、消えた職の名前。", hint: "消えた職とは。" },
+    { idx: 5, text: "始まりの街アルダの井戸の奥から、規則正しい鼓動のような響きが聞こえる。", hint: "井戸の底に何があるのか。" },
+    { idx: 6, text: "7つの鐘が同じ瞬間に鳴る時、灯の年の塔は再び世界に降りる──と古い詩は告げる。", hint: "全ての手がかりを集めたとき、答えに近づく。", isFinal: true },
+  ];
+
+  let currentSeason = await prisma.season.findFirst({ where: { isCurrent: true } });
   if (!currentSeason) {
-    await prisma.season.create({
+    currentSeason = await prisma.season.create({
       data: {
         name: "Season 1: 灯の年",
         isCurrent: true,
         rules: JSON.stringify({ rareJobBoost: 0.05, rumorTrend: "neutral", weakElement: "wind" }),
+        mysteryTitle: "灯の年の塔",
+        mysteryHint: "古き鐘の音と、薄明に消えた塔について、人々は囁いている。世界中に散った手がかりを集めた者だけが、塔の正体に辿り着くという。",
       },
     });
+  } else if (!currentSeason.mysteryTitle) {
+    currentSeason = await prisma.season.update({
+      where: { id: currentSeason.id },
+      data: {
+        mysteryTitle: "灯の年の塔",
+        mysteryHint: "古き鐘の音と、薄明に消えた塔について、人々は囁いている。世界中に散った手がかりを集めた者だけが、塔の正体に辿り着くという。",
+      },
+    });
+  }
+  // ensure clues exist
+  const existingClueCount = await prisma.seasonClue.count({ where: { seasonId: currentSeason.id } });
+  if (existingClueCount < SEASON1_CLUES.length) {
+    for (const c of SEASON1_CLUES) {
+      const exists = await prisma.seasonClue.findFirst({ where: { seasonId: currentSeason.id, orderIdx: c.idx } });
+      if (!exists) {
+        await prisma.seasonClue.create({
+          data: { seasonId: currentSeason.id, orderIdx: c.idx, text: c.text, hint: c.hint, isFinal: c.isFinal ?? false },
+        });
+      }
+    }
   }
 
   // Initial castle (scaffolding for siege)

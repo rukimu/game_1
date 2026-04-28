@@ -4,6 +4,8 @@ import { getActiveCharacter } from "@/lib/activeCharacter";
 import { prisma } from "@/lib/prisma";
 import AuctionClient from "./Client";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuctionPage() {
   const c = await getActiveCharacter();
   if (!c) redirect("/characters");

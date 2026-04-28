@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import ShopClient from "./Client";
 import CosmeticList from "./CosmeticList";
 
+export const dynamic = "force-dynamic";
+
 export default async function ShopPage() {
   const c = await getActiveCharacter();
   if (!c) redirect("/characters");

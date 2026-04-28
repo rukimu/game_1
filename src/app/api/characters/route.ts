@@ -4,10 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { applyJobBaseStats } from "@/lib/leveling";
 import { sanitizeName } from "@/lib/sanitize";
+import { pickBio, scoreQuiz } from "@/lib/quiz";
 
 const schema = z.object({
   name: z.string().min(2).max(24),
-  jobName: z.string().min(1).max(40),
+  // Either provide quiz answers (preferred) or an explicit jobName fallback.
+  quizAnswers: z.record(z.string()).optional(),
+  jobName: z.string().min(1).max(40).optional(),
 });
 
 export async function GET() {
@@ -32,7 +35,19 @@ export async function POST(req: Request) {
   if (dup) return NextResponse.json({ error: "その名前は既に使われています" }, { status: 400 });
   const count = await prisma.character.count({ where: { userId: user.id } });
   if (count >= user.characterSlots) return NextResponse.json({ error: "キャラクター枠が一杯です" }, { status: 400 });
-  const job = await prisma.job.findUnique({ where: { name: parsed.data.jobName } });
+
+  let jobName = parsed.data.jobName;
+  let quizScores: any = null;
+  let bio: string | null = null;
+  if (parsed.data.quizAnswers) {
+    const result = scoreQuiz(parsed.data.quizAnswers);
+    jobName = result.jobName;
+    quizScores = result;
+    bio = pickBio(result.topArchetype);
+  }
+  if (!jobName) return NextResponse.json({ error: "職業が決まりませんでした" }, { status: 400 });
+
+  const job = await prisma.job.findUnique({ where: { name: jobName } });
   if (!job) return NextResponse.json({ error: "職業が見つかりません" }, { status: 400 });
   const base = applyJobBaseStats(JSON.parse(job.baseStats));
   const town = await prisma.town.findFirst({ orderBy: { danger: "asc" } });
@@ -43,6 +58,8 @@ export async function POST(req: Request) {
       ...base,
       currentJobId: job.id,
       currentTownId: town?.id,
+      bio,
+      quizAnswers: parsed.data.quizAnswers ? JSON.stringify(parsed.data.quizAnswers) : null,
       jobHistory: { create: [{ jobId: job.id }] },
       jobMastery: { create: [{ jobId: job.id, mastery: 0 }] },
     },
@@ -52,5 +69,10 @@ export async function POST(req: Request) {
   if (starter) {
     await prisma.inventoryItem.create({ data: { characterId: character.id, itemId: starter.id, quantity: 5 } });
   }
-  return NextResponse.json({ character });
+  return NextResponse.json({
+    character,
+    job: { name: job.name, description: job.description, category: job.category },
+    bio,
+    quizResult: quizScores,
+  });
 }

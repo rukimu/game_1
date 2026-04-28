@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import CharacterClient from "./Client";
 
+export const dynamic = "force-dynamic";
+
 export default async function CharactersPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -12,7 +14,6 @@ export default async function CharactersPage() {
     include: { jobHistory: { include: { job: true } } },
     orderBy: { createdAt: "asc" },
   });
-  const jobs = await prisma.job.findMany({ where: { rank: "beginner" }, orderBy: { name: "asc" } });
   return (
     <main className="space-y-4">
       <header className="flex items-center justify-between">
@@ -32,7 +33,6 @@ export default async function CharactersPage() {
           isCursed: c.isCursed,
           jobName: c.jobHistory.find((h) => h.jobId === c.currentJobId)?.job.name ?? "—",
         }))}
-        jobs={jobs.map((j) => ({ name: j.name, description: j.description }))}
         slots={user.characterSlots}
       />
     </main>

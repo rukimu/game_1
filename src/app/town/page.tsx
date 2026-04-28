@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import TownActions from "./TownActions";
 
+export const dynamic = "force-dynamic";
+
 export default async function TownPage() {
   const c = await getActiveCharacter();
   if (!c) redirect("/characters");

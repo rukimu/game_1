@@ -89,12 +89,14 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const element = pick(ELEMENTS as unknown as string[], rng);
     const weakness = pick(ELEMENTS.filter(e => e !== element && e !== "none") as unknown as string[], rng);
     const description = `辺境にて目撃された${name}。${element === "none" ? "属性は感じられない" : `${jpElement(element)}の気配を纏う`}。`;
-    const hp = 18 + level * 6 + intBetween(rng, 0, 10);
-    const atk = 4 + level * 2 + intBetween(rng, 0, 4);
+    // Difficulty curve: starter level 1 should be winnable solo, but later
+    // levels and dungeon-deep encounters scale harder than the player.
+    const hp = 22 + level * 8 + intBetween(rng, 0, 10);
+    const atk = 5 + level * 2 + intBetween(rng, 0, 3);
     const def = 1 + level + intBetween(rng, 0, 3);
     const spd = 4 + intBetween(rng, 0, level);
-    const expReward = 8 + level * 6 + intBetween(rng, 0, 6);
-    const goldReward = 5 + level * 5 + intBetween(rng, 0, 8);
+    const expReward = 12 + level * 7 + intBetween(rng, 0, 6);
+    const goldReward = 7 + level * 5 + intBetween(rng, 0, 8);
     const v = validateGeneratedEnemy({ name, description, level, hp, atk, def, spd, element, weakness, expReward, goldReward });
     if (!v.ok) throw new Error("enemy validation failed: " + v.reason);
     return v.value;

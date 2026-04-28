@@ -4,6 +4,8 @@ import { getActiveCharacter } from "@/lib/activeCharacter";
 import { prisma } from "@/lib/prisma";
 import PvpClient from "./Client";
 
+export const dynamic = "force-dynamic";
+
 export default async function PvpPage() {
   const c = await getActiveCharacter();
   if (!c) redirect("/characters");

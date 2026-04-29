@@ -1,20 +1,48 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
+import { computeCombatStats, computeCombatEffects } from "@/lib/equipment";
+import type { AggregatedEffects } from "@/lib/affixes";
 
-// MVP: simulate the duel in-place and award the winner. PvP loss has no resource cost.
-function simulate(a: any, b: any) {
+type Combatant = {
+  id: string;
+  name: string;
+  hp: number; maxHp: number;
+  atk: number; def: number; spd: number;
+  effects: AggregatedEffects;
+};
+
+// MVP simulate now reads the same equipment + affix layer as PvE combat. A
+// duel between two warriors carrying very different gear actually produces
+// different outcomes than a base-stats brawl. PvP loss still has no resource
+// cost — only ranking/record updates downstream.
+function simulate(a: Combatant, b: Combatant) {
   const log: string[] = [];
-  let ahp = a.maxHp, bhp = b.maxHp;
+  let ahp = a.hp;
+  let bhp = b.hp;
   let turn = 1;
   while (ahp > 0 && bhp > 0 && turn < 30) {
     const aFirst = (a.spd + Math.random() * 5) >= (b.spd + Math.random() * 5);
     const order = aFirst ? [a, b] : [b, a];
     for (const attacker of order) {
       const defender = attacker === a ? b : a;
-      const dmg = Math.max(1, Math.floor(attacker.atk * (1 + Math.random() * 0.4) - defender.def * 0.6));
+      const baseDmg = Math.max(1, Math.floor(attacker.atk * (1 + Math.random() * 0.4) - defender.def * 0.6));
+      // Apply crit + lifesteal. Slay does not apply (defender has no
+      // creatureType in PvP — players are players, not "humanoid mobs").
+      const critRate = Math.min(60, 5 + attacker.effects.critRateBonus);
+      const isCrit = Math.random() * 100 < critRate;
+      const critMult = isCrit ? 1.5 + attacker.effects.critDamageBonus / 100 : 1.0;
+      const dmg = Math.max(1, Math.floor(baseDmg * critMult));
       if (attacker === a) bhp -= dmg; else ahp -= dmg;
-      log.push(`T${turn}: ${attacker.name}の攻撃 → ${defender.name}に${dmg}ダメージ`);
+      const tag = isCrit ? "【クリティカル！】" : "";
+      log.push(`T${turn}: ${attacker.name}の攻撃 → ${defender.name}に${dmg}ダメージ${tag}`);
+      // Lifesteal heals attacker
+      if (attacker.effects.lifestealPercent > 0) {
+        const heal = Math.max(1, Math.floor(dmg * attacker.effects.lifestealPercent / 100));
+        if (attacker === a) ahp = Math.min(ahp + heal, a.maxHp);
+        else bhp = Math.min(bhp + heal, b.maxHp);
+        log.push(`  └ ${attacker.name}は ${heal} HP を吸収した。`);
+      }
       if (ahp <= 0 || bhp <= 0) break;
     }
     turn++;
@@ -33,7 +61,32 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   });
   if (!duel || duel.status !== "pending") return NextResponse.json({ error: "不正な決闘" }, { status: 400 });
   if (duel.opponentCharacterId !== c.id) return NextResponse.json({ error: "あなた宛てではありません" }, { status: 403 });
-  const { winner, log } = simulate(duel.challenger, duel.opponent);
+  // Build combatant records using equipment-aware stats so gear matters.
+  const [aStats, bStats, aEff, bEff] = await Promise.all([
+    computeCombatStats(duel.challenger.id),
+    computeCombatStats(duel.opponent.id),
+    computeCombatEffects(duel.challenger.id),
+    computeCombatEffects(duel.opponent.id),
+  ]);
+  const a: Combatant = {
+    id: duel.challenger.id, name: duel.challenger.name,
+    hp: aStats?.maxHp ?? duel.challenger.maxHp,
+    maxHp: aStats?.maxHp ?? duel.challenger.maxHp,
+    atk: aStats?.atk ?? duel.challenger.atk,
+    def: aStats?.def ?? duel.challenger.def,
+    spd: aStats?.spd ?? duel.challenger.spd,
+    effects: aEff,
+  };
+  const b: Combatant = {
+    id: duel.opponent.id, name: duel.opponent.name,
+    hp: bStats?.maxHp ?? duel.opponent.maxHp,
+    maxHp: bStats?.maxHp ?? duel.opponent.maxHp,
+    atk: bStats?.atk ?? duel.opponent.atk,
+    def: bStats?.def ?? duel.opponent.def,
+    spd: bStats?.spd ?? duel.opponent.spd,
+    effects: bEff,
+  };
+  const { winner, log } = simulate(a, b);
   await prisma.duel.update({
     where: { id: duel.id },
     data: { status: "finished", winnerCharacterId: winner.id, log: JSON.stringify(log), resolvedAt: new Date() },

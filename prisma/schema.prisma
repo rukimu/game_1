@@ -90,6 +90,7 @@ model Character {
   achievements    CharacterAchievement[]
   masteryQuests   MasteryQuest[]
   dailyChallenges DailyChallenge[]
+  raidParticipants RaidParticipant[]
 }
 
 // World-level achievement definitions. Most are seeded statically; some can
@@ -219,6 +220,7 @@ model Town {
   rumors       TavernRumor[]
   npcs         Npc[]
   quests       Quest[]
+  raids        Raid[]
 }
 
 model TownState {
@@ -609,6 +611,66 @@ model MasteryQuest {
   character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   @@unique([characterId, jobCategory, tier])
   @@index([characterId, completedAt])
+}
+
+// World raid bosses. Spawn lazily in towns; players have 10 minutes to
+// gather, then the combat phase opens for up to 30 minutes. Async DPS race
+// — every player has individual cooldowns. Contribution ranking drives the
+// reward distribution.
+model Raid {
+  id            String   @id @default(cuid())
+  townId        String?
+  name          String
+  description   String   @default("")
+  level         Int      @default(20)
+  maxHp         Int
+  hp            Int
+  atk           Int      @default(20)
+  defense       Int      @default(10)
+  element       String?
+  weakness      String?
+  creatureType  String   @default("magic")
+  // joining = open for sign-up, active = combat phase, ended = resolved
+  status        String   @default("joining")
+  result        String?  // victory / expired / cancelled
+  startsAt      DateTime @default(now())
+  joinDeadline  DateTime
+  combatEndsAt  DateTime
+  endedAt       DateTime?
+  // JSON list of { characterId, name, damage, healing, rewardTier, drop } — generated on finalize.
+  rewardsJson   String   @default("[]")
+  // Combat log: [{ at, actor, line }] — recent N entries kept.
+  combatLogJson String   @default("[]")
+  createdAt     DateTime @default(now())
+  town          Town?    @relation(fields: [townId], references: [id], onDelete: SetNull)
+  participants  RaidParticipant[]
+  @@index([status])
+  @@index([townId, status])
+}
+
+model RaidParticipant {
+  id              String   @id @default(cuid())
+  raidId          String
+  characterId     String
+  joinedAt        DateTime @default(now())
+  hp              Int      @default(0)
+  maxHp           Int      @default(0)
+  mp              Int      @default(0)
+  maxMp           Int      @default(0)
+  damageDealt     Int      @default(0)
+  healingDone     Int      @default(0)
+  // Ms-precision millisecond timestamps for cooldown gates. Compared against
+  // Date.now() at action time. attack (5s), skill (15s), heal (10s).
+  attackReadyAt   BigInt   @default(0)
+  skillReadyAt    BigInt   @default(0)
+  healReadyAt     BigInt   @default(0)
+  alive           Boolean  @default(true)
+  // KO recovery: if downed (alive=false), revives at this timestamp (Date.now() + 90s).
+  reviveAt        BigInt   @default(0)
+  raid            Raid     @relation(fields: [raidId], references: [id], onDelete: Cascade)
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([raidId, characterId])
+  @@index([raidId, damageDealt])
 }
 
 // Daily challenges: 3 randomized objectives per character per day. Cleared

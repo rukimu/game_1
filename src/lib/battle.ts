@@ -4,6 +4,8 @@ import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { onDungeonBattleEnded } from "@/lib/dungeon";
 import { rollClueDiscovery } from "@/lib/mystery";
+import { rollItemInstance, tierLabel, type ItemInstance } from "@/lib/affixes";
+import { computeCombatStats } from "@/lib/equipment";
 
 export type EnemyState = {
   id: string;
@@ -234,20 +236,23 @@ async function resolveTurn(battleId: string) {
   let enemies: EnemyState[] = JSON.parse(battle.enemyState || "[]");
   let log: BattleLogEntry[] = JSON.parse(battle.log || "[]");
 
-  // Build participant runtime state
+  // Build participant runtime state. Combat stats are computed including
+  // equipped gear + per-instance affixes + job affinity, so a freshly looted
+  // weapon actually changes how hard you hit this very next turn.
   const partState = new Map<string, { id: string; hp: number; mp: number; defending: boolean; alive: boolean; spd: number; atk: number; mat: number; def: number; mdf: number; name: string; }>();
   for (const p of battle.participants) {
+    const eqStats = await computeCombatStats(p.characterId);
     partState.set(p.characterId, {
       id: p.characterId,
       hp: p.hp,
       mp: p.mp,
       defending: false,
       alive: p.alive,
-      spd: p.character.spd,
-      atk: p.character.atk,
-      mat: p.character.mat,
-      def: p.character.def,
-      mdf: p.character.mdf,
+      spd: eqStats?.spd ?? p.character.spd,
+      atk: eqStats?.atk ?? p.character.atk,
+      mat: eqStats?.mat ?? p.character.mat,
+      def: eqStats?.def ?? p.character.def,
+      mdf: eqStats?.mdf ?? p.character.mdf,
       name: p.character.name,
     });
   }
@@ -409,10 +414,11 @@ async function resolveTurn(battleId: string) {
         try {
           const drop = await rollEquipmentDrop(p.id, avgEnemyLevel);
           if (drop) {
+            const flair = drop.tier !== "common" ? `《${tierLabel(drop.tier)}》 ` : "";
             log.push({
               turn: battle.turn,
               ts: Date.now(),
-              text: `${p.name}は戦利品『${drop.name}』を手に入れた！`,
+              text: `${p.name}は戦利品 ${flair}『${drop.displayName}』を手に入れた！`,
             });
           }
         } catch (e) { /* non-fatal */ }
@@ -528,19 +534,74 @@ async function countWinStreak(characterId: string): Promise<number> {
   return streak;
 }
 
-// Roll a chance to drop a piece of equipment from the global Item pool.
-// Drop chance scales gently with enemy level (5.5% at Lv1 → 12% at Lv30).
+// Hack-and-slash drop. We pick a base item from the equip pool, weighted by
+// the character's archetype so they tend to find weapons that are *for them*
+// (not exclusively — variety still matters), then layer affixes on top to
+// produce a unique instance. Two players who both find a "古びた剣" will see
+// genuinely different weapons.
 async function rollEquipmentDrop(characterId: string, enemyLevel: number) {
   const chance = Math.min(0.05 + enemyLevel * 0.005, 0.13);
   if (Math.random() >= chance) return null;
+
+  // Resolve the character's archetype so we can bias the loot table.
+  const character = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { currentJobId: true },
+  });
+  let archetype: string | null = null;
+  if (character?.currentJobId) {
+    const job = await prisma.job.findUnique({
+      where: { id: character.currentJobId },
+      select: { category: true },
+    });
+    archetype = job?.category ?? null;
+  }
+
+  // Pull the equip pool. Weight items whose jobAffinity contains the player's
+  // archetype 3x; non-affine items still appear so the hunt for "the right
+  // weapon" stays meaningful.
   const candidates = await prisma.item.findMany({
     where: { category: "equip" },
-    select: { id: true, name: true },
+    select: { id: true, name: true, jobAffinity: true, weaponClass: true, slot: true },
   });
   if (candidates.length === 0) return null;
-  const pick = candidates[Math.floor(Math.random() * candidates.length)];
-  await prisma.inventoryItem.create({
-    data: { characterId, itemId: pick.id, quantity: 1 },
+
+  const weighted: Array<{ id: string; name: string; weight: number }> = [];
+  for (const c of candidates) {
+    let weight = 1;
+    if (archetype) {
+      try {
+        const arr = JSON.parse(c.jobAffinity ?? "[]");
+        if (Array.isArray(arr) && arr.includes(archetype)) weight = 3;
+        // Slight push toward weapons over chest/legs so weapons are the
+        // signature drop. Ratio chosen by feel, not theory.
+        if (c.slot === "weapon") weight *= 1.3;
+      } catch { /* ignore malformed affinity */ }
+    }
+    weighted.push({ id: c.id, name: c.name, weight });
+  }
+  const total = weighted.reduce((a, w) => a + w.weight, 0);
+  let r = Math.random() * total;
+  let chosen = weighted[0];
+  for (const w of weighted) {
+    r -= w.weight;
+    if (r <= 0) { chosen = w; break; }
+  }
+
+  // Roll affixes for this specific instance.
+  const instance: ItemInstance = rollItemInstance({
+    baseName: chosen.name,
+    enemyLevel,
+    seed: `${characterId}-${chosen.id}-${Date.now()}-${Math.random()}`,
   });
-  return pick;
+  await prisma.inventoryItem.create({
+    data: {
+      characterId,
+      itemId: chosen.id,
+      quantity: 1,
+      displayName: instance.displayName,
+      instanceJson: JSON.stringify(instance),
+    },
+  });
+  return { name: chosen.name, displayName: instance.displayName, tier: instance.tier };
 }

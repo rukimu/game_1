@@ -26,19 +26,27 @@
 
 ---
 
-## Cycle 2 (実装中) — テーマ: 「世界が個に応える」+ 「もう一戦」の即効性
+## Cycle 3 (進行中) — テーマ: ハクスラ的ドロップ × 装備の意味づけ
+
+**ユーザリクエスト (2026-04-29 #2):**
+> ハクスラっぽくドロップアイテムや装備が同名でも効果が違ったり特殊効果ついてたり。武器の種類も沢山、各職業毎に適正な武器がある。
+
+**監督判断:** Cycle 1 で技術エージェントが指摘した「装備装着 API 不在」ブロッカーと完全に重なる。装備システムを一気にハクスラ仕様で立ち上げる。
 
 ### P0 (本サイクルで実装)
 
 | # | 項目 | 工数 | 神ゲー指針 | 触るファイル |
 | --- | --- | --- | --- | --- |
-| 1 | EXP 曲線の平準化 (Lv9→10 緩和) | S | (即動性) | src/lib/leveling.ts |
-| 2 | クイズ後自動で街へリダイレクト | S | 初動30分 | src/app/characters/Client.tsx |
-| 3 | 連戦ボーナス (streak) | S | 中毒性 | src/lib/battle.ts |
-| 4 | 装備ドロップ最小実装 | S | 中毒性 | src/lib/battle.ts |
-| 5 | bio が職業説明・噂に逆流 | M | 個に応じる | src/lib/generation/service.ts, templates.ts |
-| 6 | シーズン謎キーワードを噂・敵説明に染み込ませる | M | 不確実性 + 個に応じる | service.ts, mystery.ts |
-| 7 | NPC を主要街に seed + 季節を反映する台詞生成 | M | 協調の必然 + テキストの格 | prisma/seed.ts, town/page.tsx, service.ts |
+| 1 | InventoryItem に per-instance フィールド (displayName, instanceJson) | S | (前提) | prisma/schema.prisma |
+| 2 | Item に weaponClass + jobAffinity フィールド | S | 個に応じる | 同上 |
+| 3 | 武器カタログ拡張 (剣・大剣・槍・短剣・弓・杖・ロッド・太鼓・笛・槌・フレイル 等 30+) | M | 中毒性 | prisma/seed.ts |
+| 4 | アフィックス生成モジュール (prefix/suffix/special、tier 別) | M | 不確実性 + 中毒性 | src/lib/affixes.ts (新規) |
+| 5 | ドロップ時にアフィックスをロール、InventoryItem の displayName/instanceJson に保存 | S | 中毒性 | src/lib/battle.ts |
+| 6 | 装備計算 helper: equipped + affix を合成して戦闘ステータス算出 | M | (前提) | src/lib/equipment.ts (新規) |
+| 7 | 戦闘で装備合成ステータスを参照 | S | バランス | src/lib/battle.ts |
+| 8 | Equip / Unequip API | S | (前提) | src/app/api/inventory/[id]/equip/route.ts (新規) |
+| 9 | インベントリ画面 (/inventory) + 装備変更フロー | M | 初動 + 中毒性 | src/app/inventory/page.tsx (新規) |
+| 10 | 職業適性ボーナス/ペナルティ (職業 × 武器カテゴリで ±) | S | 個に応じる | equipment.ts |
 
 ---
 
@@ -65,6 +73,21 @@
 - AiContentGenerationService の完全置換 — API キー無し前提のテンプレート世界で十分な品質を得る方が優先
 
 ## DONE
+
+### Cycle 3 (2026-04-29) — テーマ: ハクスラ × 装備の意味づけ
+
+- [x] **InventoryItem に per-instance フィールド** — `displayName` + `instanceJson` 追加 (`prisma/schema.prisma`)
+- [x] **Item に weaponClass + jobAffinity** — 武器分類と職業適性 JSON (`prisma/schema.prisma`)
+- [x] **武器カタログ拡張 35+ アイテム** — 剣・大剣・槍・短剣・弓・杖・ロッド・太鼓・笛・槌・フレイル + 防具 + 装飾 (`prisma/seed.ts`)
+- [x] **アフィックスモジュール** — Common/Rare/Epic/Legendary の 4 ティア。プレフィックス 23 種、サフィックス 13 種、ティア毎の確率 + 特殊効果テキスト 18 種 (`src/lib/affixes.ts` 新規)
+- [x] **ハクスラドロップ** — 倒した敵から **同名でも別アフィックス**の装備が落ちる。スモークテストで「古びた剣」が "燻し銀の 古びた剣の継承"、"練磨の 古びた剣の風斬り" など別個体に展開を確認 (`src/lib/battle.ts`)
+- [x] **archetype 重み付きドロップ** — プレイヤーの職業に合う武器が出やすいが、無関係武器も低確率で出る (探索の余地)
+- [x] **装備計算ヘルパー** — base + affix + 職業適性 (適性外 50% 効果) を合成 (`src/lib/equipment.ts` 新規)
+- [x] **戦闘で装備込みステータス参照** — `computeCombatStats` を使って partState を構築 (`battle.ts`)
+- [x] **Equip / Unequip API** — `POST /api/inventory/[id]/equip` および `/unequip` (新規)
+- [x] **インベントリ画面 `/inventory`** — スロット別グルーピング、ティア色分け、適性外バッジ、特殊効果フレーバー、ワンクリック装備切替
+- [x] **HUD に「所持品」リンク追加**
+- [x] **スモークテスト** — `scripts/smoke_loot.ts` でアフィックス展開確認
 
 ### Cycle 2 (2026-04-29)
 

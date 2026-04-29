@@ -64,6 +64,7 @@ export default async function Hud() {
 
         <div className="ml-auto flex gap-2 flex-wrap">
           <Link href="/town" className="btn">街</Link>
+          <Link href="/inventory" className="btn">所持品</Link>
           <Link href="/dungeon" className="btn">ダンジョン</Link>
           <Link href="/party" className="btn">PT</Link>
           <Link href="/guild" className="btn">ギルド</Link>

@@ -1,5 +1,35 @@
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
+import { awardAchievement } from "@/lib/achievements";
+
+// Per-season list of "world keywords" that the mystery is built around. These
+// bleed into rumors, enemy descriptions, and NPC lines so the season's central
+// motif permeates every town the player visits, even before they uncover a
+// single clue. Keep these short: they are slotted into templates verbatim.
+const SEASON_KEYWORDS_BY_NAME: Record<string, string[]> = {
+  "Season 1: 灯の年": [
+    "塔", "鐘", "紋章", "禁書", "井戸", "灯", "影", "封印者", "薄明",
+  ],
+  "Season 2: 鏡の森": [
+    "鏡", "森", "影", "泉", "もう一つ", "映る", "対", "境界",
+  ],
+  "Season 3: 灰の唄": [
+    "灰", "唄", "詩", "夜", "声", "燃え尽きた", "古き節", "祝祭",
+  ],
+};
+
+// The cache key used to be the season name only, which broke when the
+// world auto-rotated mid-process. Cache by name so a rotation invalidates.
+let _keywordCache: { name: string; words: string[] } | null = null;
+
+export async function getCurrentSeasonKeywords(): Promise<string[]> {
+  const season = await prisma.season.findFirst({ where: { isCurrent: true }, select: { name: true } });
+  if (!season) return [];
+  if (_keywordCache && _keywordCache.name === season.name) return _keywordCache.words;
+  const words = SEASON_KEYWORDS_BY_NAME[season.name] ?? [];
+  _keywordCache = { name: season.name, words };
+  return words;
+}
 
 // Returns the current season's mystery + this character's discovered clues.
 export async function getCharacterMystery(characterId: string) {
@@ -69,6 +99,12 @@ export async function rollClueDiscovery(
   await prisma.characterClue.create({
     data: { characterId, clueId: clue.id, source },
   });
+  // Achievement hooks for mystery progress.
+  try {
+    await awardAchievement("clue_first", characterId);
+    const total = await prisma.characterClue.count({ where: { characterId } });
+    if (total >= 4) await awardAchievement("clue_half", characterId);
+  } catch { /* non-fatal */ }
   // First-finder bonus and global announce.
   if (clue.isFinal) {
     const character = await prisma.character.findUnique({ where: { id: characterId } });
@@ -89,6 +125,7 @@ export async function rollClueDiscovery(
         },
       });
       getIO()?.emit("system:announcement", a);
+      try { await awardAchievement("mystery_first_solver", character.id); } catch { /* non-fatal */ }
     }
   }
   return { id: clue.id, text: clue.text, isFinal: clue.isFinal };

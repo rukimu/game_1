@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { startBattleForParty } from "@/lib/battle";
 import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
+import { tickMasteryProgress } from "@/lib/mastery";
+import { tickDailyChallenge } from "@/lib/dailyChallenge";
 
 // Dungeons are short multi-floor adventures. Rewards from each cleared floor
 // accumulate in DungeonRun and are only paid out when the player retreats
@@ -124,6 +126,20 @@ export async function onDungeonBattleEnded(args: {
     updates.status = "cleared";
   }
   await prisma.dungeonRun.update({ where: { id: run.id }, data: updates });
+  // Hook mastery / daily progress when the run is fully cleared.
+  if (status === "cleared") {
+    try {
+      if (run.theme) {
+        await tickMasteryProgress({
+          characterId: run.characterId,
+          goalType: "clear_themed_dungeon",
+          goalParam: run.theme,
+          delta: 1,
+        });
+      }
+      await tickDailyChallenge({ characterId: run.characterId, goalType: "clear_dungeon", delta: 1 });
+    } catch { /* non-fatal */ }
+  }
 }
 
 // Retreat: settle accumulated rewards safely.
@@ -144,6 +160,12 @@ export async function retreatDungeonRun(runId: string) {
       currentBattleId: null,
     },
   });
+  // Daily challenge: clearing or retreating both count as "clear_dungeon" for
+  // today's daily — the goal is "踏破する（撤退でも可）". Themed mastery only
+  // ticks on a real clear (handled in onDungeonBattleEnded).
+  try {
+    await tickDailyChallenge({ characterId: run.characterId, goalType: "clear_dungeon", delta: 1 });
+  } catch { /* non-fatal */ }
   return run;
 }
 

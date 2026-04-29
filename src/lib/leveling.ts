@@ -5,8 +5,10 @@ export const JOB_CHANGE_LEVELS = [10, 30, 50];
 
 export function expForLevel(level: number) {
   // Required exp to go from `level` to `level+1`.
-  // Tuned so Lv1→2 is achievable in ~3 fights, scaling up to a reasonable Lv50 grind.
-  return Math.floor(20 * level * level + 30 * level);
+  // Sub-quadratic curve (power 1.6) keeps Lv1→2 achievable in ~3 fights while
+  // flattening the Lv9→10 cliff and Lv30→50 grind that earlier playtests hit.
+  // Lv1: 45 / Lv9: 727 / Lv29: 5,330 / Lv49: 8,520
+  return Math.floor(15 * Math.pow(level, 1.6) + 30 * level);
 }
 
 export function applyJobBaseStats(base: any) {

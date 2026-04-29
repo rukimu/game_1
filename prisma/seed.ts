@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { generateAllTowns, generateNpcsForTown } from "../src/lib/townGen";
+import { generateMassJobs } from "../src/lib/jobGen";
+import { generateMassItems } from "../src/lib/itemGen";
 
 const prisma = new PrismaClient();
 
@@ -23,17 +26,52 @@ async function main() {
     await prisma.user.update({ where: { id: existing.id }, data: { isAdmin: true } });
   }
 
-  // Towns
-  const towns = [
-    { name: "始まりの街アルダ", region: "中央", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。" },
-    { name: "湖畔の街ミルレ", region: "西", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。" },
-    { name: "霧の街ヴェルナ", region: "北", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。" },
+  // Towns — generated in bulk via the procedural townGen so the world map
+  // is dense (14 regions × 8 towns = 112 towns by default). The first 3
+  // legacy names are preserved as aliases by upserting before generation.
+  const legacyTowns = [
+    { name: "始まりの街アルダ", region: "中央高原", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。", rumorTrend: "neutral" },
+    { name: "湖畔の街ミルレ", region: "湖畔地方", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。", rumorTrend: "neutral" },
+    { name: "霧の街ヴェルナ", region: "霧の北縁", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。", rumorTrend: "ominous" },
   ];
-  for (const t of towns) {
+  for (const t of legacyTowns) {
     await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
   }
+  const generatedTowns = generateAllTowns(8); // 14 regions * 8 = 112
+  for (const t of generatedTowns) {
+    const exists = await prisma.town.findUnique({ where: { name: t.name } });
+    if (!exists) {
+      await prisma.town.create({ data: t });
+    }
+  }
+  console.log(`  towns: ${legacyTowns.length} legacy + ${generatedTowns.length} generated = ${legacyTowns.length + generatedTowns.length}`);
 
-  // Initial jobs (beginner) so new characters can adopt one
+  // NPCs — procedural per town. Each town gets ~5 NPCs with sampled-without-
+  // replacement names + roles, plus theme-appropriate fallback dialogue.
+  // Live town page regenerates the actual line per visit (Cycle 17 memory).
+  const allTowns = await prisma.town.findMany({ select: { id: true, name: true, region: true } });
+  const themeByRegion: Record<string, string> = {
+    "中央高原": "central", "湖畔地方": "lakeside", "霧の北縁": "mist", "黄金の南海岸": "gold",
+    "黒森地方": "darkforest", "霜の高山": "frost", "塩の砂漠": "desert", "古王国の遺跡群": "ruin",
+    "東風の谷": "valley", "影海岸": "shadow", "聖印の高原": "holy", "灰落としの平原": "ash",
+    "鏡映の湖沼": "mirror", "鐘塔の麓": "bell",
+    "中央": "central", "西": "lakeside", "北": "mist",
+  };
+  let npcTotal = 0;
+  for (const town of allTowns) {
+    const npcs = generateNpcsForTown(town.name, themeByRegion[town.region] ?? "central", 5);
+    for (const n of npcs) {
+      const exists = await prisma.npc.findFirst({ where: { townId: town.id, name: n.name } });
+      if (!exists) {
+        await prisma.npc.create({ data: { townId: town.id, name: n.name, role: n.role, dialogue: n.dialogue } });
+        npcTotal++;
+      }
+    }
+  }
+  console.log(`  npcs: +${npcTotal} generated (5 per town target)`);
+
+  // Initial 5 beginner jobs (anchor entries the quiz maps onto). Kept as
+  // upserts so they always exist regardless of generator output.
   const initialJobs = [
     { name: "見習い戦士", category: "warrior", rank: "beginner", description: "前線で剣を振るう道。", baseStats: JSON.stringify({ hp: 40, mp: 8, atk: 12, def: 10, mat: 4, mdf: 6, spd: 6 }) },
     { name: "見習い魔導士", category: "mage", rank: "beginner", description: "古き書と詠唱に身を捧げる道。", baseStats: JSON.stringify({ hp: 25, mp: 30, atk: 5, def: 4, mat: 14, mdf: 10, spd: 6 }) },
@@ -44,8 +82,7 @@ async function main() {
   for (const j of initialJobs) {
     await prisma.job.upsert({ where: { name: j.name }, update: {}, create: j });
   }
-
-  // Pair each beginner job with one starter skill
+  // Starter skills for the 5 anchor jobs.
   const starters = [
     { jobName: "見習い戦士", skill: { name: "斬撃", description: "敵単体に攻撃を加える。", type: "attack", element: "none", power: 14, cost: 2, cooldown: 0, targetType: "enemy" } },
     { jobName: "見習い魔導士", skill: { name: "蒼焔斬", description: "火属性の魔法攻撃。", type: "attack", element: "fire", power: 18, cost: 5, cooldown: 0, targetType: "enemy" } },
@@ -60,15 +97,170 @@ async function main() {
     if (!exists) await prisma.skill.create({ data: { jobId: job.id, ...s.skill } });
   }
 
-  // Starter items
-  const items = [
-    { name: "薬草", description: "HPを少し回復する。", category: "consumable", rarity: "common", basePrice: 20, hpBonus: 0 },
-    { name: "古びた剣", description: "新人の最初の相棒。", category: "equip", slot: "weapon", rarity: "common", atkBonus: 3, basePrice: 30 },
+  // Mass-generate the rest of the job universe. ~200 per category × 9 cats
+  // (capped by combinatorial space for rare/cursed/heretic) → ~1500 jobs +
+  // 3-4 procedurally-named skills each = ~5000 skills.
+  const massJobs = generateMassJobs(200);
+  let jobsCreated = 0;
+  let skillsCreated = 0;
+  for (const j of massJobs) {
+    const existing = await prisma.job.findUnique({ where: { name: j.name } });
+    if (existing) continue;
+    const job = await prisma.job.create({
+      data: {
+        name: j.name,
+        category: j.category,
+        rank: j.rank,
+        description: j.description,
+        isCursed: j.isCursed,
+        baseStats: JSON.stringify(j.baseStats),
+      },
+    });
+    jobsCreated++;
+    for (const s of j.skills) {
+      try {
+        await prisma.skill.create({
+          data: { jobId: job.id, ...s, element: s.element ?? null },
+        });
+        skillsCreated++;
+      } catch { /* ignore name uniqueness rare-collision */ }
+    }
+  }
+  console.log(`  jobs: 5 anchor + ${jobsCreated} generated = ${5 + jobsCreated} (skills: ${skillsCreated} attached)`);
+
+  // ----- Items: mass-generated weapons + armor + consumables ----------------
+  // generateMassItems() produces ~600 weapons (13 classes × ~45) + ~225 armor
+  // (7 slots × ~32) + 10 consumables. Combined with per-instance affixes,
+  // the actual unique-instance space is in the hundreds of thousands.
+  const massItems = generateMassItems(45, 32);
+  let itemsCreated = 0;
+  for (const it of massItems) {
+    const existing = await prisma.item.findFirst({ where: { name: it.name } });
+    if (!existing) {
+      await prisma.item.create({ data: it });
+      itemsCreated++;
+    }
+  }
+  console.log(`  items: +${itemsCreated} generated`);
+
+  // ----- Legacy hand-curated items (kept so quest references / seed cookies
+  // that point at "古びた剣" etc. still resolve). The generator may also
+  // produce items with these names; the upsert pattern reconciles.
+  const items: Array<{
+    name: string;
+    description: string;
+    category: string;
+    rarity?: string;
+    slot?: string;
+    weaponClass?: string;
+    jobAffinity?: string;
+    basePrice?: number;
+    atkBonus?: number;
+    defBonus?: number;
+    matBonus?: number;
+    mdfBonus?: number;
+    hpBonus?: number;
+    mpBonus?: number;
+  }> = [
+    // --- Consumables / starters ---
+    { name: "薬草", description: "HPを少し回復する。", category: "consumable", rarity: "common", basePrice: 20 },
+    { name: "癒しの霊薬", description: "HPを大きく回復する。", category: "consumable", rarity: "rare", basePrice: 80 },
+    { name: "魔力の小瓶", description: "MPを少し回復する。", category: "consumable", rarity: "common", basePrice: 30 },
+    { name: "携帯食", description: "戦闘外で少し回復する。", category: "consumable", rarity: "common", basePrice: 10 },
+
+    // --- Swords (warrior + cleric secondary) ---
+    { name: "古びた剣", description: "新人の最初の相棒。", category: "equip", slot: "weapon", weaponClass: "sword", jobAffinity: '["warrior","cleric"]', rarity: "common", atkBonus: 3, basePrice: 30 },
+    { name: "鉄の剣", description: "鈍く重い両刃。", category: "equip", slot: "weapon", weaponClass: "sword", jobAffinity: '["warrior","cleric"]', rarity: "common", atkBonus: 6, basePrice: 120 },
+    { name: "騎士の剣", description: "誓いと共に振るう刃。", category: "equip", slot: "weapon", weaponClass: "sword", jobAffinity: '["warrior","cleric"]', rarity: "rare", atkBonus: 9, defBonus: 2, basePrice: 380 },
+    { name: "長剣レイラム", description: "湖畔で鍛えられた繊細な長剣。", category: "equip", slot: "weapon", weaponClass: "sword", jobAffinity: '["warrior"]', rarity: "rare", atkBonus: 12, basePrice: 620 },
+
+    // --- Greatswords (warrior only) ---
+    { name: "両手剣", description: "重い一撃を得意とする。", category: "equip", slot: "weapon", weaponClass: "greatsword", jobAffinity: '["warrior"]', rarity: "common", atkBonus: 9, defBonus: -1, basePrice: 200 },
+    { name: "竜骨の大剣", description: "竜の骨を芯に鋳た大剣。", category: "equip", slot: "weapon", weaponClass: "greatsword", jobAffinity: '["warrior"]', rarity: "rare", atkBonus: 14, hpBonus: 6, basePrice: 780 },
+
+    // --- Spears (warrior) ---
+    { name: "鉄の槍", description: "間合いと突きの武器。", category: "equip", slot: "weapon", weaponClass: "spear", jobAffinity: '["warrior"]', rarity: "common", atkBonus: 7, basePrice: 140 },
+    { name: "蒼穹の槍", description: "雲を裂くと言われる。", category: "equip", slot: "weapon", weaponClass: "spear", jobAffinity: '["warrior"]', rarity: "rare", atkBonus: 11, matBonus: 2, basePrice: 540 },
+
+    // --- Daggers (rogue main, mage secondary) ---
+    { name: "錆びた短刀", description: "練習用の短刀。", category: "equip", slot: "weapon", weaponClass: "dagger", jobAffinity: '["rogue","mage"]', rarity: "common", atkBonus: 4, basePrice: 40 },
+    { name: "影刃", description: "夜陰で切る、暗殺者の常道。", category: "equip", slot: "weapon", weaponClass: "dagger", jobAffinity: '["rogue"]', rarity: "rare", atkBonus: 9, basePrice: 360 },
+    { name: "毒牙", description: "刃に微かな苦味が染みている。", category: "equip", slot: "weapon", weaponClass: "dagger", jobAffinity: '["rogue"]', rarity: "rare", atkBonus: 8, matBonus: 3, basePrice: 420 },
+
+    // --- Bows (rogue + support) ---
+    { name: "森人の弓", description: "風を読みやすい弓。", category: "equip", slot: "weapon", weaponClass: "bow", jobAffinity: '["rogue","support"]', rarity: "common", atkBonus: 5, basePrice: 80 },
+    { name: "月光弓", description: "月夜にだけ良く飛ぶという。", category: "equip", slot: "weapon", weaponClass: "bow", jobAffinity: '["rogue","support"]', rarity: "rare", atkBonus: 10, matBonus: 2, basePrice: 480 },
+
+    // --- Staves (mage + cleric) ---
+    { name: "練習用の杖", description: "詠唱補助の最初の一本。", category: "equip", slot: "weapon", weaponClass: "staff", jobAffinity: '["mage","cleric"]', rarity: "common", matBonus: 4, mpBonus: 4, basePrice: 50 },
+    { name: "蒼炎のロッド", description: "火元素を孕む詠唱具。", category: "equip", slot: "weapon", weaponClass: "rod", jobAffinity: '["mage"]', rarity: "rare", matBonus: 9, mpBonus: 6, basePrice: 460 },
+    { name: "神官の杖", description: "祈りを増幅する。", category: "equip", slot: "weapon", weaponClass: "staff", jobAffinity: '["cleric"]', rarity: "rare", matBonus: 7, mdfBonus: 4, mpBonus: 6, basePrice: 420 },
+    { name: "古き賢者の杖", description: "持つ者の声を遠くまで届かせる。", category: "equip", slot: "weapon", weaponClass: "staff", jobAffinity: '["mage","cleric"]', rarity: "rare", matBonus: 11, mpBonus: 10, basePrice: 720 },
+
+    // --- Hammers / flails (cleric) ---
+    { name: "聖印の槌", description: "重く、しかし祈りで軽くなる。", category: "equip", slot: "weapon", weaponClass: "hammer", jobAffinity: '["cleric"]', rarity: "rare", atkBonus: 7, mdfBonus: 4, basePrice: 380 },
+    { name: "鎖付きフレイル", description: "祈りと打撃を兼ねる武器。", category: "equip", slot: "weapon", weaponClass: "flail", jobAffinity: '["cleric"]', rarity: "common", atkBonus: 6, mdfBonus: 2, basePrice: 180 },
+
+    // --- Support instruments ---
+    { name: "旅の太鼓", description: "戦場でも仲間を鼓舞する。", category: "equip", slot: "weapon", weaponClass: "drum", jobAffinity: '["support"]', rarity: "common", atkBonus: 2, matBonus: 4, mpBonus: 4, basePrice: 110 },
+    { name: "詩人の笛", description: "音色で士気を保つ。", category: "equip", slot: "weapon", weaponClass: "flute", jobAffinity: '["support"]', rarity: "common", matBonus: 5, mdfBonus: 3, mpBonus: 6, basePrice: 140 },
+    { name: "月詠みの竪琴", description: "夜にだけ鳴る弦が一本ある。", category: "equip", slot: "weapon", weaponClass: "drum", jobAffinity: '["support"]', rarity: "rare", matBonus: 8, mdfBonus: 4, mpBonus: 10, basePrice: 580 },
+
+    // --- Heretic / cursed ---
+    { name: "禁書の短杖", description: "誰も読めない頁を捲ると指が痛む。", category: "equip", slot: "weapon", weaponClass: "rod", jobAffinity: '["mage","heretic"]', rarity: "rare", matBonus: 12, mdfBonus: -2, mpBonus: 8, basePrice: 600 },
+
+    // --- Armor: head ---
+    { name: "布の帽子", description: "風よけにはなる。", category: "equip", slot: "head", rarity: "common", defBonus: 1, basePrice: 30 },
+    { name: "鉄兜", description: "頭部を守る基本装備。", category: "equip", slot: "head", rarity: "common", defBonus: 3, basePrice: 110 },
+    { name: "革のフード", description: "影に紛れやすい。", category: "equip", slot: "head", rarity: "common", defBonus: 2, basePrice: 70 },
+
+    // --- Armor: body ---
     { name: "布の服", description: "最低限の防具。", category: "equip", slot: "body", rarity: "common", defBonus: 2, basePrice: 20 },
+    { name: "革の鎧", description: "軽くて動きやすい。", category: "equip", slot: "body", rarity: "common", defBonus: 5, basePrice: 160 },
+    { name: "鎖帷子", description: "斬撃に強い。", category: "equip", slot: "body", rarity: "common", defBonus: 8, basePrice: 380 },
+    { name: "蒼の長衣", description: "詠唱者向けの装い。", category: "equip", slot: "body", rarity: "rare", defBonus: 4, mdfBonus: 5, mpBonus: 6, basePrice: 460 },
+
+    // --- Armor: arm/leg/foot ---
+    { name: "革の腕当て", description: "腕を擦り傷から守る。", category: "equip", slot: "arm", rarity: "common", defBonus: 1, basePrice: 50 },
+    { name: "鋼の籠手", description: "重いが頼りになる。", category: "equip", slot: "arm", rarity: "common", defBonus: 3, basePrice: 180 },
+    { name: "革のズボン", description: "丈夫で動きやすい。", category: "equip", slot: "leg", rarity: "common", defBonus: 2, basePrice: 80 },
+    { name: "鎖のすね当て", description: "脚を守る。", category: "equip", slot: "leg", rarity: "common", defBonus: 4, basePrice: 220 },
+    { name: "革のブーツ", description: "長旅向きの靴。", category: "equip", slot: "foot", rarity: "common", defBonus: 1, basePrice: 60 },
+    { name: "鋼のサバトン", description: "重装兵の足元。", category: "equip", slot: "foot", rarity: "common", defBonus: 3, basePrice: 200 },
+
+    // --- Accessories / charms ---
+    { name: "銅の指輪", description: "気休めにはなる。", category: "equip", slot: "accessory", rarity: "common", matBonus: 1, basePrice: 60 },
+    { name: "翡翠のペンダント", description: "首元に冷たさが伝わる。", category: "equip", slot: "accessory", rarity: "rare", matBonus: 4, mpBonus: 6, basePrice: 380 },
+    { name: "治癒のお守り", description: "疲労を少しだけ軽くする。", category: "equip", slot: "charm", rarity: "common", hpBonus: 6, basePrice: 90 },
+    { name: "風読みの羽", description: "速度の感覚が鋭くなる。", category: "equip", slot: "charm", rarity: "rare", atkBonus: 1, mdfBonus: 2, basePrice: 220 },
+    { name: "古き紋章の欠片", description: "誰のものかは分からない。", category: "equip", slot: "charm", rarity: "rare", matBonus: 3, mdfBonus: 3, basePrice: 320 },
   ];
   for (const it of items) {
     const exists = await prisma.item.findFirst({ where: { name: it.name } });
-    if (!exists) await prisma.item.create({ data: it });
+    if (!exists) {
+      await prisma.item.create({ data: { ...it, jobAffinity: it.jobAffinity ?? "[]" } });
+    } else {
+      // Keep existing items in sync with the catalog. Helps when re-running
+      // the seed after adding new fields like weaponClass / jobAffinity.
+      await prisma.item.update({
+        where: { id: exists.id },
+        data: {
+          description: it.description,
+          category: it.category,
+          slot: it.slot ?? null,
+          weaponClass: it.weaponClass ?? null,
+          jobAffinity: it.jobAffinity ?? "[]",
+          rarity: it.rarity ?? "common",
+          basePrice: it.basePrice ?? 10,
+          atkBonus: it.atkBonus ?? 0,
+          defBonus: it.defBonus ?? 0,
+          matBonus: it.matBonus ?? 0,
+          mdfBonus: it.mdfBonus ?? 0,
+          hpBonus: it.hpBonus ?? 0,
+          mpBonus: it.mpBonus ?? 0,
+        },
+      });
+    }
   }
 
   // Initial season w/ central mystery
@@ -115,13 +307,32 @@ async function main() {
     }
   }
 
-  // Initial castle (scaffolding for siege)
-  const castle = await prisma.castle.findFirst({ where: { name: "アルダ城" } });
-  if (!castle) {
-    await prisma.castle.create({
-      data: { name: "アルダ城", region: "中央", description: "中央地方を見下ろす由緒ある城。" },
-    });
+  // Castles — one per region so siege participation has territorial meaning.
+  const castles = [
+    { name: "アルダ城", region: "中央高原", description: "中央地方を見下ろす由緒ある城。" },
+    { name: "湖鏡城", region: "湖畔地方", description: "湖面に映る石壁が独特の景観を持つ。" },
+    { name: "霧塔城", region: "霧の北縁", description: "塔の上半分が常に霧に隠れている。" },
+    { name: "黄金城", region: "黄金の南海岸", description: "海風と陽光に磨かれた壁面が陽に光る。" },
+    { name: "黒森砦", region: "黒森地方", description: "森に呑まれかけた半廃墟の砦。" },
+    { name: "霜帝城", region: "霜の高山", description: "氷柱が天然の城壁となっている。" },
+    { name: "塩塔", region: "塩の砂漠", description: "塩の柱で支えられた奇怪な塔。" },
+    { name: "古王の祠", region: "古王国の遺跡群", description: "城というより巨大な祠跡。" },
+    { name: "東風城", region: "東風の谷", description: "稲穂の海に浮かぶように見える石城。" },
+    { name: "影潮城", region: "影海岸", description: "黒潮を背に建つ侵入を拒む要塞。" },
+    { name: "聖印大聖殿", region: "聖印の高原", description: "城を兼ねた巨大な聖殿。" },
+    { name: "灰煤城", region: "灰落としの平原", description: "煤けた壁面が独特の質感を持つ。" },
+    { name: "鏡映城", region: "鏡映の湖沼", description: "湖底にもう一つの城が映ると噂される。" },
+    { name: "鐘塔本城", region: "鐘塔の麓", description: "三時間に一度、城自身の鐘が鳴る。" },
+  ];
+  let castlesCreated = 0;
+  for (const c of castles) {
+    const exists = await prisma.castle.findFirst({ where: { name: c.name } });
+    if (!exists) {
+      await prisma.castle.create({ data: c });
+      castlesCreated++;
+    }
   }
+  console.log(`  castles: +${castlesCreated} (${castles.length} total)`);
 
   console.log("Seed complete.");
 }

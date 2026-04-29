@@ -9,8 +9,18 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const townId: string | undefined = body.townId;
   const town = townId ? await prisma.town.findUnique({ where: { id: townId } }) : null;
+  // For "explore" quests, pick another town as the destination — anything but
+  // the current one. Falls back to "遠くの街" if there's only one seeded.
+  const others = await prisma.town.findMany({
+    where: town?.id ? { id: { not: town.id } } : {},
+    select: { name: true },
+    take: 5,
+  });
+  const otherTownName = others.length > 0
+    ? others[Math.floor(Math.random() * others.length)].name
+    : "遠くの街";
   const gen = getContentGenerationService();
-  const q = await gen.generateQuest({ townName: town?.name });
+  const q = await gen.generateQuest({ townName: town?.name, otherTownName });
   const quest = await prisma.quest.create({
     data: {
       townId: town?.id ?? null,

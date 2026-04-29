@@ -14,6 +14,22 @@ export default async function BattlePage({ params }: { params: { id: string } })
   if (!battle) redirect("/town");
   // load my skills
   const skills = c.currentJobId ? await prisma.skill.findMany({ where: { jobId: c.currentJobId } }) : [];
+
+  // Mid-battle join/leave eligibility (Cycle 23). Boss + dungeon battles
+  // are excluded; the UI hides the buttons via `joinable=false`.
+  const myPart = battle.participants.find((p) => p.characterId === c.id);
+  const joinable = battle.kind !== "boss" && !battle.dungeonRunId;
+  let canJoin = false;
+  if (joinable && !myPart && battle.partyId && battle.status === "active") {
+    const member = await prisma.partyMember.findFirst({
+      where: { partyId: battle.partyId, characterId: c.id },
+      select: { id: true },
+    });
+    canJoin = !!member;
+  }
+  const canLeave = !!(joinable && myPart?.alive && battle.status === "active"
+    && battle.participants.filter((p) => p.alive).length > 1);
+
   return (
     <main>
       <Hud />
@@ -21,6 +37,9 @@ export default async function BattlePage({ params }: { params: { id: string } })
         battleId={battle.id}
         characterId={c.id}
         skills={skills.map((s) => ({ id: s.id, name: s.name, type: s.type, cost: s.cost, description: s.description }))}
+        canJoin={canJoin}
+        canLeave={canLeave}
+        isParticipant={!!myPart?.alive}
       />
     </main>
   );

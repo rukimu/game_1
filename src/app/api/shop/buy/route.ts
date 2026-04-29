@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
+import { tickDailyChallenge } from "@/lib/dailyChallenge";
 
 const schema = z.object({ itemId: z.string(), quantity: z.number().int().min(1).max(50).default(1) });
 
@@ -16,5 +17,7 @@ export async function POST(req: Request) {
   if (c.gold < cost) return NextResponse.json({ error: "ゴールドが足りません" }, { status: 400 });
   await prisma.character.update({ where: { id: c.id }, data: { gold: { decrement: cost } } });
   await prisma.inventoryItem.create({ data: { characterId: c.id, itemId: item.id, quantity: parsed.data.quantity } });
+  // Daily: spend_gold counts the gross outflow.
+  try { await tickDailyChallenge({ characterId: c.id, goalType: "spend_gold", delta: cost }); } catch { /* non-fatal */ }
   return NextResponse.json({ ok: true, cost });
 }

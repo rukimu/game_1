@@ -6,6 +6,7 @@ import { onDungeonBattleEnded } from "@/lib/dungeon";
 import { rollClueDiscovery } from "@/lib/mystery";
 import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance } from "@/lib/affixes";
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
+import { awardAchievement } from "@/lib/achievements";
 
 export type EnemyState = {
   id: string;
@@ -552,9 +553,43 @@ async function resolveTurn(battleId: string) {
                 ts: Date.now(),
                 text: `★ ${p.name} はボス討伐の証 《${tierLabel(bossDrop.tier)}》 『${bossDrop.displayName}』 を手にした！`,
               });
+              if (bossDrop.tier === "legendary") {
+                const a = await awardAchievement("first_legendary", p.id);
+                if (a) log.push({ turn: battle.turn, ts: Date.now(), text: `🏆 ${p.name} は称号「${a.title}」を獲得した。` });
+              }
             }
           }
         } catch (e) { /* non-fatal */ }
+        // Achievement hooks: first blood, streaks, boss firsts.
+        try {
+          const earned: { title: string }[] = [];
+          const a1 = await awardAchievement("first_blood", p.id);
+          if (a1) earned.push(a1);
+          const newStreak = priorStreak + 1;
+          if (newStreak >= 5) {
+            const a = await awardAchievement("streak_5", p.id);
+            if (a) earned.push(a);
+          }
+          if (newStreak >= 15) {
+            const a = await awardAchievement("streak_15", p.id);
+            if (a) earned.push(a);
+          }
+          if (isBossBattle) {
+            // Anyone in the very-first-kill party gets the achievement; we
+            // detect that by checking that we *just* announced this slug.
+            const ann = await prisma.announcement.findFirst({
+              where: { title: { contains: `[本日のボス討伐] ${battle.bossSlug}` } },
+              select: { createdAt: true },
+            });
+            if (ann && Date.now() - ann.createdAt.getTime() < 60_000) {
+              const a = await awardAchievement("boss_first_kill", p.id);
+              if (a) earned.push(a);
+            }
+          }
+          for (const e of earned) {
+            log.push({ turn: battle.turn, ts: Date.now(), text: `🏆 ${p.name} は称号「${e.title}」を獲得した。` });
+          }
+        } catch { /* non-fatal */ }
       }
       // update quest progress for defeat_enemy quests
       const cqs = await prisma.characterQuest.findMany({ where: { characterId: p.id, completedAt: null }, include: { quest: true } });

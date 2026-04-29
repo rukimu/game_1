@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { sanitizeText } from "@/lib/sanitize";
+import { awardAchievement } from "@/lib/achievements";
 
 const GUILD_FOUND_LEVEL = 5;
 const GUILD_FOUND_COST = 200;
@@ -45,5 +46,6 @@ export async function POST(req: Request) {
     },
   });
   await prisma.character.update({ where: { id: c.id }, data: { gold: c.gold - GUILD_FOUND_COST } });
+  await awardAchievement("guild_founder", c.id);
   return NextResponse.json({ guild });
 }

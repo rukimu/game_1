@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { computeCombatStats, computeCombatEffects } from "@/lib/equipment";
 import type { AggregatedEffects } from "@/lib/affixes";
+import { awardAchievement } from "@/lib/achievements";
 
 type Combatant = {
   id: string;
@@ -91,5 +92,16 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     where: { id: duel.id },
     data: { status: "finished", winnerCharacterId: winner.id, log: JSON.stringify(log), resolvedAt: new Date() },
   });
+  // Achievement hooks: first duel, win-count tiers.
+  for (const cid of [duel.challengerCharacterId, duel.opponentCharacterId]) {
+    try { await awardAchievement("first_duel", cid); } catch { /* non-fatal */ }
+  }
+  try {
+    const wins = await prisma.duel.count({
+      where: { status: "finished", winnerCharacterId: winner.id },
+    });
+    if (wins >= 5) await awardAchievement("duel_5_wins", winner.id);
+    if (wins >= 25) await awardAchievement("duel_25_wins", winner.id);
+  } catch { /* non-fatal */ }
   return NextResponse.json({ winnerName: winner.name, log });
 }

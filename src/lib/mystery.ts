@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
+import { awardAchievement } from "@/lib/achievements";
 
 // Per-season list of "world keywords" that the mystery is built around. These
 // bleed into rumors, enemy descriptions, and NPC lines so the season's central
@@ -90,6 +91,12 @@ export async function rollClueDiscovery(
   await prisma.characterClue.create({
     data: { characterId, clueId: clue.id, source },
   });
+  // Achievement hooks for mystery progress.
+  try {
+    await awardAchievement("clue_first", characterId);
+    const total = await prisma.characterClue.count({ where: { characterId } });
+    if (total >= 4) await awardAchievement("clue_half", characterId);
+  } catch { /* non-fatal */ }
   // First-finder bonus and global announce.
   if (clue.isFinal) {
     const character = await prisma.character.findUnique({ where: { id: characterId } });
@@ -110,6 +117,7 @@ export async function rollClueDiscovery(
         },
       });
       getIO()?.emit("system:announcement", a);
+      try { await awardAchievement("mystery_first_solver", character.id); } catch { /* non-fatal */ }
     }
   }
   return { id: clue.id, text: clue.text, isFinal: clue.isFinal };

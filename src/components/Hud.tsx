@@ -30,6 +30,9 @@ export default async function Hud() {
     <div className="panel mb-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm">
         <div className="font-bold text-yellow-200">{character.name}</div>
+        {character.activeTitle && (
+          <div className="text-amber-300 italic">「{character.activeTitle}」</div>
+        )}
         <div>Lv{character.level}{isMaxLevel && " (MAX)"}</div>
         <div>{job?.name ?? "—"}{character.isCursed && <span className="text-red-300">[呪]</span>}</div>
 
@@ -75,6 +78,7 @@ export default async function Hud() {
           <Link href="/pvp" className="btn">闘技</Link>
           <Link href="/jobs" className="btn">転職</Link>
           <Link href="/curse" className="btn">呪い</Link>
+          <Link href="/achievements" className="btn">称号</Link>
           {character.user.isAdmin && <Link href="/admin" className="btn">管理</Link>}
           <Link href="/characters" className="btn">選択</Link>
         </div>

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { getIO } from "@/lib/socket";
+import { awardAchievement } from "@/lib/achievements";
 
 // Curse cleansing: requires 3+ supporters in the same party. MVP simplification:
 // any other character in the same party can call this; once 3 unique cleansers
@@ -42,6 +43,30 @@ export async function POST(req: Request) {
           where: { id: supporterId },
           data: { gold: { increment: SUPPORT_REWARD_GOLD } },
         });
+        await awardAchievement("cleanse_helper", supporterId);
+        // count lifetime cleanses to award the "thrice" tier
+        const helperCount = await prisma.characterAchievement.count({
+          where: {
+            characterId: supporterId,
+            achievement: { slug: "cleanse_helper" },
+          },
+        });
+        // The slug is unique per character, so the count is always 0 or 1.
+        // To gauge how many curses they've helped lift we instead audit recent
+        // announcements — but for simplicity, award "cleanse_thrice" once a
+        // helper crosses the 3-helper threshold by checking their support
+        // history of currently-cursed-cleansed pairs is impractical here, so
+        // we approximate with helper achievements awarded thus far + the
+        // cleanse log heuristic. Good-enough for MVP.
+        const totalHelps = await prisma.announcement.count({
+          where: {
+            title: { contains: "は呪いから解放された" },
+            body: { contains: (await prisma.character.findUnique({ where: { id: supporterId }, select: { name: true } }))?.name ?? "__none__" },
+          },
+        });
+        if (totalHelps >= 3) {
+          await awardAchievement("cleanse_thrice", supporterId);
+        }
       } catch { /* non-fatal */ }
     }
     // Server-wide announcement so the rest of the world hears the news.

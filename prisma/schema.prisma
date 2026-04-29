@@ -59,6 +59,9 @@ model Character {
   cosmeticOutfit  String?  // free-form JSON in future
   bio             String?  // auto-generated background story
   quizAnswers     String?  // JSON answers from job quiz
+  // Currently-displayed title (slug into Achievement.titleSlug). Players can
+  // pick which earned title to wear from /achievements.
+  activeTitle     String?
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventory       InventoryItem[]
@@ -77,6 +80,32 @@ model Character {
   duelsB          Duel[] @relation("DuelB")
   clues           CharacterClue[]
   dungeonRuns     DungeonRun[]
+  achievements    CharacterAchievement[]
+}
+
+// World-level achievement definitions. Most are seeded statically; some can
+// be created at runtime by world events (e.g. "First to slay [boss-2026-04-29]").
+model Achievement {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String   // "呪縛を解く者", "闘技場の覇者" etc.
+  description String
+  // Optional title that holders can wear on their HUD.
+  titleSlug   String?
+  rarity      String   @default("common") // common/rare/epic/legendary/mythic
+  hidden      Boolean  @default(false)    // hidden until earned
+  createdAt   DateTime @default(now())
+  holders     CharacterAchievement[]
+}
+
+model CharacterAchievement {
+  id              String   @id @default(cuid())
+  characterId     String
+  achievementId   String
+  earnedAt        DateTime @default(now())
+  character       Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  @@unique([characterId, achievementId])
 }
 
 model Job {

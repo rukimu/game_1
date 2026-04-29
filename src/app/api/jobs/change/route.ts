@@ -5,6 +5,7 @@ import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { applyJobBaseStats } from "@/lib/leveling";
 import { getContentGenerationService, generationLabel } from "@/lib/generation/service";
 import { getIO } from "@/lib/socket";
+import { awardAchievement } from "@/lib/achievements";
 
 const schema = z.object({
   jobId: z.string(),
@@ -105,6 +106,7 @@ export async function POST(req: Request) {
       });
       getIO()?.emit("system:announcement", a);
     } catch (e) { /* non-fatal — curse takes effect regardless */ }
+    await awardAchievement("cursed_one", c.id);
   }
   return NextResponse.json({ ok: true });
 }

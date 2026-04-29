@@ -73,6 +73,7 @@ export default async function Hud() {
           <Link href="/shop" className="btn">店</Link>
           <Link href="/pvp" className="btn">闘技</Link>
           <Link href="/jobs" className="btn">転職</Link>
+          <Link href="/curse" className="btn">呪い</Link>
           {character.user.isAdmin && <Link href="/admin" className="btn">管理</Link>}
           <Link href="/characters" className="btn">選択</Link>
         </div>

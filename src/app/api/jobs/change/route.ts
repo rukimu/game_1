@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { applyJobBaseStats } from "@/lib/leveling";
 import { getContentGenerationService, generationLabel } from "@/lib/generation/service";
+import { getIO } from "@/lib/socket";
 
 const schema = z.object({
   jobId: z.string(),
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
     }
   }
   const base = applyJobBaseStats(JSON.parse(job.baseStats));
+  const wasNotCursed = !c.isCursed;
   await prisma.character.update({
     where: { id: c.id },
     data: {
@@ -90,5 +92,19 @@ export async function POST(req: Request) {
     update: {},
     create: { characterId: c.id, jobId: job.id, mastery: 0 },
   });
+  // Curse onset is a world event. Broadcast so other players can find and
+  // (eventually) help the new sufferer — without that, cursed jobs remained
+  // a private, isolating choice rather than the protagonist of stories.
+  if (job.isCursed && wasNotCursed) {
+    try {
+      const a = await prisma.announcement.create({
+        data: {
+          title: `『${c.name}』は呪いに身を落とした`,
+          body: `${c.name} は ${job.name} に身を捧げた。世界はその名を静かに刻む。解除には、同じパーティーに集う 3 人の手が要る。`,
+        },
+      });
+      getIO()?.emit("system:announcement", a);
+    } catch (e) { /* non-fatal — curse takes effect regardless */ }
+  }
   return NextResponse.json({ ok: true });
 }

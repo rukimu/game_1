@@ -13,6 +13,17 @@ function getSocket() {
 
 type Skill = { id: string; name: string; type: string; cost: number; description: string };
 
+function labelForType(t: string): string {
+  switch (t) {
+    case "attack": return "攻撃";
+    case "heal":   return "回復";
+    case "buff":   return "強化";
+    case "debuff": return "弱化";
+    case "special": return "特殊";
+    default: return t;
+  }
+}
+
 export default function BattleClient({
   battleId,
   characterId,
@@ -198,11 +209,20 @@ export default function BattleClient({
           <div className="mt-3 flex gap-2 flex-wrap items-center">
             {isParticipant && (
               <>
-                <button className="btn" onClick={() => send("defend")} disabled={submitting}>防御</button>
+                <button className="btn" onClick={() => send("defend")} disabled={submitting} title="このターン受けるダメージを軽減する">防御</button>
                 {skills.length > 0 && (
-                  <select className="input w-auto" value={skillId ?? ""} onChange={(e) => setSkillId(e.target.value || null)}>
+                  <select
+                    className="input w-auto"
+                    value={skillId ?? ""}
+                    onChange={(e) => setSkillId(e.target.value || null)}
+                    title="使うスキルを選んでから、敵の『スキル』ボタンで発動"
+                  >
                     <option value="">スキルを選ぶ</option>
-                    {skills.map((s) => <option key={s.id} value={s.id}>{s.name}（cost:{s.cost}）</option>)}
+                    {skills.map((s) => (
+                      <option key={s.id} value={s.id} title={s.description}>
+                        {s.name}（{labelForType(s.type)}/{s.cost}MP）
+                      </option>
+                    ))}
                   </select>
                 )}
                 <span className="text-[10px] text-yellow-200/50 ml-2">攻撃ボタンは長押しで連続発動</span>
@@ -220,6 +240,25 @@ export default function BattleClient({
               </button>
             )}
           </div>
+          {/* Selected skill detail panel — fixes the "what does this skill do?" gap. */}
+          {isParticipant && skillId && (() => {
+            const s = skills.find((x) => x.id === skillId);
+            if (!s) return null;
+            return (
+              <div className="mt-2 border border-yellow-900/40 rounded p-2 bg-black/30 text-xs">
+                <div className="font-bold text-yellow-200">
+                  {s.name}{" "}
+                  <span className="text-yellow-300/80 text-[10px]">
+                    [{labelForType(s.type)} / {s.cost}MP]
+                  </span>
+                </div>
+                <div className="text-yellow-100/85 mt-0.5">{s.description || "（説明なし）"}</div>
+                <div className="text-yellow-200/60 text-[10px] mt-0.5">
+                  対象を選んで「スキル」ボタンで発動。攻撃系は対象選択、回復は最も HP が低い味方に自動。
+                </div>
+              </div>
+            );
+          })()}
           {err && <div className="text-red-400 text-xs mt-1">{err}</div>}
         </div>
         <div className="panel">

@@ -21,7 +21,19 @@ export type GeneratedItemEntry = {
   mpBonus: number;
 };
 
-const WEAPON_CLASSES: Array<{ key: string; affinity: string[]; nameRoots: string[]; baseAtk: number; baseMat: number; baseDef: number }> = [
+// Exposed to UI so the inventory page can show "あなたの職業に合う武器一覧".
+export const WEAPON_CLASS_LABEL_JP: Record<string, string> = {
+  sword: "剣", greatsword: "大剣", spear: "槍", dagger: "短剣",
+  bow: "弓", staff: "杖", rod: "ロッド", drum: "太鼓",
+  flute: "笛", hammer: "槌", flail: "フレイル", claws: "爪", knuckle: "拳",
+};
+
+export const ARCHETYPE_LABEL_JP: Record<string, string> = {
+  warrior: "戦士系", mage: "魔導系", rogue: "盗賊系", cleric: "神官系",
+  support: "支援系", craft: "職人系", heretic: "異端系", rare: "稀少系", cursed: "呪い系",
+};
+
+export const WEAPON_CLASSES: Array<{ key: string; affinity: string[]; nameRoots: string[]; baseAtk: number; baseMat: number; baseDef: number }> = [
   { key: "sword",      affinity: ["warrior", "cleric"],   nameRoots: ["剣", "刃", "細剣", "長剣", "騎士剣", "片手剣", "礼拝剣", "古剣"], baseAtk: 8, baseMat: 0, baseDef: 0 },
   { key: "greatsword", affinity: ["warrior"],             nameRoots: ["大剣", "両手剣", "重剣", "巨剣", "断頭剣"], baseAtk: 12, baseMat: 0, baseDef: -1 },
   { key: "spear",      affinity: ["warrior"],             nameRoots: ["槍", "鉾", "薙刀", "穂槍", "騎兵槍"], baseAtk: 9, baseMat: 1, baseDef: 0 },

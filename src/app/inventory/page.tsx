@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { computeCombatStats, isAffine } from "@/lib/equipment";
 import { parseInstance, tierColorClass, tierLabel } from "@/lib/affixes";
+import { WEAPON_CLASSES, WEAPON_CLASS_LABEL_JP, ARCHETYPE_LABEL_JP } from "@/lib/itemGen";
 import InventoryClient from "./Client";
 
 export const dynamic = "force-dynamic";
@@ -114,6 +115,49 @@ export default async function InventoryPage() {
               <div className="text-yellow-200/50 text-xs">読み込めませんでした。</div>
             )}
           </div>
+          {archetype && (
+            <div className="panel">
+              <div className="text-sm font-bold text-yellow-200 mb-1">武器適性表</div>
+              <p className="text-[10px] text-yellow-200/60 mb-2">
+                あなたの職業 <span className="text-yellow-100">{job?.name}</span>（
+                {ARCHETYPE_LABEL_JP[archetype] ?? archetype}）に対応する武器クラス。
+                適性外の武器を装備すると ATK / MAT 等の補正が <span className="text-red-300">半減</span> します（affix の補正は減りません）。
+              </p>
+              <table className="text-xs w-full">
+                <thead>
+                  <tr className="text-yellow-300/80 text-left">
+                    <th className="pb-1">武器</th>
+                    <th className="pb-1">適性</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {WEAPON_CLASSES.map((w) => {
+                    const ok = w.affinity.includes(archetype);
+                    return (
+                      <tr key={w.key} className={ok ? "" : "opacity-50"}>
+                        <td className="py-0.5">
+                          {WEAPON_CLASS_LABEL_JP[w.key] ?? w.key}
+                          <span className="text-yellow-200/50 ml-1 text-[10px]">({w.key})</span>
+                        </td>
+                        <td className="py-0.5">
+                          {ok ? (
+                            <span className="text-green-300">○ 適性</span>
+                          ) : (
+                            <span className="text-red-300">× 半減</span>
+                          )}
+                          {w.affinity.length > 0 && (
+                            <span className="text-yellow-200/50 ml-2 text-[10px]">
+                              ({w.affinity.map((a) => ARCHETYPE_LABEL_JP[a] ?? a).join("/")} 向け)
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </main>

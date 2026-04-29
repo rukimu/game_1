@@ -119,14 +119,40 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
     }
     const qIndex = step - 1;
     const isFinalQ = qIndex >= quiz.length;
+    function restartQuiz() {
+      setAnswers({});
+      setStep(1);
+      setErr(null);
+    }
     if (isFinalQ) {
+      // Summary of current answers so the player can review before committing.
       return (
         <div className="panel space-y-3">
           <div className="text-sm text-yellow-200">回答を星詠みに委ねますか？</div>
+          <div className="border border-yellow-900/40 rounded p-2 bg-black/30 text-xs space-y-1">
+            <div className="text-yellow-300/80">回答一覧</div>
+            {quiz.map((q, idx) => {
+              const aId = answers[q.id];
+              const aLabel = q.options.find((o) => o.id === aId)?.label ?? "（未回答）";
+              return (
+                <div key={q.id} className="flex gap-2">
+                  <span className="text-yellow-300/60 tabular-nums">Q{idx + 1}</span>
+                  <span className="flex-1 text-yellow-100/90">{aLabel}</span>
+                  <button
+                    className="text-yellow-300/80 hover:text-yellow-200 underline text-[10px]"
+                    onClick={() => setStep(idx + 1)}
+                  >
+                    変更
+                  </button>
+                </div>
+              );
+            })}
+          </div>
           {err && <div className="text-red-400 text-xs">{err}</div>}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button className="btn-primary" onClick={submit}>運命を委ねる</button>
-            <button className="btn" onClick={() => setStep(quiz.length)}>戻って見直す</button>
+            <button className="btn" onClick={() => setStep(1)}>1問目から見直す</button>
+            <button className="btn" onClick={restartQuiz} title="全回答をクリアして最初の設問へ">最初からやり直す</button>
             <button className="btn" onClick={reset}>やめる</button>
           </div>
         </div>
@@ -153,8 +179,17 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
             </li>
           ))}
         </ul>
-        <div className="flex justify-between">
-          <button className="btn" onClick={() => setStep(Math.max(0, step - 1))}>戻る</button>
+        <div className="flex flex-wrap gap-2 justify-between">
+          <div className="flex gap-2">
+            <button className="btn" onClick={() => setStep(Math.max(0, step - 1))}>戻る</button>
+            <button
+              className="btn"
+              onClick={restartQuiz}
+              title="今までの回答をクリアして最初からやり直す"
+            >
+              最初から
+            </button>
+          </div>
           <button className="btn" onClick={reset}>やめる</button>
         </div>
       </div>

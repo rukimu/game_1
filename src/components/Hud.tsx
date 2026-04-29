@@ -9,7 +9,9 @@ import HudMenu from "@/components/HudMenu";
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   return (
-    <div className="w-20 sm:w-28 h-2 bg-black/50 border border-yellow-900/50 rounded overflow-hidden">
+    // On <sm screens the bar grows to fill the row so each stat reads cleanly.
+    // On >=sm we keep a fixed width so the inline HUD stays compact.
+    <div className="flex-1 sm:flex-none w-auto sm:w-28 h-2 bg-black/50 border border-yellow-900/50 rounded overflow-hidden">
       <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -38,36 +40,41 @@ export default async function Hud() {
         <div>Lv{character.level}{isMaxLevel && " (MAX)"}</div>
         <div>{job?.name ?? "—"}{character.isCursed && <span className="text-red-300">[呪]</span>}</div>
 
-        <div className="flex items-center gap-1" title={`HP ${character.hp}/${character.maxHp}`}>
-          <span className="text-red-300">HP</span>
+        <div className="flex items-center gap-1 w-full sm:w-auto" title={`HP ${character.hp}/${character.maxHp}`}>
+          <span className="text-red-300 w-8 sm:w-auto">HP</span>
           <Bar value={character.hp} max={character.maxHp} color="bg-red-600" />
-          <span className="tabular-nums">{character.hp}/{character.maxHp}</span>
+          <span className="tabular-nums w-20 sm:w-auto text-right sm:text-left">{character.hp}/{character.maxHp}</span>
         </div>
 
-        <div className="flex items-center gap-1" title={`MP ${character.mp}/${character.maxMp}`}>
-          <span className="text-blue-300">MP</span>
+        <div className="flex items-center gap-1 w-full sm:w-auto" title={`MP ${character.mp}/${character.maxMp}`}>
+          <span className="text-blue-300 w-8 sm:w-auto">MP</span>
           <Bar value={character.mp} max={character.maxMp} color="bg-blue-500" />
-          <span className="tabular-nums">{character.mp}/{character.maxMp}</span>
+          <span className="tabular-nums w-20 sm:w-auto text-right sm:text-left">{character.mp}/{character.maxMp}</span>
         </div>
 
         <div
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 w-full sm:w-auto"
           title={
             isMaxLevel
               ? "最大レベルです"
               : `次のレベルまで ${expRemaining} 経験値`
           }
         >
-          <span className="text-yellow-300">EXP</span>
+          <span className="text-yellow-300 w-8 sm:w-auto">EXP</span>
           <Bar value={isMaxLevel ? 1 : character.exp} max={isMaxLevel ? 1 : expNeeded} color="bg-yellow-400" />
-          <span className="tabular-nums">
+          <span className="tabular-nums w-20 sm:w-auto text-right sm:text-left">
             {isMaxLevel ? "MAX" : `${character.exp}/${expNeeded}`}
           </span>
         </div>
 
         <div title={`所持金 ${character.gold}G`}>G {character.gold}</div>
 
-        <HudMenu isAdmin={!!character.user.isAdmin} unreadDms={unreadDms} />
+        <HudMenu
+          isAdmin={!!character.user.isAdmin}
+          unreadDms={unreadDms}
+          level={character.level}
+          inGuild={!!character.guildMember}
+        />
       </div>
       {!isMaxLevel && (
         <div className="text-[10px] sm:text-xs text-yellow-200/60 mt-1">

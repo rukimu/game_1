@@ -74,6 +74,37 @@
 
 ## DONE
 
+### Cycle 15 (2026-04-29) — 攻城戦 MVP
+- [x] SiegeEvent に status / winningGuildId / SiegeRegistration を追加
+- [x] src/lib/siege.ts: 24h 登録窓 + 3h 戦闘窓 + 自動決着 (lazy advance)
+- [x] /siege ページ + /api/siege/register
+- [x] 勝利ギルドはサーバー全体告知 + CastleOwnership 更新
+
+### Cycle 14 (2026-04-29) — アダプティブチュートリアル
+- [x] Character.tutorialState 追加
+- [x] src/lib/tutorial.ts: 6 段階のヒントを行動履歴から自動選択
+- [x] /town に TutorialBox + /api/tutorial/dismiss
+
+### Cycle 13 (2026-04-29) — クエスト多様化
+- [x] QUEST_TEMPLATES を 3 → 10 (defeat / collect / explore / endure)
+- [x] generateQuest が kind 別の title/goalParam/goalCount を出力
+- [x] battle.ts で win_battles / collect_drop / defeat_enemy を tick
+- [x] towns/[id]/move で visit_town を tick
+
+### Cycle 12 (2026-04-29) — 鍛冶 (アフィックス加工)
+- [x] src/lib/forge.ts: Reroll / Upgrade、5 素材消費、ティア別ゴールド
+- [x] /forge ページ + /api/forge
+
+### Cycle 11 (2026-04-29) — 戦闘状態異常
+- [x] EnemyState に statuses[] を追加 (poison/burn/stun)
+- [x] debuff スキル → 必中、attack スキルのクリ時 → 50% 確率
+- [x] 毒/火傷の tick ダメージ、スタンの行動阻止
+
+### Cycle 10 (2026-04-29) — アチーブメント / 称号
+- [x] Achievement / CharacterAchievement モデル + 15 種シード
+- [x] battle.ts / curse / duel / mystery / guild / dungeon にフック
+- [x] /achievements + /api/achievements/title + HUD 称号
+
 ### Cycle 9 (2026-04-29) — 街に「最近の世界の出来事」表示
 - [x] /town に最新 5 件の Announcement を表示。呪い告知・ボス討伐・謎解明が一目で分かる
 

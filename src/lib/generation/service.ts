@@ -48,7 +48,7 @@ export interface ContentGenerationService {
   generateJob(ctx: GenerationContext): Promise<GeneratedJob>;
   generateSkill(ctx: GenerationContext & { jobName?: string }): Promise<GeneratedSkill>;
   generateEnemy(ctx: GenerationContext): Promise<GeneratedEnemy>;
-  generateQuest(ctx: GenerationContext & { townName?: string }): Promise<GeneratedQuest>;
+  generateQuest(ctx: GenerationContext & { townName?: string; otherTownName?: string }): Promise<GeneratedQuest>;
   generateRumor(ctx: GenerationContext & { townName: string }): Promise<string>;
   generateNpcDialogue(ctx: GenerationContext & { role?: string }): Promise<{ role: string; line: string }>;
   generateDungeonName(ctx: GenerationContext): Promise<string>;

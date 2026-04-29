@@ -74,6 +74,7 @@ type AffixDef = {
   effects?: SpecialEffect[];
 };
 
+// Cycle 21C: pools 4-7x larger so 100-hour players keep finding new affixes.
 const PREFIXES_T1: AffixDef[] = [
   { text: "鋭い", bonus: { atk: 2 } },
   { text: "頑強な", bonus: { def: 2 } },
@@ -83,19 +84,49 @@ const PREFIXES_T1: AffixDef[] = [
   { text: "練磨の", bonus: { atk: 2, def: 1 } },
   { text: "若き", bonus: { mat: 1, mp: 3 } },
   { text: "整った", bonus: { def: 2, mdf: 1 } },
+  { text: "錆びた", bonus: { atk: 1, def: 1 } },
+  { text: "磨かれた", bonus: { atk: 1, def: 1, hp: 2 } },
+  { text: "鋼の", bonus: { atk: 2 } },
+  { text: "古道の", bonus: { def: 1, hp: 3 } },
+  { text: "湖風の", bonus: { mat: 1, mp: 2 } },
+  { text: "陽だまりの", bonus: { hp: 5, mp: 1 } },
+  { text: "夜霧の", bonus: { atk: 1, mat: 1 } },
+  { text: "森人の", bonus: { atk: 1, hp: 2 } },
+  { text: "塩風の", bonus: { def: 1, mdf: 1 } },
+  { text: "白翼の", bonus: { mdf: 2, mp: 1 } },
+  { text: "黄金の", bonus: { def: 1, hp: 3 } },
+  { text: "黒檀の", bonus: { mat: 2 } },
+  { text: "瑪瑙の", bonus: { mdf: 1, hp: 2 } },
+  { text: "銀細工の", bonus: { def: 1, mat: 1 } },
+  { text: "稚拙な", bonus: { atk: 1, mat: 1 } },
+  { text: "丹念な", bonus: { def: 1, mat: 1, mdf: 1 } },
 ];
 
 const PREFIXES_T2: AffixDef[] = [
   { text: "蒼炎の", bonus: { mat: 4, atk: 2 }, special: "刃に微かな炎が灯っている。クリティカル率 +5%。", effects: [{ kind: "crit_rate", bonusPercent: 5 }] },
-  { text: "霜結ぶ", bonus: { mdf: 3, def: 2 }, special: "触れた者の指先が悴む。" },
+  { text: "霜結ぶ", bonus: { mdf: 3, def: 2 }, special: "触れた者の指先が悴む。獣型に与ダメ +10%。", effects: [{ kind: "slay", target: "beast", bonusPercent: 10 }] },
   { text: "雷を孕む", bonus: { atk: 4, mat: 2 }, special: "鞘から微かな放電が漏れる。クリティカル時のダメージ +20%。", effects: [{ kind: "crit_damage", bonusPercent: 20 }] },
-  { text: "月光の", bonus: { mat: 3, mdf: 3 }, special: "夜にだけ柄が淡く光る。" },
+  { text: "月光の", bonus: { mat: 3, mdf: 3 }, special: "夜にだけ柄が淡く光る。クリティカル率 +3%。", effects: [{ kind: "crit_rate", bonusPercent: 3 }] },
   { text: "影喰みの", bonus: { atk: 5, hp: -3 }, special: "握る手から温度が逃げていく。与ダメの 5% を吸収して回復する。", effects: [{ kind: "lifesteal", percent: 5 }] },
   { text: "聖印の", bonus: { mdf: 4, hp: 6 }, special: "祈りに似た振動を伝える。戦闘終了後にHPがわずかに回復する。", effects: [{ kind: "post_battle_regen", amount: 8 }] },
-  { text: "黄昏の", bonus: { atk: 3, mat: 3 }, special: "見つめると視野の端が薄暗くなる。" },
+  { text: "黄昏の", bonus: { atk: 3, mat: 3 }, special: "見つめると視野の端が薄暗くなる。クリティカル時のダメージ +10%。", effects: [{ kind: "crit_damage", bonusPercent: 10 }] },
   { text: "羽化する", bonus: { atk: 2, def: 2, hp: 4 }, special: "速度がわずかに上がる。", effects: [{ kind: "speed_aura", amount: 2 }] },
   { text: "深紅の", bonus: { atk: 5 } },
   { text: "翠玉の", bonus: { mdf: 4, mp: 5 } },
+  { text: "黒鉄の", bonus: { atk: 4, def: 3 } },
+  { text: "陽炎の", bonus: { mat: 5, mp: 3 }, special: "陽光の中で柄が揺らいで見える。", effects: [{ kind: "crit_rate", bonusPercent: 4 }] },
+  { text: "霧深き", bonus: { atk: 2, mdf: 4 }, special: "霧が出ている時、与ダメが上がる。", effects: [{ kind: "crit_damage", bonusPercent: 8 }] },
+  { text: "玻璃の", bonus: { mat: 5, mdf: 2 } },
+  { text: "古王国の", bonus: { atk: 3, def: 3, mat: 3 } },
+  { text: "祝祭の", bonus: { mdf: 3, hp: 8 }, special: "祝祭の日には特に良く作用する。" },
+  { text: "盲目の", bonus: { atk: 6, hp: -4 }, special: "見えないからこそ振り抜ける。クリティカル率 +6%。", effects: [{ kind: "crit_rate", bonusPercent: 6 }] },
+  { text: "鏡映の", bonus: { mat: 4, mdf: 4 }, special: "湖面で見た自分の姿を覚えている。", effects: [{ kind: "post_battle_regen", amount: 5 }] },
+  { text: "鐘塔の", bonus: { atk: 3, mat: 3, mp: 4 }, special: "鐘の音と共に力が高まる。" },
+  { text: "黎明の", bonus: { atk: 3, mdf: 3, hp: 5 }, special: "夜明けと共に研ぎ直される。", effects: [{ kind: "post_battle_regen", amount: 6 }] },
+  { text: "霜帝の", bonus: { mdf: 5, def: 3 }, special: "極寒に晒した者の刃。不死型に与ダメ +12%。", effects: [{ kind: "slay", target: "undead", bonusPercent: 12 }] },
+  { text: "塩漬けの", bonus: { def: 4, hp: 6 }, special: "錆びるはずの場所で錆びない。" },
+  { text: "薔薇色の", bonus: { atk: 4, mat: 2 }, special: "戦場で香るはずのない花。" },
+  { text: "閃光の", bonus: { atk: 4, mat: 4 }, special: "一瞬の輝きが敵の動きを止める。", effects: [{ kind: "crit_damage", bonusPercent: 12 }] },
 ];
 
 const PREFIXES_T3: AffixDef[] = [
@@ -104,6 +135,13 @@ const PREFIXES_T3: AffixDef[] = [
   { text: "封印された", bonus: { atk: 7, mat: 7 }, special: "持ち主以外には重すぎて動かない。与ダメの 8% を吸収する。", effects: [{ kind: "lifesteal", percent: 8 }] },
   { text: "灯の年の", bonus: { atk: 5, mat: 5, hp: 10, mp: 8 }, special: "シーズンの中心の謎と共鳴している。戦闘後にHPが大きく回復する。", effects: [{ kind: "post_battle_regen", amount: 18 }] },
   { text: "伝承の", bonus: { atk: 6, def: 6, hp: 12 }, special: "古い詩に名が残されている。クリティカル時のダメージ +35%。", effects: [{ kind: "crit_damage", bonusPercent: 35 }] },
+  { text: "鏡の年の", bonus: { mat: 7, mdf: 6, hp: 8 }, special: "鏡の森に映る影と契約している。", effects: [{ kind: "lifesteal", percent: 7 }] },
+  { text: "灰の年の", bonus: { atk: 6, mat: 6, hp: 6 }, special: "灰の唄と共鳴し、戦場で歌い始める。", effects: [{ kind: "post_battle_regen", amount: 12 }, { kind: "crit_damage", bonusPercent: 15 }] },
+  { text: "塔陰の", bonus: { atk: 8, mdf: 5 }, special: "塔の影が触れたものに宿る。", effects: [{ kind: "slay", target: "magic", bonusPercent: 30 }] },
+  { text: "禁忌の", bonus: { atk: 10, hp: -8 }, special: "持つ者の名が記録から削られる代償。", effects: [{ kind: "crit_rate", bonusPercent: 12 }, { kind: "crit_damage", bonusPercent: 15 }] },
+  { text: "黒水の", bonus: { mat: 8, mdf: 6, mp: 12 }, special: "深淵の井戸の水で鍛えた武器。", effects: [{ kind: "lifesteal", percent: 6 }, { kind: "post_battle_regen", amount: 10 }] },
+  { text: "白竜の", bonus: { atk: 10, def: 5, hp: 10 }, special: "選ばれし者にしか持たれない。", effects: [{ kind: "slay", target: "humanoid", bonusPercent: 20 }, { kind: "slay", target: "construct", bonusPercent: 20 }] },
+  { text: "亡き王の", bonus: { atk: 8, def: 4, mat: 4 }, special: "古王国時代の最後の名匠の作。", effects: [{ kind: "crit_damage", bonusPercent: 25 }] },
 ];
 
 const SUFFIXES_T1: AffixDef[] = [
@@ -112,6 +150,12 @@ const SUFFIXES_T1: AffixDef[] = [
   { text: "の手記", bonus: { mat: 1 } },
   { text: "の継承", bonus: { hp: 5 } },
   { text: "の鍛え直し", bonus: { atk: 1, def: 1 } },
+  { text: "の銘無し", bonus: { atk: 1 } },
+  { text: "の修復", bonus: { def: 1, hp: 3 } },
+  { text: "の戯作", bonus: { atk: 1, mat: 1 } },
+  { text: "の若手", bonus: { atk: 1, mp: 2 } },
+  { text: "の遺品", bonus: { mdf: 1, hp: 4 } },
+  { text: "の摸造", bonus: { atk: 1, def: 1, mp: 1 } },
 ];
 
 const SUFFIXES_T2: AffixDef[] = [
@@ -123,12 +167,26 @@ const SUFFIXES_T2: AffixDef[] = [
   { text: "の不眠", bonus: { atk: 3, hp: -2 }, special: "夜が来てもこれを置いて眠れない。クリティカル率 +3%。", effects: [{ kind: "crit_rate", bonusPercent: 3 }] },
   { text: "の探求", bonus: { mat: 3, mp: 4 } },
   { text: "の屍払い", bonus: { atk: 3, mdf: 2 }, special: "不死型の敵に与ダメ +25%。", effects: [{ kind: "slay", target: "undead", bonusPercent: 25 }] },
+  { text: "の構築砕き", bonus: { atk: 4, mat: 1 }, special: "構築型の敵に与ダメ +25%。", effects: [{ kind: "slay", target: "construct", bonusPercent: 25 }] },
+  { text: "の人狩り", bonus: { atk: 4, mdf: -1 }, special: "人型の敵に与ダメ +20%。", effects: [{ kind: "slay", target: "humanoid", bonusPercent: 20 }] },
+  { text: "の歌い止め", bonus: { mat: 3, mdf: 3 }, special: "詠唱を中断させる響きがある。", effects: [{ kind: "crit_damage", bonusPercent: 12 }] },
+  { text: "の血の刻", bonus: { atk: 4 }, special: "戦闘で勝つほどに鋭くなる。与ダメの 4% を吸収する。", effects: [{ kind: "lifesteal", percent: 4 }] },
+  { text: "の旅路", bonus: { atk: 2, def: 2, hp: 6 }, special: "長旅に耐える耐久性。" },
+  { text: "の祈祷文", bonus: { mdf: 5, mp: 4 }, special: "持ち主が祈ると刃が温まる。", effects: [{ kind: "post_battle_regen", amount: 8 }] },
+  { text: "の灰節", bonus: { atk: 3, mat: 3 }, special: "灰の唄を奏でる時、力が増す。" },
+  { text: "の鏡像", bonus: { mat: 4, mdf: 2 }, special: "敵の弱点を映し出す。", effects: [{ kind: "crit_rate", bonusPercent: 4 }] },
+  { text: "の鐘の音", bonus: { atk: 3, mp: 4 }, special: "鐘の鳴る街では特に良く働く。" },
+  { text: "の塔陰行", bonus: { atk: 4, mdf: 2 }, special: "影に紛れる動きを助ける。", effects: [{ kind: "speed_aura", amount: 1 }] },
 ];
 
 const SUFFIXES_T3: AffixDef[] = [
   { text: "の絶剣", bonus: { atk: 12, def: 4 }, special: "詠唱不要で刃が震える。クリティカル率 +8%、クリティカル時ダメ +20%。", effects: [{ kind: "crit_rate", bonusPercent: 8 }, { kind: "crit_damage", bonusPercent: 20 }] },
   { text: "の禁忌", bonus: { mat: 12, mp: 10 }, special: "これを抜いた者の名は記録から削られる。与ダメの 10% を吸収する。", effects: [{ kind: "lifesteal", percent: 10 }] },
   { text: "の伝承", bonus: { atk: 6, def: 6, mat: 6, mdf: 6 }, special: "戦闘後にHPがしっかり回復する。", effects: [{ kind: "post_battle_regen", amount: 25 }] },
+  { text: "の星宿り", bonus: { mat: 10, mdf: 6, mp: 12 }, special: "星座が刃に宿る。", effects: [{ kind: "crit_rate", bonusPercent: 10 }, { kind: "crit_damage", bonusPercent: 20 }] },
+  { text: "の竜の血", bonus: { atk: 14, hp: -6 }, special: "持ち主の血を僅かに吸う。", effects: [{ kind: "lifesteal", percent: 12 }] },
+  { text: "の終焉", bonus: { atk: 15, def: -3 }, special: "持ち主が一度倒れると刃が砕ける。", effects: [{ kind: "crit_damage", bonusPercent: 40 }] },
+  { text: "の世界節", bonus: { atk: 5, def: 5, mat: 5, mdf: 5, hp: 8, mp: 8 }, special: "全ての要素にわずかに作用する完全装備。" },
 ];
 
 // ----- Tier roll ---------------------------------------------------------

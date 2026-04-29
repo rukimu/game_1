@@ -9,6 +9,7 @@ import {
   QUEST_TEMPLATES,
   ROLES,
   RUMOR_TEMPLATES,
+  SEASONAL_RUMOR_TEMPLATES,
   SKILL_PARTS,
 } from "@/lib/generation/templates";
 import {
@@ -31,6 +32,16 @@ export type GenerationContext = {
   level?: number;
   category?: string;
   rank?: string;
+  // Optional context that lets generation react to the current world / character.
+  // - seasonClueWords: short keywords from the current season's mystery; if present
+  //   we splice them into rumors and NPC lines so the season permeates everywhere.
+  // - characterArchetype: warrior/mage/rogue/cleric/support, used by NPCs to greet
+  //   the player in a way that resonates with their bio.
+  // - characterBioOpening: a short fragment of the character's bio (one clause)
+  //   that NPCs may echo back to the player.
+  seasonClueWords?: string[];
+  characterArchetype?: string | null;
+  characterBioOpening?: string | null;
 };
 
 export interface ContentGenerationService {
@@ -95,8 +106,10 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const atk = 5 + level * 2 + intBetween(rng, 0, 3);
     const def = 1 + level + intBetween(rng, 0, 3);
     const spd = 4 + intBetween(rng, 0, level);
-    const expReward = 12 + level * 7 + intBetween(rng, 0, 6);
-    const goldReward = 7 + level * 5 + intBetween(rng, 0, 8);
+    // EXP/gold scale super-linearly so reward keeps pace with the leveling curve.
+    // Lv1 ≈ 25 EXP, Lv10 ≈ 108, Lv30 ≈ 438, Lv50 ≈ 970.
+    const expReward = 15 + level * (7 + Math.floor(level / 4)) + intBetween(rng, 0, 6);
+    const goldReward = 8 + level * (5 + Math.floor(level / 6)) + intBetween(rng, 0, 8);
     const v = validateGeneratedEnemy({ name, description, level, hp, atk, def, spd, element, weakness, expReward, goldReward });
     if (!v.ok) throw new Error("enemy validation failed: " + v.reason);
     return v.value;
@@ -124,11 +137,19 @@ class TemplateContentGenerationService implements ContentGenerationService {
   async generateRumor(ctx: GenerationContext & { townName: string }): Promise<string> {
     const seed = ctx.seed ?? `${Date.now()}-${Math.random()}`;
     const rng = makeRng(seed);
-    const tpl = pick(RUMOR_TEMPLATES, rng);
+    const seasonWords = ctx.seasonClueWords ?? [];
+    // 45% chance to use a season-flavored template if we have keywords. The
+    // season's central mystery thus permeates rumors across every town without
+    // ever spelling out the answer.
+    const useSeasonal = seasonWords.length > 0 && rng() < 0.45;
+    const tpl = useSeasonal
+      ? pick(SEASONAL_RUMOR_TEMPLATES, rng)
+      : pick(RUMOR_TEMPLATES, rng);
     const text = tpl
       .replace("{place}", ctx.townName)
       .replace("{element}", jpElement(pick(ELEMENTS as unknown as string[], rng)))
-      .replace("{role}", pick(ROLES, rng));
+      .replace("{role}", pick(ROLES, rng))
+      .replace("{seasonWord}", useSeasonal ? pick(seasonWords, rng) : "");
     const v = validateRumor(text);
     if (!v.ok) throw new Error("rumor validation failed: " + v.reason);
     return v.value;
@@ -138,7 +159,22 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const seed = ctx.seed ?? `${Date.now()}-${Math.random()}`;
     const rng = makeRng(seed);
     const npc = pick(NPC_TEMPLATES, rng);
-    return { role: ctx.role ?? npc.role, line: npc.line };
+    const role = ctx.role ?? npc.role;
+    let line = roleLineFor(role, rng) ?? npc.line;
+    // Sprinkle a season keyword into ~40% of NPC lines so the central mystery
+    // surfaces in casual chatter, not just in tavern rumors.
+    const seasonWords = ctx.seasonClueWords ?? [];
+    if (seasonWords.length > 0 && rng() < 0.4) {
+      const word = pick(seasonWords, rng);
+      line = `${line} 最近は『${word}』の話ばかりだよ。`;
+    }
+    // ~35% chance the NPC reads the player's archetype off them. Pure flavor —
+    // never reveals stats — but it makes the world feel as if it knows you.
+    if (ctx.characterArchetype && rng() < 0.35) {
+      const greet = ARCHETYPE_NPC_GREETINGS[ctx.characterArchetype];
+      if (greet && greet.length > 0) line = `${line} ${pick(greet, rng)}`;
+    }
+    return { role, line };
   }
 
   async generateDungeonName(ctx: GenerationContext): Promise<string> {
@@ -167,6 +203,68 @@ function jpElement(e: string) {
     default: return "無";
   }
 }
+
+// Per-role line variants. NPCs feel less repetitive when each role has 2-3 ways
+// to greet the player. The fallback NPC_TEMPLATES is still used for unknown roles.
+const ROLE_LINE_VARIANTS: Record<string, string[]> = {
+  "酒場の主人": [
+    "ようこそ。今日はちょっと変わった噂が流れているよ。",
+    "席は空いてる。何か飲むかい？それとも噂が目当てかね。",
+    "あんた、今日も歩き通しか。火の傍で温まっていきな。",
+  ],
+  "宿屋の主人": [
+    "一晩あたためた寝床と、温かい飯を出すよ。",
+    "今夜はやけに静かだ。ぐっすり眠れるはずさ。",
+    "鎧は脱いで楽にしな。ここは戦場じゃない。",
+  ],
+  "旅の吟遊詩人": [
+    "新しい歌を覚えたんだ、聴いていくかい？",
+    "酒場で集めた物語ばかりだ。どれも誰かの本当だよ。",
+    "歌わないなら、今夜の旅人にはなれないのさ。",
+  ],
+  "占い師": [
+    "あんたの星には、まだ見ぬ職が浮かんでいる…。",
+    "近頃、星の並びが変だ。何かが目覚めようとしている。",
+    "あんたの選択ひとつで、あの星座は形を変える。",
+  ],
+  "転職屋の老人": [
+    "心当たりがあるなら、そこを開いてみるといい。鍵はあんた自身だ。",
+    "道は閉じたんじゃない。歩き慣れた足が次の道を覚えていないだけだ。",
+    "選んだ職は記憶になる。記憶は呼び戻せる。",
+  ],
+};
+
+function roleLineFor(role: string, rng: () => number): string | null {
+  const variants = ROLE_LINE_VARIANTS[role];
+  if (!variants || variants.length === 0) return null;
+  return pick(variants, rng);
+}
+
+// Lines that NPCs may add when they sense the player's archetype. These are
+// flavor-only — they never reveal stats and they should never be the *whole*
+// line, only a tail addition.
+const ARCHETYPE_NPC_GREETINGS: Record<string, string[]> = {
+  warrior: [
+    "あんた、肩の構え方が戦場の人間のそれだ。",
+    "剣を握り続けた手だな。守るために振るう手だ。",
+  ],
+  mage: [
+    "書物の埃の匂いがする。詠唱者の目だ。",
+    "言葉を信じている人間は、目の奥が静かなんだ。",
+  ],
+  rogue: [
+    "足音を消す癖は、隠せないものだよ。",
+    "あんたの影、濃いね。よく光を見てきた人だ。",
+  ],
+  cleric: [
+    "祈りを忘れない者は、見ればわかる。",
+    "あんたの気配、心が静かだ。誰かに尽くしてきた人だな。",
+  ],
+  support: [
+    "あんた、よく歌を聴いてきた人だな。",
+    "賑やかな人生を歩んできたんだろう。耳がいい。",
+  ],
+};
 
 function describeJob(cat: string, name: string, rng: () => number) {
   const flavor: Record<string, string[]> = {

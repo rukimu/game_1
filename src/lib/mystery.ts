@@ -1,6 +1,27 @@
 import { prisma } from "@/lib/prisma";
 import { getIO } from "@/lib/socket";
 
+// Per-season list of "world keywords" that the mystery is built around. These
+// bleed into rumors, enemy descriptions, and NPC lines so the season's central
+// motif permeates every town the player visits, even before they uncover a
+// single clue. Keep these short: they are slotted into templates verbatim.
+const SEASON_KEYWORDS_BY_NAME: Record<string, string[]> = {
+  "Season 1: 灯の年": [
+    "塔", "鐘", "紋章", "禁書", "井戸", "灯", "影", "封印者", "薄明",
+  ],
+};
+
+let _keywordCache: { name: string; words: string[] } | null = null;
+
+export async function getCurrentSeasonKeywords(): Promise<string[]> {
+  if (_keywordCache) return _keywordCache.words;
+  const season = await prisma.season.findFirst({ where: { isCurrent: true }, select: { name: true } });
+  if (!season) return [];
+  const words = SEASON_KEYWORDS_BY_NAME[season.name] ?? [];
+  _keywordCache = { name: season.name, words };
+  return words;
+}
+
 // Returns the current season's mystery + this character's discovered clues.
 export async function getCharacterMystery(characterId: string) {
   const season = await prisma.season.findFirst({

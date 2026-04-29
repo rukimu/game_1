@@ -33,6 +33,37 @@ async function main() {
     await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
   }
 
+  // Seed NPCs into each starter town. Their `dialogue` field is a fallback;
+  // the live town page regenerates lines per-visit so the world keeps speaking
+  // about whatever the season's mystery is currently surfacing.
+  const NPC_SEED: Record<string, Array<{ name: string; role: string; dialogue: string }>> = {
+    "始まりの街アルダ": [
+      { name: "ガロン", role: "酒場の主人", dialogue: "ようこそ。今日はちょっと変わった噂が流れているよ。" },
+      { name: "リヤ", role: "宿屋の主人", dialogue: "一晩あたためた寝床と、温かい飯を出すよ。" },
+      { name: "老師ヒース", role: "転職屋の老人", dialogue: "心当たりがあるなら、そこを開いてみるといい。鍵はあんた自身だ。" },
+    ],
+    "湖畔の街ミルレ": [
+      { name: "セリオ", role: "酒場の主人", dialogue: "湖風の街は噂もよく流れる。座って聞いていきなよ。" },
+      { name: "占い師ティナ", role: "占い師", dialogue: "あんたの星には、まだ見ぬ職が浮かんでいる…。" },
+      { name: "詩人ヤン", role: "旅の吟遊詩人", dialogue: "新しい歌を覚えたんだ、聴いていくかい？" },
+    ],
+    "霧の街ヴェルナ": [
+      { name: "ボルト", role: "酒場の主人", dialogue: "霧の夜に来たな。ここでは冗談みたいな話が本当になる。" },
+      { name: "司書クラエル", role: "占い師", dialogue: "禁書の写本が、また一冊消えた。読めない頁ほど消える。" },
+      { name: "宿屋のミラ", role: "宿屋の主人", dialogue: "霧が濃い夜は、外を歩かない方がいい。" },
+    ],
+  };
+  for (const [townName, npcs] of Object.entries(NPC_SEED)) {
+    const town = await prisma.town.findUnique({ where: { name: townName } });
+    if (!town) continue;
+    for (const n of npcs) {
+      const exists = await prisma.npc.findFirst({ where: { townId: town.id, name: n.name } });
+      if (!exists) {
+        await prisma.npc.create({ data: { townId: town.id, name: n.name, role: n.role, dialogue: n.dialogue } });
+      }
+    }
+  }
+
   // Initial jobs (beginner) so new characters can adopt one
   const initialJobs = [
     { name: "見習い戦士", category: "warrior", rank: "beginner", description: "前線で剣を振るう道。", baseStats: JSON.stringify({ hp: 40, mp: 8, atk: 12, def: 10, mat: 4, mdf: 6, spd: 6 }) },

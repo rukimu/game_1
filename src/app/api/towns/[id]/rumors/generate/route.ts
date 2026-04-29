@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { getContentGenerationService, generationLabel, logGeneratedContent } from "@/lib/generation/service";
-import { rollClueDiscovery } from "@/lib/mystery";
+import { getCurrentSeasonKeywords, rollClueDiscovery } from "@/lib/mystery";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const user = await requireUser().catch((r) => r);
@@ -11,7 +11,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const town = await prisma.town.findUnique({ where: { id: params.id } });
   if (!town) return NextResponse.json({ error: "no town" }, { status: 404 });
   const gen = getContentGenerationService();
-  const text = await gen.generateRumor({ townName: town.name });
+  const seasonClueWords = await getCurrentSeasonKeywords();
+  const text = await gen.generateRumor({ townName: town.name, seasonClueWords });
   const rumor = await prisma.tavernRumor.create({
     data: { townId: town.id, text, generatedBy: generationLabel() },
   });

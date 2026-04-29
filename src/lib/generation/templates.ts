@@ -77,6 +77,18 @@ export const RUMOR_TEMPLATES = [
   "海から流れ着いた瓶の中に、{element}の力を封じる呪文があるという噂だ。",
 ];
 
+// Templates that splice in a season-specific "world keyword" so the central
+// mystery slowly bleeds into every town the player visits. Used when a season
+// keyword is supplied; otherwise we fall back to RUMOR_TEMPLATES.
+export const SEASONAL_RUMOR_TEMPLATES = [
+  "{place}の年寄りが、夜更けになるたび『{seasonWord}』の話をするらしい。",
+  "{role}の口から、こぼれ落ちるように『{seasonWord}』という言葉が出たという。",
+  "誰も読めないはずの『{seasonWord}』を、酔った旅人が酒場でずっと呟いていた。",
+  "{place}の壁に、夜のうちに『{seasonWord}』とだけ刻まれた跡があったそうだ。",
+  "{role}が見た夢には、いつも『{seasonWord}』が出てくると怯えていた。",
+  "古地図の隅に、子どもの落書きのような『{seasonWord}』の文字を見つけた者がいる。",
+];
+
 export const ROLES = ["旅人", "鍛冶屋", "司書", "踊り子", "錬金術師", "歩哨", "占い師", "宿屋の娘"];
 
 export const QUEST_TEMPLATES = [

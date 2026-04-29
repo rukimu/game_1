@@ -4,6 +4,8 @@ import Hud from "@/components/Hud";
 import Chat from "@/components/Chat";
 import { prisma } from "@/lib/prisma";
 import { getActiveCharacter } from "@/lib/activeCharacter";
+import { getContentGenerationService } from "@/lib/generation/service";
+import { getCurrentSeasonKeywords } from "@/lib/mystery";
 import TownActions from "./TownActions";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +28,33 @@ export default async function TownPage() {
     where: { characterId: c.id, completedAt: null },
     include: { quest: true },
   });
+  // Per-visit NPC dialogue: archetype-aware + season-keyword-aware. The seed
+  // includes the date so the same character sees the same line all day, but
+  // tomorrow brings a new exchange.
+  const job = c.currentJobId
+    ? await prisma.job.findUnique({ where: { id: c.currentJobId }, select: { category: true } })
+    : null;
+  const archetype = job?.category ?? null;
+  const seasonClueWords = await getCurrentSeasonKeywords();
+  const dayKey = new Date().toISOString().slice(0, 10);
+  const gen = getContentGenerationService();
+  const npcLines = town
+    ? await Promise.all(
+        town.npcs.map(async (n) => {
+          try {
+            const dlg = await gen.generateNpcDialogue({
+              role: n.role,
+              seasonClueWords,
+              characterArchetype: archetype,
+              seed: `${c.id}-${n.id}-${dayKey}`,
+            });
+            return { id: n.id, name: n.name, role: n.role, line: dlg.line };
+          } catch {
+            return { id: n.id, name: n.name, role: n.role, line: n.dialogue };
+          }
+        })
+      )
+    : [];
   return (
     <main>
       <Hud />
@@ -71,8 +100,8 @@ export default async function TownPage() {
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">街にいる人々</h3>
                 <ul className="text-xs text-yellow-100/80 space-y-1">
-                  {town.npcs.length === 0 && <li className="text-yellow-200/50">まだ誰もいない。</li>}
-                  {town.npcs.map((n) => <li key={n.id}>＊{n.name}（{n.role}）：「{n.dialogue}」</li>)}
+                  {npcLines.length === 0 && <li className="text-yellow-200/50">まだ誰もいない。</li>}
+                  {npcLines.map((n) => <li key={n.id}>＊{n.name}（{n.role}）：「{n.line}」</li>)}
                 </ul>
               </section>
               <section className="mt-3">

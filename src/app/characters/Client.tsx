@@ -56,11 +56,29 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
       return;
     }
     const data = await res.json();
+    // Auto-select the freshly-created character so the upcoming redirect to
+    // /town actually has an active character to render. Errors here are
+    // non-fatal — the user can still pick from the list manually.
+    if (data.character?.id) {
+      try {
+        await fetch(`/api/characters/${data.character.id}/select`, { method: "POST" });
+      } catch { /* non-fatal */ }
+    }
     setResult({ jobName: data.job?.name ?? "—", bio: data.bio ?? null });
     router.refresh();
   }
 
-  // creation flow
+  // creation flow — once the quiz resolves, send the player straight to the town.
+  // The bio echoes back to them inside generated text afterward.
+  useEffect(() => {
+    if (!creating || !result) return;
+    const t = setTimeout(() => {
+      router.push("/town");
+      router.refresh();
+    }, 4500);
+    return () => clearTimeout(t);
+  }, [creating, result, router]);
+
   if (creating && result) {
     return (
       <div className="panel space-y-3">
@@ -72,8 +90,10 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
             <div>{result.bio}</div>
           </div>
         )}
+        <div className="text-xs text-yellow-300/60">数秒後、街へ向かいます…</div>
         <div className="flex gap-2">
-          <button className="btn-primary" onClick={() => { reset(); router.refresh(); }}>キャラクター選択へ戻る</button>
+          <button className="btn-primary" onClick={() => { router.push("/town"); router.refresh(); }}>すぐに街へ向かう</button>
+          <button className="btn" onClick={() => { reset(); router.refresh(); }}>キャラクター選択へ戻る</button>
         </div>
       </div>
     );

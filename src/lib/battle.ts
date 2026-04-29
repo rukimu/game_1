@@ -361,10 +361,24 @@ async function resolveTurn(battleId: string) {
     const aliveParticipants = [...partState.values()].filter(p => p.alive);
     const share = aliveParticipants.length || 1;
     const isDungeonBattle = !!battle.dungeonRunId;
+    const avgEnemyLevel = enemies.length > 0
+      ? Math.max(1, Math.round(enemies.reduce((a, e) => a + e.level, 0) / enemies.length))
+      : 1;
     for (const p of aliveParticipants) {
       const before = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
-      const expGain = Math.ceil(totalExp / share);
-      const goldGain = Math.ceil(totalGold / share);
+      const priorStreak = await countWinStreak(p.id);
+      const onStreak = priorStreak >= 2; // this win is the 3rd or later in a row
+      const expMult = onStreak ? 1.2 : 1.0;
+      const goldMult = onStreak ? 1.1 : 1.0;
+      const expGain = Math.ceil((totalExp / share) * expMult);
+      const goldGain = Math.ceil((totalGold / share) * goldMult);
+      if (onStreak) {
+        log.push({
+          turn: battle.turn,
+          ts: Date.now(),
+          text: `${p.name}の連戦は${priorStreak + 1}戦目！冴え渡る勘で経験値+20%・ゴールド+10%。`,
+        });
+      }
       if (isDungeonBattle) {
         // dungeon mode: rewards are pooled in DungeonRun, paid out only on retreat or full clear
         log.push({
@@ -388,6 +402,17 @@ async function resolveTurn(battleId: string) {
               turn: battle.turn,
               ts: Date.now(),
               text: `${p.name}は戦いの中で何かに気付いた──「${clue.text}」`,
+            });
+          }
+        } catch (e) { /* non-fatal */ }
+        // chance to drop a piece of equipment (non-dungeon only — dungeon loot is pooled)
+        try {
+          const drop = await rollEquipmentDrop(p.id, avgEnemyLevel);
+          if (drop) {
+            log.push({
+              turn: battle.turn,
+              ts: Date.now(),
+              text: `${p.name}は戦利品『${drop.name}』を手に入れた！`,
             });
           }
         } catch (e) { /* non-fatal */ }
@@ -479,9 +504,43 @@ async function resolveTurn(battleId: string) {
   scheduleTurnTimeout(battle.id);
 }
 
-function p_level(_p: any) { return 0; }
-
 async function getMaxHp(characterId: string) {
   const c = await prisma.character.findUnique({ where: { id: characterId } });
   return c?.maxHp ?? 30;
+}
+
+// Count consecutive recent wins for this character. Resets on the first non-win.
+async function countWinStreak(characterId: string): Promise<number> {
+  const recent = await prisma.battle.findMany({
+    where: {
+      status: "ended",
+      participants: { some: { characterId } },
+    },
+    orderBy: { endedAt: "desc" },
+    take: 12,
+    select: { result: true },
+  });
+  let streak = 0;
+  for (const b of recent) {
+    if (b.result === "win") streak++;
+    else break;
+  }
+  return streak;
+}
+
+// Roll a chance to drop a piece of equipment from the global Item pool.
+// Drop chance scales gently with enemy level (5.5% at Lv1 → 12% at Lv30).
+async function rollEquipmentDrop(characterId: string, enemyLevel: number) {
+  const chance = Math.min(0.05 + enemyLevel * 0.005, 0.13);
+  if (Math.random() >= chance) return null;
+  const candidates = await prisma.item.findMany({
+    where: { category: "equip" },
+    select: { id: true, name: true },
+  });
+  if (candidates.length === 0) return null;
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  await prisma.inventoryItem.create({
+    data: { characterId, itemId: pick.id, quantity: 1 },
+  });
+  return pick;
 }

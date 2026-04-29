@@ -13,7 +13,7 @@
 // existing item in that slot — handled by the equip API, not here.
 
 import { prisma } from "@/lib/prisma";
-import { parseInstance, sumBonuses, type StatBonus } from "@/lib/affixes";
+import { aggregateEffects, parseInstance, sumBonuses, type AggregatedEffects, type StatBonus } from "@/lib/affixes";
 
 export type CombatStats = {
   hp: number;
@@ -40,6 +40,17 @@ export const EQUIP_SLOTS = [
 ] as const;
 
 export type EquipSlot = typeof EQUIP_SLOTS[number];
+
+// Returns the aggregated structured effects (crit, slay, lifesteal, regen,
+// speed) from a character's equipped instances. Use alongside computeCombatStats
+// when running combat. Returns the zero-value record on no equipment.
+export async function computeCombatEffects(characterId: string): Promise<AggregatedEffects> {
+  const inv = await prisma.inventoryItem.findMany({
+    where: { characterId, equipped: true },
+    select: { instanceJson: true },
+  });
+  return aggregateEffects(inv.map((i) => parseInstance(i.instanceJson)));
+}
 
 // Returns combat-ready stats for a character, including all equipped gear and
 // its per-instance affixes. Pulls character + jobs + inventory in one query.

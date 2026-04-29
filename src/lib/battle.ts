@@ -4,8 +4,8 @@ import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { onDungeonBattleEnded } from "@/lib/dungeon";
 import { rollClueDiscovery } from "@/lib/mystery";
-import { rollItemInstance, tierLabel, type ItemInstance } from "@/lib/affixes";
-import { computeCombatStats } from "@/lib/equipment";
+import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance } from "@/lib/affixes";
+import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 
 export type EnemyState = {
   id: string;
@@ -18,6 +18,9 @@ export type EnemyState = {
   level: number;
   element: string | null;
   weakness: string | null;
+  // Loose category for slay-bonus affixes. Stored on the JSON state, not on
+  // the Enemy table — old battles without it default to "unknown".
+  creatureType: "humanoid" | "beast" | "undead" | "magic" | "construct" | "unknown";
   expReward: number;
   goldReward: number;
   alive: boolean;
@@ -107,6 +110,7 @@ export async function startBattleForParty(partyId: string, opts?: { enemyCount?:
       level: stored.level,
       element: stored.element,
       weakness: stored.weakness,
+      creatureType: ((e as any).creatureType ?? "unknown") as EnemyState["creatureType"],
       expReward: stored.expReward,
       goldReward: stored.goldReward,
       alive: true,
@@ -236,16 +240,24 @@ async function resolveTurn(battleId: string) {
   let enemies: EnemyState[] = JSON.parse(battle.enemyState || "[]");
   let log: BattleLogEntry[] = JSON.parse(battle.log || "[]");
 
-  // Build participant runtime state. Combat stats are computed including
-  // equipped gear + per-instance affixes + job affinity, so a freshly looted
-  // weapon actually changes how hard you hit this very next turn.
-  const partState = new Map<string, { id: string; hp: number; mp: number; defending: boolean; alive: boolean; spd: number; atk: number; mat: number; def: number; mdf: number; name: string; }>();
+  // Build participant runtime state. Combat stats AND structured effects are
+  // pulled from equipped gear + per-instance affixes + job affinity, so a
+  // freshly looted weapon actually changes how hard you hit this very next
+  // turn (and lifesteal/crits/slay all light up immediately).
+  type PartActor = {
+    id: string; hp: number; mp: number; maxHp: number; defending: boolean; alive: boolean;
+    spd: number; atk: number; mat: number; def: number; mdf: number; name: string;
+    effects: AggregatedEffects;
+  };
+  const partState = new Map<string, PartActor>();
   for (const p of battle.participants) {
     const eqStats = await computeCombatStats(p.characterId);
+    const effects = await computeCombatEffects(p.characterId);
     partState.set(p.characterId, {
       id: p.characterId,
       hp: p.hp,
       mp: p.mp,
+      maxHp: eqStats?.maxHp ?? p.character.maxHp,
       defending: false,
       alive: p.alive,
       spd: eqStats?.spd ?? p.character.spd,
@@ -254,6 +266,7 @@ async function resolveTurn(battleId: string) {
       def: eqStats?.def ?? p.character.def,
       mdf: eqStats?.mdf ?? p.character.mdf,
       name: p.character.name,
+      effects,
     });
   }
 
@@ -299,9 +312,20 @@ async function resolveTurn(battleId: string) {
           log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skill.name}は対象が居なかった。` });
           continue;
         }
-        const dmg = applyDamage(Math.max(actor.atk, actor.mat), target.def, skill.power, skill.element, target.weakness, target.element);
-        target.hp -= dmg;
-        log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skill.name}！${target.name}に${dmg}のダメージ。` });
+        const baseDmg = applyDamage(Math.max(actor.atk, actor.mat), target.def, skill.power, skill.element, target.weakness, target.element);
+        const result = applyEffects(baseDmg, actor, target);
+        target.hp -= result.damage;
+        if (result.lifesteal > 0) {
+          actor.hp = Math.min(actor.hp + result.lifesteal, actor.maxHp);
+        }
+        log.push({
+          turn: battle.turn,
+          ts: Date.now(),
+          text: `${actor.name}の${skill.name}！${target.name}に${result.damage}のダメージ。${result.tagText}`,
+        });
+        if (result.lifesteal > 0) {
+          log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${actor.name}は ${result.lifesteal} HP を吸収した。` });
+        }
         if (target.hp <= 0) {
           target.hp = 0;
           target.alive = false;
@@ -317,9 +341,20 @@ async function resolveTurn(battleId: string) {
       log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は攻撃する敵が居なかった。` });
       continue;
     }
-    const dmg = applyDamage(actor.atk, target.def, 10, null, target.weakness, target.element);
-    target.hp -= dmg;
-    log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の攻撃！${target.name}に${dmg}のダメージ。` });
+    const baseDmg = applyDamage(actor.atk, target.def, 10, null, target.weakness, target.element);
+    const result = applyEffects(baseDmg, actor, target);
+    target.hp -= result.damage;
+    if (result.lifesteal > 0) {
+      actor.hp = Math.min(actor.hp + result.lifesteal, actor.maxHp);
+    }
+    log.push({
+      turn: battle.turn,
+      ts: Date.now(),
+      text: `${actor.name}の攻撃！${target.name}に${result.damage}のダメージ。${result.tagText}`,
+    });
+    if (result.lifesteal > 0) {
+      log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${actor.name}は ${result.lifesteal} HP を吸収した。` });
+    }
     if (target.hp <= 0) {
       target.hp = 0;
       target.alive = false;
@@ -366,6 +401,18 @@ async function resolveTurn(battleId: string) {
     const aliveParticipants = [...partState.values()].filter(p => p.alive);
     const share = aliveParticipants.length || 1;
     const isDungeonBattle = !!battle.dungeonRunId;
+    // Apply post-battle regen from equipped instances (e.g. 聖印の prefix).
+    for (const p of aliveParticipants) {
+      const regen = p.effects.postBattleRegen;
+      if (regen > 0) {
+        const before = p.hp;
+        p.hp = Math.min(p.hp + regen, p.maxHp);
+        const healed = p.hp - before;
+        if (healed > 0) {
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}は装備の力で${healed}HP回復した。` });
+        }
+      }
+    }
     const avgEnemyLevel = enemies.length > 0
       ? Math.max(1, Math.round(enemies.reduce((a, e) => a + e.level, 0) / enemies.length))
       : 1;
@@ -513,6 +560,30 @@ async function resolveTurn(battleId: string) {
 async function getMaxHp(characterId: string) {
   const c = await prisma.character.findUnique({ where: { id: characterId } });
   return c?.maxHp ?? 30;
+}
+
+// Layer crit + slay + lifesteal on top of an already-computed base damage.
+// Pure function over the actor/target snapshots — does not mutate them. The
+// caller subtracts `damage` from target.hp and adds `lifesteal` to actor.hp.
+function applyEffects(
+  baseDmg: number,
+  actor: { effects: AggregatedEffects },
+  target: EnemyState,
+): { damage: number; lifesteal: number; isCrit: boolean; tagText: string } {
+  const slayBonus = actor.effects.slay[target.creatureType] ?? 0;
+  const slayMult = 1 + slayBonus / 100;
+  const baseCritRate = 5; // 5% baseline for everyone
+  const critRate = Math.min(60, baseCritRate + actor.effects.critRateBonus);
+  const isCrit = Math.random() * 100 < critRate;
+  const critMult = isCrit ? 1.5 + actor.effects.critDamageBonus / 100 : 1.0;
+  const damage = Math.max(1, Math.floor(baseDmg * slayMult * critMult));
+  const lifesteal = actor.effects.lifestealPercent > 0
+    ? Math.max(0, Math.floor(damage * actor.effects.lifestealPercent / 100))
+    : 0;
+  const tags: string[] = [];
+  if (isCrit) tags.push("【クリティカル！】");
+  if (slayBonus > 0) tags.push(`【特効 ×${(slayMult).toFixed(2)}】`);
+  return { damage, lifesteal, isCrit, tagText: tags.join("") };
 }
 
 // Count consecutive recent wins for this character. Resets on the first non-win.

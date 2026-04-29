@@ -96,9 +96,11 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const seed = ctx.seed ?? `${Date.now()}-${Math.random()}`;
     const rng = makeRng(seed);
     const level = ctx.level ?? intBetween(rng, 1, 10);
-    const name = `${pick(ENEMY_PARTS.prefix, rng)}${pick(ENEMY_PARTS.base, rng)}${pick(ENEMY_PARTS.suffix, rng)}`;
+    const baseName = pick(ENEMY_PARTS.base, rng);
+    const name = `${pick(ENEMY_PARTS.prefix, rng)}${baseName}${pick(ENEMY_PARTS.suffix, rng)}`;
     const element = pick(ELEMENTS as unknown as string[], rng);
     const weakness = pick(ELEMENTS.filter(e => e !== element && e !== "none") as unknown as string[], rng);
+    const creatureType = inferCreatureType(baseName);
     const description = `辺境にて目撃された${name}。${element === "none" ? "属性は感じられない" : `${jpElement(element)}の気配を纏う`}。`;
     // Difficulty curve: starter level 1 should be winnable solo, but later
     // levels and dungeon-deep encounters scale harder than the player.
@@ -112,7 +114,8 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const goldReward = 8 + level * (5 + Math.floor(level / 6)) + intBetween(rng, 0, 8);
     const v = validateGeneratedEnemy({ name, description, level, hp, atk, def, spd, element, weakness, expReward, goldReward });
     if (!v.ok) throw new Error("enemy validation failed: " + v.reason);
-    return v.value;
+    // Attach creatureType post-validate (the validator doesn't know the field).
+    return { ...v.value, creatureType } as GeneratedEnemy & { creatureType: string };
   }
 
   async generateQuest(ctx: GenerationContext & { townName?: string }): Promise<GeneratedQuest> {
@@ -190,6 +193,18 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const rng = makeRng(seed);
     return pick(ITEM_NAMES[ctx.slot], rng);
   }
+}
+
+// Loosely classify an enemy by its base noun. Used by slay-bonus affixes.
+// Names not matched fall back to "humanoid" since that's the largest bucket
+// among ENEMY_PARTS.base, but mismatches are non-fatal in combat.
+function inferCreatureType(baseName: string): "humanoid" | "beast" | "undead" | "magic" | "construct" | "unknown" {
+  if (/(スケルトン|リッチ|屍|ゾンビ|亡霊)/.test(baseName)) return "undead";
+  if (/(オオカミ|ハーピー|ワーム|獣|蜘蛛|蛇)/.test(baseName)) return "beast";
+  if (/(スライム|鎧人形|ゴーレム|機巧)/.test(baseName)) return "construct";
+  if (/(魔導|魔狼|精霊|霊|魔)/.test(baseName)) return "magic";
+  if (/(ゴブリン|コボルト|オーク|盗賊|盗賊団|兵士)/.test(baseName)) return "humanoid";
+  return "unknown";
 }
 
 function jpElement(e: string) {

@@ -9,6 +9,7 @@ import { getCurrentSeasonKeywords } from "@/lib/mystery";
 import { getTodayWorldState, jpElementName } from "@/lib/worldstate";
 import { pickTutorialHint } from "@/lib/tutorial";
 import { listTodayChallenges, describeDailyChallenge, tickDailyChallenge } from "@/lib/dailyChallenge";
+import { spawnRaidIfDue, listActiveRaids } from "@/lib/raid";
 import TownActions from "./TownActions";
 import TutorialBox from "./TutorialBox";
 
@@ -94,6 +95,13 @@ export default async function TownPage() {
   // before reading so the panel always shows the freshest state.
   await tickDailyChallenge({ characterId: c.id, goalType: "talk_npc", delta: 1 });
   const dailyChallenges = await listTodayChallenges(c.id);
+
+  // Lazy world-raid spawn check (gated to ~10% with a 60min respawn cooldown
+  // inside spawnRaidIfDue). Visiting the town is what drives world activity,
+  // so this is the natural trigger point.
+  const activeRaids = town
+    ? (await spawnRaidIfDue(town.id), await listActiveRaids(town.id))
+    : [];
   return (
     <main>
       <Hud />
@@ -116,6 +124,27 @@ export default async function TownPage() {
                 <div className="italic text-yellow-100/80">― {world.headline}</div>
               </div>
               {tutorialHint && <TutorialBox hint={tutorialHint} />}
+              {activeRaids.length > 0 && (
+                <section className="border border-red-700/70 bg-red-950/30 rounded p-2">
+                  {activeRaids.map((r) => {
+                    const lobbyMs = Math.max(0, r.joinDeadline - Date.now());
+                    const combatMs = Math.max(0, r.combatEndsAt - Date.now());
+                    return (
+                      <div key={r.id} className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-red-300 font-bold">★ レイド出現</span>
+                        <span className="text-amber-200">『{r.name}』</span>
+                        <span className="text-yellow-100/80">
+                          {r.status === "joining"
+                            ? `集合中・残り ${Math.ceil(lobbyMs / 1000)}s`
+                            : `戦闘中・残り ${Math.ceil(combatMs / 60000)}分`}
+                        </span>
+                        <span className="text-yellow-200/70">参戦 {r.participants.length} 名</span>
+                        <Link href={`/raid/${r.id}`} className="btn-primary ml-auto">参戦する</Link>
+                      </div>
+                    );
+                  })}
+                </section>
+              )}
               <TownActions townId={town.id} />
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">酒場の噂</h3>

@@ -85,6 +85,9 @@ export type RaidView = {
   level: number;
   hp: number;
   maxHp: number;
+  element: string | null;
+  weakness: string | null;
+  creatureType: string;
   status: "joining" | "active" | "ended";
   result: string | null;
   startsAt: number;
@@ -523,6 +526,9 @@ export async function getRaidView(raidId: string): Promise<RaidView | null> {
     level: raid.level,
     hp: raid.hp,
     maxHp: raid.maxHp,
+    element: raid.element,
+    weakness: raid.weakness,
+    creatureType: raid.creatureType,
     status: raid.status as "joining" | "active" | "ended",
     result: raid.result,
     startsAt: raid.startsAt.getTime(),

@@ -76,14 +76,16 @@ npm start
 | `/shop` | 道具屋 + 課金ショップ（モック） |
 | `/auction` | オークション出品・入札・即決 |
 | `/pvp` | 決闘 PvP（即時シミュレート） |
-| `/dungeon` | ダンジョン探索（複数階層・撤退選択・累積報酬） |
+| `/dungeon` | ダンジョン探索（複数階層・撤退選択・累積報酬・テーマ別ダンジョン選択） |
 | `/dungeon/:id` | 現在の探索ラン（進む / 撤退） |
 | `/mystery` | シーズンの中心の謎（手がかり収集） |
-| `/inventory` | 所持品・装備管理（ティア・アフィックス・職業適性表示・装備切替） |
-| `/forge` | 鍛冶場（アフィックスのリロール・ティア強化） |
+| `/inventory` | 所持品・装備管理（ティア・アフィックス・職業適性表示・装備切替・装備中比） |
+| `/forge` | 鍛冶場（アフィックスのリロール・ティア強化・プレビュー） |
 | `/curse` | 呪われし者の名簿（解除協力先を見つける） |
-| `/boss` | 本日のボス（パーティ単位 1 日 1 回、初討伐告知） |
-| `/siege` | 攻城戦（24h 登録窓 + 3h 戦闘窓、ギルド単位で参加） |
+| `/boss` | 本日のボス（パーティ単位 1 日 1 回、初討伐告知） / 週末のボス T1〜T3 |
+| `/siege` | 攻城戦（24h 登録窓 + 3h 戦闘窓、ギルド単位で参加・narrative ログ） |
+| `/raid/:id` | ワールドレイド（街湧き・非同期 DPS race・貢献度ランキング） |
+| `/mastery` | アーキタイプ別 mastery クエスト（27 種・永続 stat 強化 + 称号） |
 | `/achievements` | アチーブメント・称号（HUD 表示の切替） |
 | `/admin` | 管理者画面（全タブ） |
 
@@ -119,6 +121,16 @@ npm start
 - **シーズン自動切替**: 30 日経過 (または謎解明後 7 日) で次シーズンへ自動ロールオーバー。Season 2 (鏡の森) / Season 3 (灰の唄) のテンプレート同梱
 - **モバイル対応 HUD**: 小画面では「街・所持品・戦闘・PT」の 4 つのみ常時表示、それ以外は「メニュー」ボタンに収納
 - **ダンジョン探索**: 複数階層の連戦。各階の報酬は累積し、撤退すれば全て持ち帰る。全滅すると累積の半分を喪失。深層ほど報酬倍率増
+- **戦闘の途中参加・退出**: 同パーティ員は active な通常戦に参戦可能、参戦中は HP/MP を持って離脱可能（報酬は失効）。ボス戦・ダンジョン戦は対象外
+- **ギルド倉庫**: 装備中以外/取引可アイテムを預け・引き出し可能、affix 含むインスタンスを保存
+- **大規模テンプレート世界**: ジョブ 4957 / スキル 5039 / アイテム 858 / 街 115 / NPC 564 / 城 14 / アチーブメント 76 / アフィックス 96 を seed 済み（テンプレ事前大量生成路線）
+- **TOP5 オンボーディング修正**: スキル説明ツールチップ / 職業適性表常設 / HUD ナビのレベル/解放ゲート / クイズやり直し / モバイル HUD 縦積み
+- **テーマ別中盤ダンジョン**: 忘却の図書館・霜帝の塔・鏡映の湖底・灰の唄の祭壇・鐘塔の地下（Lv25-50、5 種、固有ボス、伝説確定タイプあり）
+- **Mastery クエスト**: 9 archetype × 3 tier = 27 クエスト。Lv15/30/45 で順次開放、報酬は永続 stat 強化 + 専用称号 (T3)
+- **Daily チャレンジ**: 7 種テンプレ（敵討伐 / 戦勝 / 装備入手 / ダンジョン踏破 / G 消費 / 街巡り / レイド参戦）から毎日 3 つ抽選、全クリで EXP+600 / G+500 + 隠し achievement
+- **ワールドレイドバトル**: `/town` 訪問時に 10% で湧き、60min 再湧き CD。同じ街のプレイヤーが「参戦する」で合流（10 分集合 → 30 分戦闘）。非同期 DPS race（攻撃 5s / 特技 15s / 回復 10s）+ ボス HP 共有、KO + 90s 遅延復活、撃破時の貢献度ランキングで個別ドロップ tier 確定（Top1 legendary / Top2-5 epic / 残り rare）+ 与ダメ比例 EXP/Gold。10 種テンプレ
+- **パーティ多様性シナジー**: 通常戦闘で alive メンバーの jobCategory ユニーク数が 3 系統で防御 +10%、5 系統で +20%（ログ表示）
+- **レイド系アチーブメント 4 種**: `raid_first` / `raid_top_dmg` / `raid_5_kills` / `raid_legend`
 - レスポンシブな昔のブラウザRPG風UI（テキスト+ボタン+ログ+チャット）
 - 街（複数街、街移動、街情報、街チャット）
 - 酒場（噂生成、クエスト生成、クエスト受注）
@@ -170,49 +182,46 @@ npm start
 
 ## 土台のみ実装した機能
 
-- **攻城戦**: `Castle` / `CastleOwnership` / `SiegeEvent` のテーブルと初期 seed 城（アルダ城）あり。管理画面から確認可。週次自動実行・GUI上の攻城戦ロジックは未実装。
-- **闘技場ランキング**: PvP は決闘のみ。レート・ブラケットなし。
-- **シーズン自動切替・世界状態の日次再生成**: テーブルあり、自動 cron なし。
-- **Stripe 等の本決済**: モックのみ。
-- **装備の特殊効果**: アフィックスのフレーバーテキスト（「魔法を使う敵に追加 1 ダメージ」等）は表示されるが、戦闘での実効性は未実装（ステータス補正のみ反映）。
+- **攻城戦の本物の戦闘 UI**: 現在は narrative 戦況ログ + スコア決着のみ。プレイヤー操作介入は未実装（Cycle 32 計画）
+- **Stripe 等の本決済**: モックのみ。リリース直前に差し替え予定（DEFERRED）
+- **AI プロバイダ実装**: `AiContentGenerationService` の interface はあるが現状未実装。テンプレ大量生成路線に方針変更（Cycle 21 DROPPED）
 
 ---
 
 ## 既知の制限
 
-- DBは既定で SQLite。マルチプロセス本番運用には不向き。
-- Socket.io は単一プロセス内のメモリで部屋を保持（Redis adapter 未導入）。
-- ターンタイマーは custom server プロセス内 `setTimeout`。プロセス再起動で失われる（次回行動送信時に再開）。
-- 装備の装着フローはAPIレベル未実装（インベントリ表示と購入のみ）。
-- ジョブ生成の重複候補は `generatedContent` から再利用するため、同 tier では同じ候補が出続けます（仕様）。
-- 攻城戦・闘技場ランキング・季節法則は管理画面でデータ確認のみ。
-- 文章生成は日本語テンプレート中心。AI連携時は `src/lib/generation/service.ts` の `AiContentGenerationService` を実装してください。
+- DB は既定で SQLite。マルチプロセス本番運用には不向き（Cycle 22 でデファー中、リリース直前に Postgres 検証予定）
+- Socket.io は単一プロセス内のメモリで部屋を保持（Redis adapter 未導入、同上）
+- ターンタイマーは custom server プロセス内 `setTimeout`。プロセス再起動で失われる（次回行動送信時に再開）
+- ジョブ生成の重複候補は `generatedContent` から再利用するため、同 tier では同じ候補が出続けます（仕様）
+- 文章生成は日本語テンプレート中心。AI 連携は方針変更で DROPPED（テンプレ事前大量生成で代替）
 
 ---
 
 ## リリース前チェックリスト
 
-詳細は `docs/team/ROADMAP.md` 末尾。**ゲーム品質は概ね完了、運用基盤と法務がまだ**:
-- ✅ ゲームコアループ (戦闘 / 装備 / 鍛冶 / クエスト / ボス / 状態異常)
-- ✅ 協調プレイ (呪い解除 / ボス / 攻城戦 / 闘技場レート)
-- ✅ 世界が動く (WorldState / シーズン自動切替 / 攻城戦サイクル / NPC 記憶)
+詳細は `docs/team/ROADMAP.md`。**ゲーム品質は十分、残るは運用基盤と法務**:
+- ✅ ゲームコアループ (戦闘 / 装備 / 鍛冶 / クエスト / ボス / 状態異常 6 種)
+- ✅ 協調プレイ (呪い解除 / ボス / 攻城戦 / 闘技場 ELO / **ワールドレイド** / **パーティ多様性シナジー**)
+- ✅ 世界が動く (WorldState / シーズン自動切替 / 攻城戦サイクル / NPC 記憶 / **テーマ別中盤ダンジョン**)
+- ✅ 中盤密度 (Cycle 28: テーマ別ダンジョン + Mastery + Daily)
 - ✅ モバイル UX (小画面 HUD)
-- ❌ Postgres / Redis 本番運用検証
-- ❌ 本決済差し替え (Stripe)
-- ❌ AI プロバイダ実装 (テキスト品質底上げ)
-- ❌ 法務 (年齢レーティング表記、利用規約)
+- ✅ オンボーディング (Cycle 27: TOP5 致命的修正)
+- ❌ Postgres / Redis 本番運用検証 (Cycle 22 DEFERRED — 公開直前)
+- ❌ 本決済差し替え (Stripe DEFERRED — 公開直前)
+- ❌ 法務 (年齢レーティング 15+ 表記 / 利用規約 — 公開直前)
 
 ## 次に実装すべき優先事項
 
-`docs/team/ROADMAP.md` の Cycle 16 以降に詳細あり:
+詳細は `docs/team/ROADMAP.md` を参照。直近の戦略は:
 
-1. **闘技場レート (Cycle 16)** - Glicko 簡易 + 適正帯マッチング
-2. **NPC 記憶 (Cycle 17)** - "○○もここに来ていた" の社会的フィードバック
-3. **インベントリ装備比較 (Cycle 18)** - QoL
-4. **シーズン自動切替 (Cycle 19)** - 世界が時間で変わる
-5. **モバイル UX 監査 (Cycle 20)** - 375px 全画面、HUD メニュー化
-6. **AI プロバイダ実装 (Cycle 21)** - テキスト品質底上げ
-7. **Postgres + Redis 移行検証 (Cycle 22)** - 本番運用前提
+- **Cycle 30 — スキル継承システム**: 過去職のスキル最大 3 つを現職に持ち込み、コンボ + 熟練度ボーナス
+- **Cycle 31 — 手作り固有職 100 体**: 「眼鏡戦士」「猫好き魔導師」のような愛着を生む curated job
+- **Cycle 32 — 攻城戦に本物の戦闘 UI**: 現在 narrative log だけのシージにプレイヤー操作介入
+- **Cycle 33 — 世界観の手作り厚み**: 手作りユニーク NPC 30 体 + lore docs
+- **Cycle 34〜38** — 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
+
+**評価軸 8 軸の現状**: A コアループ ★★★★☆ / B キャラビルド ★★★☆☆ / C ハクスラ ★★★★★ / D 物語 ★★★★☆ / E 協調 ★★★★☆ / F やりこみ ★★★★☆ / G 経済 ★★★★☆ / H UX ★★★☆☆
 
 ---
 
@@ -220,31 +229,55 @@ npm start
 
 ```
 .
+├── CLAUDE.md                    # Claude Code 常駐ガイド (規約・DoD)
 ├── prisma/
 │   ├── schema.prisma            # SQLite schema (Postgres でも可)
-│   └── seed.ts                  # 街・初期職・スキル・アイテム・シーズン・城・admin ユーザー
+│   └── seed.ts                  # 街・職・スキル・アイテム・シーズン・城・admin / 大量テンプレ
 ├── server.js                    # Custom server: Next.js + Socket.io
 ├── src/
-│   ├── app/                     # Next.js app router (UI + API routes)
-│   │   ├── api/                 # 認証 / キャラ / 街 / クエスト / 戦闘 / PT / ギルド / トレード / オークション / PvP / ショップ / 管理者
-│   │   ├── town/, battle/, party/, guild/, shop/, auction/, pvp/, jobs/, admin/, characters/, login/, register/
+│   ├── app/                     # Next.js App Router (UI + API)
+│   │   ├── api/                 # 認証 / キャラ / 街 / クエスト / 戦闘 / PT / ギルド / DM / トレード / オークション / PvP / ショップ / レイド / 管理者
+│   │   ├── town/, battle/, party/, guild/, shop/, auction/, pvp/, jobs/
+│   │   ├── inventory/, forge/, curse/, boss/, siege/, dungeon/, mystery/
+│   │   ├── raid/, mastery/, messages/, achievements/
+│   │   ├── admin/, characters/, login/, register/
 │   │   └── globals.css, layout.tsx
 │   ├── components/
-│   │   ├── Hud.tsx              # キャラクター情報 + メニュー
+│   │   ├── Hud.tsx              # キャラクター情報 + メニュー (称号 / 未読バッジ)
+│   │   ├── HudMenu.tsx          # モバイル: 4 primary + collapsible
 │   │   └── Chat.tsx             # Socket.io ベースチャット
-│   └── lib/
-│       ├── prisma.ts            # Prisma client (singleton)
-│       ├── auth.ts              # bcrypt + cookie session
-│       ├── activeCharacter.ts   # 現在操作中キャラの cookie
-│       ├── socket.ts            # io ヘルパ
-│       ├── leveling.ts          # 経験値・転職 tier
+│   └── lib/                     # ドメインロジック (1 機能 = 1 ファイル)
+│       ├── prisma.ts, auth.ts, activeCharacter.ts, socket.ts, sanitize.ts, rng.ts
+│       ├── leveling.ts          # 経験値曲線・転職 tier
 │       ├── battle.ts            # ターン制戦闘エンジン
-│       ├── sanitize.ts          # NGワード/サニタイズ
-│       ├── rng.ts               # 種付き擬似乱数
+│       ├── equipment.ts         # 装備込みステータス計算
+│       ├── affixes.ts           # ハクスラアフィックス (96 種)
+│       ├── forge.ts             # 鍛冶 (リロール / 強化 / プレビュー)
+│       ├── boss.ts, weeklyBoss.ts # 本日のボス / 週末 T1〜T3
+│       ├── dungeon.ts, themedDungeon.ts # ダンジョン / テーマ別 5 種
+│       ├── siege.ts             # 攻城戦 (24h+3h, narrative log)
+│       ├── raid.ts              # ワールドレイド (非同期 DPS race)
+│       ├── mastery.ts           # 27 マスタリークエスト
+│       ├── dailyChallenge.ts    # 日替わり 3 ミッション
+│       ├── achievements.ts      # 76+ 種、称号付与
+│       ├── tutorial.ts          # アダプティブチュートリアル
+│       ├── worldstate.ts        # 日次 WorldState
+│       ├── seasonRotation.ts    # シーズン自動切替 (S1/S2/S3)
+│       ├── mystery.ts           # シーズンの謎 / 季節キーワード
+│       ├── dm.ts                # DM (スレッド / 未読)
+│       ├── townGen.ts, jobGen.ts, itemGen.ts, quiz.ts
 │       └── generation/
 │           ├── templates.ts     # 単語/文テンプレート
 │           ├── validate.ts      # 数値範囲・禁止語検査
-│           └── service.ts       # ContentGenerationService
+│           └── service.ts       # ContentGenerationService (template 既定 / AI は未実装)
+├── scripts/
+│   ├── smoke_combat.ts          # 戦闘スモーク
+│   ├── smoke_gen.ts             # テキスト生成スモーク
+│   ├── smoke_loot.ts            # ハクスラドロップスモーク
+│   └── smoke_raid.ts            # レイドスモーク
+├── docs/
+│   ├── team/                    # 開発チーム向け (MISSION / ROADMAP / BACKLOG)
+│   └── archive/                 # 完了済 WIP ハンドオフの退避先
 ├── docker-compose.yml           # 任意の Postgres
 ├── tailwind.config.js, postcss.config.js, next.config.js, tsconfig.json
 └── .env.example
@@ -261,7 +294,10 @@ npm start
 5. 「戦いに出る」→ 敵と遭遇 →「攻撃」を押す → ターンが進み、勝利すると経験値とゴールドが入る。
 6. ゴールドが溜まったら `/shop` で薬草等を購入。
 7. 別アカウントを作って `/pvp` で決闘 → 受け手が「受けて立つ」。
-8. 管理者（`admin@example.com`）でログインして `/admin` でユーザー・チャット・生成物・戦闘・取引・告知・シーズンを確認。
+8. `/town` を複数回更新するとレイドが湧く（10%）→ 「参戦する」→ `/raid/[id]` で攻撃連打、貢献度ランキングを競う。
+9. `/dungeon` でテーマ別ダンジョン（忘却の図書館など）を選択して挑戦。
+10. `/mastery` で archetype 別の mastery クエストを進める（Lv15 で T1 開放）。
+11. 管理者（`admin@example.com`）でログインして `/admin` でユーザー・チャット・生成物・戦闘・取引・告知・シーズンを確認。
 
 ---
 

@@ -74,6 +74,29 @@
 
 ## DONE
 
+### Cycle 20 (2026-04-29) — モバイル HUD
+- [x] HudMenu.tsx 新規: 4 primary + collapsible (3-col grid) for sm 未満
+- [x] HUD のリンク列を全部 HudMenu に委譲、admin リンクは props 経由
+
+### Cycle 19 (2026-04-29) — シーズン自動切替
+- [x] Season.expectedDurationDays 追加 (default 30)
+- [x] src/lib/seasonRotation.ts: Season 2 (鏡の森) / Season 3 (灰の唄) テンプレート
+- [x] worldstate.ts の getTodayWorldState() が rotation を駆動
+- [x] mystery.ts の SEASON_KEYWORDS_BY_NAME に新シーズン分を追加
+
+### Cycle 18 (2026-04-29) — インベントリ装備比較
+- [x] /inventory に装備中比 ±N 表示 (色分け: 緑+/赤-)
+- [x] 適性ペナルティを反映した実効ボーナスでの diff
+
+### Cycle 17 (2026-04-29) — NPC が訪問者を記憶
+- [x] Npc.lastSpokenName / lastSpokenAt / visitCount 追加
+- [x] /town で 30 分以内の他訪問者を NPC 台詞末尾に追記
+
+### Cycle 16 (2026-04-29) — 闘技場 ELO レート
+- [x] Character.duelRating (default 1500) 追加
+- [x] /api/pvp/duels/[id]/accept で K=32 ELO 更新 (transaction)
+- [x] /pvp ランキングをレート順に、適正帯マッチング (±200) でサジェスト
+
 ### Cycle 15 (2026-04-29) — 攻城戦 MVP
 - [x] SiegeEvent に status / winningGuildId / SiegeRegistration を追加
 - [x] src/lib/siege.ts: 24h 登録窓 + 3h 戦闘窓 + 自動決着 (lazy advance)

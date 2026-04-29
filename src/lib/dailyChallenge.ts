@@ -11,7 +11,7 @@ import { awardExpAndGold } from "@/lib/leveling";
 import { awardAchievement } from "@/lib/achievements";
 
 export type DailyTemplate = {
-  goalType: "defeat_enemy" | "win_battles" | "drop_gear" | "clear_dungeon" | "spend_gold" | "talk_npc";
+  goalType: "defeat_enemy" | "win_battles" | "drop_gear" | "clear_dungeon" | "spend_gold" | "talk_npc" | "raid_join";
   // Range of goal counts (inclusive). The actual count is rolled per generation.
   goalRange: [number, number];
   description: (count: number) => string;
@@ -61,6 +61,13 @@ const TEMPLATES: DailyTemplate[] = [
     description: (n) => `今日 ${n} 人の NPC に会う（街を訪れる）`,
     rewardExpRange: [80, 150],
     rewardGoldRange: [60, 150],
+  },
+  {
+    goalType: "raid_join",
+    goalRange: [1, 1],
+    description: () => `今日 ワールドレイドに 1 回参戦する`,
+    rewardExpRange: [300, 500],
+    rewardGoldRange: [200, 400],
   },
 ];
 

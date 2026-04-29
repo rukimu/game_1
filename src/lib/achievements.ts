@@ -132,6 +132,12 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { slug: "party_battle", title: "並んで戦った", description: "パーティー戦闘に参加して勝利した。", rarity: "common" },
   { slug: "party_full_battle", title: "10 人の脈動", description: "10 人パーティーで戦闘に勝利した。", titleSlug: "10 人の脈動", rarity: "legendary" },
 
+  // -- World raid (Cycle 29) --
+  { slug: "raid_first", title: "最初の咆哮", description: "初めてワールドレイドに参戦した。", rarity: "common" },
+  { slug: "raid_top_dmg", title: "群を抜く一撃", description: "ワールドレイドで貢献度 1 位を取った。", titleSlug: "群を抜く一撃", rarity: "rare" },
+  { slug: "raid_5_kills", title: "巨影を断つ者", description: "5 体のワールドレイドを討伐した。", titleSlug: "巨影を断つ者", rarity: "epic" },
+  { slug: "raid_legend", title: "孤高の咆哮", description: "ワールドレイド 1 体相手に 5000 ダメージ与えた。", titleSlug: "孤高の咆哮", rarity: "legendary" },
+
   // -- Hidden / Easter eggs --
   { slug: "found_secret_well", title: "井戸の底を知る者", description: "ある井戸の底に手を触れた。", titleSlug: "井戸の底を知る者", rarity: "mythic", hidden: true },
   { slug: "spoke_to_all_npcs_in_town", title: "声を集めた者", description: "ある街の全 NPC に話しかけた。", rarity: "rare", hidden: true },

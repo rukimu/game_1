@@ -21,6 +21,8 @@ import { prisma } from "@/lib/prisma";
 import { computeCombatStats, computeCombatEffects } from "@/lib/equipment";
 import { applyDamage, rollEquipmentDrop } from "@/lib/battle";
 import { awardExpAndGold } from "@/lib/leveling";
+import { awardAchievement } from "@/lib/achievements";
+import { tickDailyChallenge } from "@/lib/dailyChallenge";
 import { getIO } from "@/lib/socket";
 
 const JOIN_WINDOW_MS = 10 * 60 * 1000;
@@ -202,6 +204,11 @@ export async function joinRaid(raidId: string, characterId: string): Promise<{ o
       maxMp: stats.maxMp,
     },
   });
+
+  // Cross-cutting hooks (Cycle 29-d). Best-effort — never block the join.
+  try { await awardAchievement("raid_first", characterId); } catch { /* ignore */ }
+  try { await tickDailyChallenge({ characterId, goalType: "raid_join", delta: 1 }); } catch { /* ignore */ }
+
   return { ok: true, firstJoin: true };
 }
 
@@ -446,6 +453,21 @@ export async function finalizeRaidIfDue(raidId: string): Promise<"victory" | "ex
         const exp = Math.floor(raid.level * 30 + p.damageDealt * 0.05);
         const gold = Math.floor(raid.level * 12 + p.damageDealt * 0.02);
         await awardExpAndGold(p.characterId, exp, gold);
+      } catch { /* ignore */ }
+      // Achievements (best-effort).
+      try {
+        if (i === 0) await awardAchievement("raid_top_dmg", p.characterId);
+        if (p.damageDealt >= 5000) await awardAchievement("raid_legend", p.characterId);
+        // Lifetime victory count includes this raid (status will be flipped
+        // to ended below; counting now means we look at completed raids
+        // strictly before this one and add 1).
+        const priorVictories = await prisma.raidParticipant.count({
+          where: {
+            characterId: p.characterId,
+            raid: { result: "victory", id: { not: raidId } },
+          },
+        });
+        if (priorVictories + 1 >= 5) await awardAchievement("raid_5_kills", p.characterId);
       } catch { /* ignore */ }
     }
     rewards.push({

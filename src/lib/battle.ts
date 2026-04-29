@@ -446,6 +446,33 @@ async function resolveTurn(battleId: string) {
     });
   }
 
+  // Party diversity synergy (Cycle 29). Unique job categories among the alive
+  // attackers feed a flat defense multiplier — encourages mixed comps over
+  // five-warriors-in-a-trenchcoat. Solo (1 archetype) = no-op.
+  const archetypeIds = new Set<string>();
+  for (const p of battle.participants) {
+    if (p.alive && p.character.currentJobId) archetypeIds.add(p.character.currentJobId);
+  }
+  if (archetypeIds.size > 0) {
+    const jobs = await prisma.job.findMany({
+      where: { id: { in: Array.from(archetypeIds) } },
+      select: { id: true, category: true },
+    });
+    const cats = new Set(jobs.map((j) => j.category));
+    const synergyMult = cats.size >= 5 ? 1.20 : cats.size >= 3 ? 1.10 : 1.00;
+    if (synergyMult > 1) {
+      for (const ps of partState.values()) {
+        ps.def = Math.floor(ps.def * synergyMult);
+        ps.mdf = Math.floor(ps.mdf * synergyMult);
+      }
+      log.push({
+        turn: battle.turn,
+        ts: Date.now(),
+        text: `【パーティ多様性シナジー】 ${cats.size} 系統 → 全員の防御 +${Math.round((synergyMult - 1) * 100)}%`,
+      });
+    }
+  }
+
   // Tick player statuses BEFORE the player phase. Poison/burn/bleed deal
   // damage; bleed ignores defense (raw); curse halves outgoing damage and
   // is checked at attack-time; silence and stun gate actions below.

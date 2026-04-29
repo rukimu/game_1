@@ -13,7 +13,7 @@
 | B. キャラビルド | ★★★☆☆ | ★★★★★ | C30 (skill inherit), C31 (curated jobs) |
 | C. ハクスラ偶発性 | ★★★★★ | ★★★★★ (維持) | — |
 | D. 物語・世界観 | ★★★★☆ | ★★★★★ | C33 (curated NPC), C34 (lore docs) |
-| E. 協調プレイ | ★★★☆☆ | ★★★★★ | C29 (raid), C32 (siege ops) |
+| E. 協調プレイ | ★★★★☆ | ★★★★★ | C29 ✅ (raid), C32 (siege ops) |
 | F. やりこみ・エンドゲーム | ★★★★☆ | ★★★★★ | C28 ✅, C30 (skill inherit), C36 (endless) |
 | G. 公平・経済 | ★★★★☆ | ★★★★★ | C37 (rate-limit, monitoring) |
 | H. UX・プレゼン | ★★★☆☆ | ★★★★★ | C27 ✅, C35 (pixel art), C38 (a11y) |
@@ -78,27 +78,40 @@
 
 ---
 
-### Cycle 29 — 強制協調プレイ：レイド＋ワールドイベント
+### Cycle 29 — 強制協調プレイ：レイド＋ワールドイベント ✅ DONE
 
-**狙い**: 「呪い解除」以外でも他プレイヤーの存在が必要な瞬間を作る。
+**実装結果（C29-a/b/c/d 4 サブサイクル）**:
 
-1. **ワールドレイドバトル（偶発遭遇型）**
-   - 一定確率で「街にレイドモンスターが出現」announcement
-   - 同じ街に居るプレイヤーは 10 分の間「参戦する」ボタンが出る
-   - 最大 20 人まで参戦可能、HP は参戦者数 × 倍率でスケール
-   - 個別貢献度（与ダメ）でランク別報酬、撃破は全員に経験値+装備
-   - レイドダメージ表示で「誰が一番貢献したか」可視化
-2. **ギルド討伐依頼**
-   - 週 1 回、各ギルドに固有ボス依頼が降ってくる
-   - クリアでギルド倉庫に入る共有装備
-3. **救援システム**
-   - 戦闘中に「救援を呼ぶ」ボタン → 同パーティ外のフレンド/ギルド員が緊急参戦可能
-4. **シーズンの謎の協調ヒント**
-   - 「3 人で同じ場所に集まると新しい手がかりが出る」協調謎
-5. **パーティ専用パッシブシナジー**
-   - 同パーティ内で異なるアーキタイプが揃うと特定 buff（warrior + cleric で防御+10% 等）
+1. ✅ **ワールドレイドバトル（偶発遭遇型）** — `src/lib/raid.ts`
+   - `prisma/schema.prisma`: `Raid` + `RaidParticipant` モデル
+   - `/town` 訪問時に 10% で湧き、60min 再湧きクールダウン
+   - 同じ街のプレイヤーが「参戦する」ボタンで合流（10 分集合 → 30 分戦闘）
+   - 非同期 DPS race: 個別 CD（攻撃 5s / 特技 15s / 回復 10s）+ ボス HP 共有
+   - KO + 90s 遅延復活、撃沈中は次アクションでレイジー復活
+   - 既存の `computeCombatStats` / `computeCombatEffects` / `applyDamage` を流用 — crit/slay/lifesteal がそのまま乗る
+   - 撃破時の貢献度ランキングで個別ドロップ tier 確定（Top1 legendary / Top2-5 epic / 残り rare）+ 与ダメに比例した EXP/Gold
+   - 出現・決算で `Announcement` ブロードキャスト
+   - 10 種のテンプレ（灰の唄を喰らう者 / 塔陰の長腕鬼 / 霜帝の落とし子 等）
+2. ✅ **HTTP API 7 本** — `src/app/api/raids/...`
+   - `GET /api/raids/active` / `GET /api/raids/[id]` / `POST /api/raids/[id]/{join,start,attack,skill,heal}`
+3. ✅ **UI** — `src/app/raid/[id]/page.tsx` + `Client.tsx` + `/town` バナー
+   - サーバコンポで初期 view、Client は 1.5s ポーリング + 4Hz ローカル時計
+   - ボス HP バー / ランキング / 自分 HP/MP/CD / 攻撃・特技・回復ボタン / 戦闘ログ
+   - 観戦は同じ街のプレイヤー or 参戦者のみ
+4. ✅ **パーティ多様性シナジー** — `src/lib/battle.ts`
+   - 通常戦闘の `resolveTurn` で aliveメンバーの jobCategory ユニーク数を集計
+   - 3 系統で防御 +10%、5 系統で +20%（ログに表示）
+5. ✅ **アチーブメント 4 種** — `src/lib/achievements.ts`
+   - `raid_first` (common) / `raid_top_dmg` (rare title) / `raid_5_kills` (epic title) / `raid_legend` (legendary title, 5000 ダメ条件)
+6. ✅ **デイリーチャレンジ `raid_join`** — `src/lib/dailyChallenge.ts`
+   - 「今日 ワールドレイドに 1 回参戦する」テンプレ追加
+   - `joinRaid` から自動 tick
 
-**指標**: 同時接続時の交流頻度 +2 倍
+**C29.5 にデファー**:
+- ギルド討伐依頼（週次固有ボス）
+- 戦闘中の救援システム（同パーティ外）
+- シーズンの謎の協調ヒント
+- AOE 化（`Raid.lastBossTickMs` 列追加とともに次回）
 
 ---
 
@@ -341,5 +354,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: `748786a` (Cycle 26 完了)
-**次の着手**: Cycle 27 (TOP 5 致命的修正) を即実装。
+**現状の最新コミット**: Cycle 29 完了 (C29-a/b/c/d)
+**次の着手**: Cycle 30 (スキル継承システム) を実装。

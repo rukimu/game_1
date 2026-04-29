@@ -118,21 +118,40 @@ class TemplateContentGenerationService implements ContentGenerationService {
     return { ...v.value, creatureType } as GeneratedEnemy & { creatureType: string };
   }
 
-  async generateQuest(ctx: GenerationContext & { townName?: string }): Promise<GeneratedQuest> {
+  async generateQuest(ctx: GenerationContext & { townName?: string; otherTownName?: string }): Promise<GeneratedQuest> {
     const seed = ctx.seed ?? `${Date.now()}-${Math.random()}`;
     const rng = makeRng(seed);
     const tpl = pick(QUEST_TEMPLATES, rng);
     const enemy = `${pick(ENEMY_PARTS.prefix, rng)}${pick(ENEMY_PARTS.base, rng)}`;
     const place = ctx.townName ?? "この街";
+    const otherPlace = ctx.otherTownName ?? "遠くの街";
     const count = intBetween(rng, 2, 5);
     const description = tpl.text
       .replace("{place}", place)
       .replace("{enemy}", enemy)
-      .replace("{count}", String(count));
-    const title = `${enemy}討伐`;
-    const expReward = 30 + count * 10;
-    const goldReward = 25 + count * 8;
-    const v = validateGeneratedQuest({ title, description, goalType: tpl.goalType, goalParam: enemy, goalCount: count, expReward, goldReward });
+      .replace("{count}", String(count))
+      .replace("{otherPlace}", otherPlace);
+    // Title varies by quest kind so the player sees what they're getting at a glance.
+    const title = tpl.kind === "defeat" ? `${enemy}討伐`
+      : tpl.kind === "collect" ? "装備品の供出"
+      : tpl.kind === "explore" ? `${otherPlace}への伝令`
+      : "戦いの腕試し";
+    // Reward also scales by kind. Explore is one-and-done so we pay flat.
+    const baseExp = 30 + count * 10;
+    const baseGold = 25 + count * 8;
+    const expReward = tpl.kind === "explore" ? 40 : baseExp;
+    const goldReward = tpl.kind === "explore" ? 50 : baseGold;
+    // goalParam carries either the enemy name (defeat), the destination town
+    // (visit_town), or empty (collect_drop / win_battles).
+    const goalParam = tpl.goalType === "defeat_enemy" ? enemy
+      : tpl.goalType === "visit_town" ? otherPlace
+      : "";
+    // Adjust goalCount per kind so explore is 1-shot, collect is small, etc.
+    const goalCount = tpl.goalType === "visit_town" ? 1
+      : tpl.goalType === "collect_drop" ? Math.max(2, intBetween(rng, 2, 4))
+      : tpl.goalType === "win_battles" ? Math.max(2, intBetween(rng, 2, 5))
+      : count;
+    const v = validateGeneratedQuest({ title, description, goalType: tpl.goalType, goalParam, goalCount, expReward, goldReward });
     if (!v.ok) throw new Error("quest validation failed: " + v.reason);
     return v.value;
   }

@@ -592,6 +592,21 @@ async function resolveTurn(battleId: string) {
               ts: Date.now(),
               text: `${p.name}は戦利品 ${flair}『${drop.displayName}』を手に入れた！`,
             });
+            // tick collect_drop quests
+            const collectQs = await prisma.characterQuest.findMany({
+              where: { characterId: p.id, completedAt: null, quest: { goalType: "collect_drop" } },
+              include: { quest: true },
+            });
+            for (const cq of collectQs) {
+              const newProg = cq.progress + 1;
+              if (newProg >= cq.quest.goalCount) {
+                await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg, completedAt: new Date() } });
+                await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
+                log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！` });
+              } else {
+                await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
+              }
+            }
           }
           // Boss kills always drop something, and the tier is forced epic at
           // minimum (legendary on a coin flip).
@@ -642,21 +657,23 @@ async function resolveTurn(battleId: string) {
           }
         } catch { /* non-fatal */ }
       }
-      // update quest progress for defeat_enemy quests
+      // update quest progress for defeat_enemy / win_battles / collect_drop
       const cqs = await prisma.characterQuest.findMany({ where: { characterId: p.id, completedAt: null }, include: { quest: true } });
       for (const cq of cqs) {
-        if (cq.quest.goalType === "defeat_enemy") {
-          const inc = enemies.length;
-          const newProg = cq.progress + inc;
-          if (newProg >= cq.quest.goalCount) {
-            await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg, completedAt: new Date() } });
-            const beforeQ = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
-            const updatedQ = await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
-            const leveledQ = updatedQ && beforeQ && updatedQ.level > beforeQ.level;
-            log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！${leveledQ ? `(Lv${beforeQ!.level}→Lv${updatedQ!.level})` : ""}` });
-          } else {
-            await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
-          }
+        let inc = 0;
+        if (cq.quest.goalType === "defeat_enemy") inc = enemies.length;
+        else if (cq.quest.goalType === "win_battles") inc = 1;
+        // collect_drop is incremented separately below when a drop occurs.
+        if (inc <= 0) continue;
+        const newProg = cq.progress + inc;
+        if (newProg >= cq.quest.goalCount) {
+          await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg, completedAt: new Date() } });
+          const beforeQ = await prisma.character.findUnique({ where: { id: p.id }, select: { level: true } });
+          const updatedQ = await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
+          const leveledQ = updatedQ && beforeQ && updatedQ.level > beforeQ.level;
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！${leveledQ ? `(Lv${beforeQ!.level}→Lv${updatedQ!.level})` : ""}` });
+        } else {
+          await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
         }
       }
       // update job change quest progress

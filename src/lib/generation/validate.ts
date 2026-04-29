@@ -162,7 +162,7 @@ export function validateGeneratedQuest(input: any): ValidationResult<GeneratedQu
     value: {
       title,
       description,
-      goalType: ["defeat_enemy","collect_item","talk_npc"].includes(input.goalType) ? input.goalType : "defeat_enemy",
+      goalType: ["defeat_enemy","collect_item","talk_npc","collect_drop","visit_town","win_battles"].includes(input.goalType) ? input.goalType : "defeat_enemy",
       goalParam: input.goalParam ? sanitizeText(String(input.goalParam), 40) : null,
       goalCount: clamp(Number(input.goalCount ?? 3), 1, 20),
       expReward: clamp(Number(input.expReward ?? 50), 1, 5000),

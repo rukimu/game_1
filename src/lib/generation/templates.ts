@@ -92,9 +92,20 @@ export const SEASONAL_RUMOR_TEMPLATES = [
 export const ROLES = ["旅人", "鍛冶屋", "司書", "踊り子", "錬金術師", "歩哨", "占い師", "宿屋の娘"];
 
 export const QUEST_TEMPLATES = [
+  // Defeat variants — direct combat objectives.
   { kind: "defeat", text: "{place}周辺で増えている{enemy}を{count}体討伐してほしい。", goalType: "defeat_enemy" },
   { kind: "defeat", text: "夜に現れる{enemy}を、街の門番に代わって{count}体始末してくれ。", goalType: "defeat_enemy" },
   { kind: "defeat", text: "森の奥に巣食う{enemy}の群れを{count}体排除する仕事だ。", goalType: "defeat_enemy" },
+  { kind: "defeat", text: "{place}の用心棒が音を上げた。{enemy}を{count}体狩り尽くしてくれ。", goalType: "defeat_enemy" },
+  // Collect — gathering loot from defeated foes (counts equip drops).
+  { kind: "collect", text: "{place}の鍛冶屋が素材を欲している。古い装備を{count}個持ち込んでほしい。", goalType: "collect_drop" },
+  { kind: "collect", text: "失われた装備の手がかりを集めている。装備品を{count}個提示してくれ。", goalType: "collect_drop" },
+  // Explore — visit a target town or fight in the field.
+  { kind: "explore", text: "{place}から{otherPlace}まで街道を辿ってほしい。誰かが安否を待っている。", goalType: "visit_town" },
+  { kind: "explore", text: "{otherPlace}に伝わる古い書物を確かめてきてくれ。", goalType: "visit_town" },
+  // Endure — survive multiple battles (any wins) within the day.
+  { kind: "endure", text: "今日中に戦闘で{count}勝してくれ。腕の鈍りを払いたい。", goalType: "win_battles" },
+  { kind: "endure", text: "{place}に巣食う敵に{count}回勝ってきてくれ。意地を見せてやれ。", goalType: "win_battles" },
 ];
 
 export const NPC_TEMPLATES = [

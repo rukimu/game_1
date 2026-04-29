@@ -7,7 +7,9 @@ import { getActiveCharacter } from "@/lib/activeCharacter";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { getCurrentSeasonKeywords } from "@/lib/mystery";
 import { getTodayWorldState, jpElementName } from "@/lib/worldstate";
+import { pickTutorialHint } from "@/lib/tutorial";
 import TownActions from "./TownActions";
+import TutorialBox from "./TutorialBox";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +66,9 @@ export default async function TownPage() {
     orderBy: { createdAt: "desc" },
     take: 5,
   });
+  // Per-character onboarding hint. Adapts to whether they've fought,
+  // looted, joined a party, etc. Hidden after dismissal.
+  const tutorialHint = await pickTutorialHint(c.id);
   return (
     <main>
       <Hud />
@@ -85,6 +90,7 @@ export default async function TownPage() {
                 </div>
                 <div className="italic text-yellow-100/80">― {world.headline}</div>
               </div>
+              {tutorialHint && <TutorialBox hint={tutorialHint} />}
               <TownActions townId={town.id} />
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">酒場の噂</h3>

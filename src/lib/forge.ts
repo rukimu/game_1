@@ -85,6 +85,101 @@ export async function quoteForge(
   };
 }
 
+// Preview mode: a deeper quote that also resolves which materials will be
+// consumed and a description of the expected outcome. Reroll outcomes are
+// random so we describe a *range*; upgrades are deterministic on tier.
+export type ForgePreview = {
+  ok: boolean;
+  error?: string;
+  goldCost?: number;
+  tier?: AffixTier;
+  // For upgrade: the tier we'll land on. For reroll: the most-likely tier
+  // (same), with an alt for the 10% lucky bump.
+  outcomeTier?: AffixTier;
+  outcomeAltTier?: AffixTier;   // null for upgrade
+  outcomeAltChance?: number;    // 0..1
+  haveGold?: boolean;
+  haveMaterials?: boolean;
+  // List of inventory rows that would be consumed. Same selection rule as the
+  // real runForge: oldest first, equip-only, not the target.
+  materials?: Array<{ id: string; name: string; tier: AffixTier; equipped: boolean }>;
+  currentBonusSummary?: string;
+};
+
+export async function previewForge(
+  characterId: string,
+  inventoryItemId: string,
+  mode: "reroll" | "upgrade",
+): Promise<ForgePreview> {
+  const inv = await prisma.inventoryItem.findUnique({
+    where: { id: inventoryItemId },
+    include: { item: true },
+  });
+  if (!inv || inv.characterId !== characterId) return { ok: false, error: "そのアイテムはあなたのものではありません" };
+  if (inv.item.category !== "equip" || !inv.item.slot) return { ok: false, error: "装備可能アイテムのみ加工できます" };
+
+  const inst = parseInstance(inv.instanceJson);
+  const tier: AffixTier = inst?.tier ?? "common";
+  if (mode === "upgrade" && tier === "legendary") {
+    return { ok: false, error: "これ以上の強化はできません" };
+  }
+  const goldCost = mode === "reroll" ? rerollGoldCost(tier) : upgradeGoldCost(tier);
+
+  const character = await prisma.character.findUnique({ where: { id: characterId } });
+  const candidates = await prisma.inventoryItem.findMany({
+    where: {
+      characterId,
+      equipped: false,
+      id: { not: inventoryItemId },
+      item: { category: "equip" },
+    },
+    include: { item: true },
+    orderBy: [{ acquiredAt: "asc" }],
+    take: MATERIAL_COUNT,
+  });
+  const materials = candidates.map((m) => {
+    const i = parseInstance(m.instanceJson);
+    return {
+      id: m.id,
+      name: m.displayName ?? m.item.name,
+      tier: (i?.tier ?? "common") as AffixTier,
+      equipped: m.equipped,
+    };
+  });
+
+  const outcomeTier = mode === "upgrade" ? nextTier(tier) : tier;
+  const outcomeAltTier = mode === "reroll" ? nextTier(tier) : undefined;
+  const outcomeAltChance = mode === "reroll" ? 0.1 : undefined;
+
+  // Summarize current affix bonuses so the player sees what they'd potentially trade.
+  const b = inst?.bonusStats ?? {};
+  const parts: string[] = [];
+  if (b.atk) parts.push(`ATK${signed(b.atk)}`);
+  if (b.def) parts.push(`DEF${signed(b.def)}`);
+  if (b.mat) parts.push(`MAT${signed(b.mat)}`);
+  if (b.mdf) parts.push(`MDF${signed(b.mdf)}`);
+  if (b.hp) parts.push(`HP${signed(b.hp)}`);
+  if (b.mp) parts.push(`MP${signed(b.mp)}`);
+  const currentBonusSummary = parts.length ? parts.join(" / ") : "（補正なし）";
+
+  return {
+    ok: true,
+    goldCost,
+    tier,
+    outcomeTier,
+    outcomeAltTier,
+    outcomeAltChance,
+    haveGold: !!character && character.gold >= goldCost,
+    haveMaterials: materials.length >= MATERIAL_COUNT,
+    materials,
+    currentBonusSummary,
+  };
+}
+
+function signed(n: number): string {
+  return n >= 0 ? `+${n}` : `${n}`;
+}
+
 // Run a forge action. Atomic-ish: validates funds and materials, deducts in
 // one transaction, then writes the new instance.
 export async function runForge(

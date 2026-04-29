@@ -13,6 +13,7 @@ type Siege = {
   registrations: Array<{ guildId: string; guildName: string; memberCount: number; score: number }>;
   winningGuildName: string | null;
   currentOwnerName: string | null;
+  battleLog: Array<{ round: number; kind: string; line: string }>;
   myGuildRegistered: boolean;
   canRegister: boolean;
 };
@@ -110,6 +111,31 @@ export default function SiegeClient({ sieges }: { sieges: Siege[] }) {
           )}
           {s.myGuildRegistered && (
             <div className="mt-2 text-xs text-green-300">★ あなたのギルドは登録済み</div>
+          )}
+          {s.status === "ended" && s.battleLog.length > 0 && (
+            <details className="mt-3 border border-yellow-900/40 rounded bg-black/30 p-2">
+              <summary className="cursor-pointer text-xs font-bold text-yellow-300/80">
+                戦況詳細（{s.battleLog.length} 行）
+              </summary>
+              <ul className="text-[11px] text-yellow-100/80 mt-1 space-y-0.5">
+                {s.battleLog.map((entry, idx) => (
+                  <li
+                    key={idx}
+                    className={
+                      entry.kind === "intro"
+                        ? "text-yellow-200/90 italic"
+                        : entry.kind === "rally"
+                          ? "text-amber-300/90"
+                          : entry.kind === "summary"
+                            ? "text-amber-200 font-bold mt-1"
+                            : ""
+                    }
+                  >
+                    {entry.line}
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </div>
       ))}

@@ -121,6 +121,47 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     });
     if (wins >= 5) await awardAchievement("duel_5_wins", winner.id);
     if (wins >= 25) await awardAchievement("duel_25_wins", winner.id);
+    if (wins >= 100) await awardAchievement("duel_100_wins", winner.id);
+    // Rating-threshold titles.
+    const winnerRating = winner.id === duel.challengerCharacterId ? newA : newB;
+    if (winnerRating >= 1700) await awardAchievement("duel_rating_1700", winner.id);
+    if (winnerRating >= 1900) await awardAchievement("duel_rating_1900", winner.id);
+    if (winnerRating >= 2100) await awardAchievement("duel_rating_2100", winner.id);
+  } catch { /* non-fatal */ }
+  // Auto-grant top-rated arena titles. We compute the leaderboard right here
+  // since rating just changed; eligible characters need at least 5 finished
+  // duels so a single match can't punt anyone into "top 1".
+  try {
+    const ratedTop = await prisma.character.findMany({
+      where: {
+        OR: [
+          { duelsA: { some: { status: "finished" } } },
+          { duelsB: { some: { status: "finished" } } },
+        ],
+      },
+      select: { id: true },
+      orderBy: { duelRating: "desc" },
+      take: 10,
+    });
+    const winsByCid = new Map<string, number>();
+    if (ratedTop.length > 0) {
+      const winsAgg = await prisma.duel.groupBy({
+        by: ["winnerCharacterId"],
+        where: { status: "finished", winnerCharacterId: { in: ratedTop.map((r) => r.id) } },
+        _count: { _all: true },
+      });
+      for (const w of winsAgg) {
+        if (w.winnerCharacterId) winsByCid.set(w.winnerCharacterId, w._count._all);
+      }
+    }
+    for (let idx = 0; idx < ratedTop.length; idx++) {
+      const cid = ratedTop[idx].id;
+      const w = winsByCid.get(cid) ?? 0;
+      if (w < 5) continue; // need a real track record
+      if (idx < 1) await awardAchievement("arena_top_1", cid);
+      if (idx < 5) await awardAchievement("arena_top_5", cid);
+      if (idx < 10) await awardAchievement("arena_top_10", cid);
+    }
   } catch { /* non-fatal */ }
   return NextResponse.json({
     winnerName: winner.name,

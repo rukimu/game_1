@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function BossClient({
+function BossClient({
   canChallenge, partyId, claimed,
 }: { canChallenge: boolean; partyId: string | null; claimed: boolean }) {
   const router = useRouter();
@@ -57,3 +57,43 @@ export default function BossClient({
     </div>
   );
 }
+
+// Weekly tier challenge button. Re-exported as a named export for clean
+// server-side import (sub-properties on client components don't survive the
+// RSC boundary cleanly).
+export function WeeklyChallenge({ tier }: { tier: 1 | 2 | 3 }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function challenge() {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch("/api/boss/start-weekly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { setErr(data.error ?? "挑戦に失敗しました"); return; }
+      if (data.battleId) router.push(`/battle/${data.battleId}`);
+      else router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="space-y-1">
+      {err && <div className="text-red-400 text-xs">{err}</div>}
+      <button
+        className="btn-primary text-xs"
+        onClick={(e) => { e.preventDefault(); challenge(); }}
+        disabled={busy}
+      >
+        {busy ? "..." : `T${tier} に挑む`}
+      </button>
+    </div>
+  );
+}
+
+export default BossClient;

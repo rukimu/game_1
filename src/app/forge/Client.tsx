@@ -14,11 +14,52 @@ type Row = {
   specials: string[];
 };
 
+type Preview = {
+  goldCost: number;
+  tier: string;
+  outcomeTier: string;
+  outcomeAltTier?: string | null;
+  outcomeAltChance?: number;
+  haveGold: boolean;
+  haveMaterials: boolean;
+  materials: Array<{ id: string; name: string; tier: string; equipped: boolean }>;
+  currentBonusSummary: string;
+};
+
+const TIER_LABEL_JA: Record<string, string> = {
+  common: "並",
+  rare: "良質",
+  epic: "希少",
+  legendary: "伝説",
+};
+
 export default function ForgeClient({ rows, myGold }: { rows: Row[]; myGold: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [preview, setPreview] = useState<{ id: string; mode: "reroll" | "upgrade"; data: Preview } | null>(null);
+
+  async function showPreview(id: string, mode: "reroll" | "upgrade") {
+    setBusy(`pv:${mode}:${id}`);
+    setErr(null);
+    try {
+      const r = await fetch("/api/forge/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inventoryItemId: id, mode }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setErr(d.error ?? "プレビューに失敗しました");
+        setPreview(null);
+      } else {
+        setPreview({ id, mode, data: d });
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function forge(id: string, mode: "reroll" | "upgrade") {
     setBusy(`${mode}:${id}`);
@@ -32,6 +73,7 @@ export default function ForgeClient({ rows, myGold }: { rows: Row[]; myGold: num
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setErr(d.error ?? "加工に失敗しました"); return; }
       setOk(`${d.before?.displayName} → ${d.after?.displayName}`);
+      setPreview(null);
       router.refresh();
     } finally {
       setBusy(null);
@@ -67,6 +109,16 @@ export default function ForgeClient({ rows, myGold }: { rows: Row[]; myGold: num
                 )}
               </div>
               <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
+                  <button
+                    className="btn text-xs"
+                    disabled={!!busy}
+                    onClick={() => showPreview(r.id, "reroll")}
+                    title="加工せずに費用と消費素材を確認"
+                  >
+                    プレビュー
+                  </button>
+                </div>
                 <button
                   className="btn text-xs"
                   disabled={!!busy}
@@ -83,6 +135,59 @@ export default function ForgeClient({ rows, myGold }: { rows: Row[]; myGold: num
                 </button>
               </div>
             </div>
+            {preview && preview.id === r.id && (
+              <div className="mt-2 border-t border-yellow-900/40 pt-2">
+                <div className="text-xs flex flex-wrap gap-2 mb-2">
+                  <button
+                    className={`btn text-[11px] ${preview.mode === "reroll" ? "bg-yellow-700" : ""}`}
+                    onClick={() => showPreview(r.id, "reroll")}
+                  >
+                    リロールで見る
+                  </button>
+                  <button
+                    className={`btn text-[11px] ${preview.mode === "upgrade" ? "bg-yellow-700" : ""}`}
+                    disabled={r.tier === "legendary"}
+                    onClick={() => showPreview(r.id, "upgrade")}
+                  >
+                    強化で見る
+                  </button>
+                  <button className="btn text-[11px] ml-auto" onClick={() => setPreview(null)}>閉じる</button>
+                </div>
+                <div className="text-[11px] text-yellow-100/85 space-y-0.5">
+                  <div>
+                    現状: 《{TIER_LABEL_JA[preview.data.tier] ?? preview.data.tier}》
+                    {" "}{preview.data.currentBonusSummary}
+                  </div>
+                  <div>
+                    結果ティア: 《{TIER_LABEL_JA[preview.data.outcomeTier] ?? preview.data.outcomeTier}》
+                    {preview.data.outcomeAltTier && preview.data.outcomeAltChance && (
+                      <span className="text-yellow-300/80">
+                        {" "}（{Math.round(preview.data.outcomeAltChance * 100)}% で 《{TIER_LABEL_JA[preview.data.outcomeAltTier]}》 にラッキー上昇）
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    費用: <span className={preview.data.haveGold ? "text-yellow-200" : "text-red-300"}>
+                      {preview.data.goldCost}G
+                    </span>
+                    {" / "} 素材 {preview.data.materials.length}/5{" "}
+                    <span className={preview.data.haveMaterials ? "text-yellow-200" : "text-red-300"}>
+                      {preview.data.haveMaterials ? "（OK）" : "（不足）"}
+                    </span>
+                  </div>
+                  {preview.data.materials.length > 0 && (
+                    <div className="mt-1 border border-yellow-900/40 rounded bg-black/20 p-1">
+                      <div className="text-yellow-300/70">消費される素材（古い順）:</div>
+                      <ul className="ml-2">
+                        {preview.data.materials.map((m) => (
+                          <li key={m.id}>・{m.name}（{TIER_LABEL_JA[m.tier] ?? m.tier}）</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>

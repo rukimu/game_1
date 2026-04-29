@@ -8,12 +8,12 @@ import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance 
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 import { awardAchievement } from "@/lib/achievements";
 
-export type StatusKind = "poison" | "burn" | "stun";
+export type StatusKind = "poison" | "burn" | "stun" | "silence" | "bleed" | "curse";
 
 export type StatusEffect = {
   kind: StatusKind;
   remaining: number;   // turns left (decremented at end of each enemy phase)
-  power: number;       // tick damage for poison/burn; for stun this is ignored
+  power: number;       // tick damage for poison/burn/bleed; ignored for stun/silence/curse
 };
 
 export type EnemyState = {
@@ -95,6 +95,8 @@ export async function startBattleForParty(partyId: string, opts?: {
     expReward: number;
     goldReward: number;
     creatureType: EnemyState["creatureType"];
+    kind?: "boss" | "boss_weekly"; // defaults to "boss"
+    tier?: number;                  // weekly tier (1..3), null otherwise
   };
 }) {
   const party = await prisma.party.findUnique({
@@ -185,8 +187,9 @@ export async function startBattleForParty(partyId: string, opts?: {
       partyId,
       status: "active",
       turn: 1,
-      kind: isBoss ? "boss" : "normal",
+      kind: isBoss ? (opts?.boss?.kind ?? "boss") : "normal",
       bossSlug: isBoss ? opts?.boss?.slug ?? null : null,
+      bossTier: isBoss ? opts?.boss?.tier ?? null : null,
       enemyState: JSON.stringify(enemies),
       log: JSON.stringify(log),
     },
@@ -273,7 +276,7 @@ export async function joinBattle(battleId: string, characterId: string): Promise
   });
   if (!battle) return { ok: false, reason: "戦闘が見つかりません" };
   if (battle.status !== "active") return { ok: false, reason: "戦闘は既に終わっています" };
-  if (battle.kind === "boss") return { ok: false, reason: "ボス戦には途中参加できません" };
+  if (battle.kind === "boss" || battle.kind === "boss_weekly") return { ok: false, reason: "ボス戦には途中参加できません" };
   if (battle.dungeonRunId) return { ok: false, reason: "ダンジョン戦には途中参加できません" };
   if (!battle.partyId) return { ok: false, reason: "パーティー戦闘ではありません" };
 
@@ -320,7 +323,7 @@ export async function leaveBattle(battleId: string, characterId: string): Promis
   });
   if (!battle) return { ok: false, reason: "戦闘が見つかりません" };
   if (battle.status !== "active") return { ok: false, reason: "戦闘は既に終わっています" };
-  if (battle.kind === "boss") return { ok: false, reason: "ボス戦からは離脱できません" };
+  if (battle.kind === "boss" || battle.kind === "boss_weekly") return { ok: false, reason: "ボス戦からは離脱できません" };
   if (battle.dungeonRunId) return { ok: false, reason: "ダンジョン戦からは離脱できません" };
 
   const me = battle.participants.find((p) => p.characterId === characterId);
@@ -415,11 +418,14 @@ async function resolveTurn(battleId: string) {
     id: string; hp: number; mp: number; maxHp: number; defending: boolean; alive: boolean;
     spd: number; atk: number; mat: number; def: number; mdf: number; name: string;
     effects: AggregatedEffects;
+    statuses: StatusEffect[];
   };
   const partState = new Map<string, PartActor>();
   for (const p of battle.participants) {
     const eqStats = await computeCombatStats(p.characterId);
     const effects = await computeCombatEffects(p.characterId);
+    let statuses: StatusEffect[] = [];
+    try { statuses = JSON.parse(p.statusesJson || "[]"); } catch { statuses = []; }
     partState.set(p.characterId, {
       id: p.characterId,
       hp: p.hp,
@@ -434,7 +440,28 @@ async function resolveTurn(battleId: string) {
       mdf: eqStats?.mdf ?? p.character.mdf,
       name: p.character.name,
       effects,
+      statuses,
     });
+  }
+
+  // Tick player statuses BEFORE the player phase. Poison/burn/bleed deal
+  // damage; bleed ignores defense (raw); curse halves outgoing damage and
+  // is checked at attack-time; silence and stun gate actions below.
+  for (const ps of partState.values()) {
+    if (!ps.alive || ps.statuses.length === 0) continue;
+    for (const s of ps.statuses) {
+      if (s.kind === "poison" || s.kind === "burn" || s.kind === "bleed") {
+        const tick = Math.max(1, s.power);
+        ps.hp -= tick;
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${ps.name}は【${statusLabel(s.kind)}】で ${tick} ダメージを受けた。` });
+        if (ps.hp <= 0) {
+          ps.hp = 0;
+          ps.alive = false;
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${ps.name}は倒れた…。` });
+          break;
+        }
+      }
+    }
   }
 
   // Order: by spd desc (player phase), then enemies
@@ -447,12 +474,25 @@ async function resolveTurn(battleId: string) {
   for (const action of ordered) {
     const actor = partState.get(action.characterId);
     if (!actor || !actor.alive) continue;
+
+    // Stun gates ALL actions; silence only gates skills. Both decrement at end of turn.
+    const isStunned = actor.statuses.some((s) => s.kind === "stun");
+    const isSilenced = actor.statuses.some((s) => s.kind === "silence");
+    if (isStunned) {
+      log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は【スタン】で動けない。` });
+      continue;
+    }
+
     if (action.actionType === "defend") {
       actor.defending = true;
       log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は身を守った。` });
       continue;
     }
     if (action.actionType === "skill" && action.skillId) {
+      if (isSilenced) {
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は【沈黙】でスキルを唱えられない。` });
+        continue;
+      }
       const skill = await prisma.skill.findUnique({ where: { id: action.skillId } });
       if (!skill || actor.mp < skill.cost) {
         log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}はスキルを使えなかった。` });
@@ -500,6 +540,12 @@ async function resolveTurn(battleId: string) {
           if (statusKind && applies) {
             applyStatus(target, statusKind, Math.max(2, Math.floor(skill.power / 6)), Math.max(2, Math.ceil(actor.mat / 4)));
             log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${target.name}は【${statusLabel(statusKind)}】状態になった。` });
+            // First-time-status achievement hooks.
+            try {
+              if (statusKind === "silence") await awardAchievement("status_silence", actor.id);
+              if (statusKind === "bleed") await awardAchievement("status_bleed", actor.id);
+              if (statusKind === "curse") await awardAchievement("status_curse", actor.id);
+            } catch { /* non-fatal */ }
           }
         }
         if (target.hp <= 0) {
@@ -578,6 +624,17 @@ async function resolveTurn(battleId: string) {
           target.hp = 0;
           target.alive = false;
           log.push({ turn: battle.turn, ts: Date.now(), text: `${target.name}は倒れた…。` });
+        } else {
+          // Element-based chance to inflict status on the player target.
+          // Higher-level enemies are more likely to land them.
+          const inflictChance = Math.min(0.04 + enemy.level * 0.01, 0.25);
+          if (Math.random() < inflictChance) {
+            const kind = inferStatusFromSkill("attack", enemy.element);
+            if (kind) {
+              applyStatus(target, kind, 2 + Math.floor(enemy.level / 8), Math.max(2, Math.ceil(enemy.atk / 8)));
+              log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${target.name}は【${statusLabel(kind)}】状態になった。` });
+            }
+          }
         }
       }
     }
@@ -590,13 +647,26 @@ async function resolveTurn(battleId: string) {
     }
   }
 
+  // Tick down player statuses at end of turn.
+  for (const ps of partState.values()) {
+    if (ps.statuses.length === 0) continue;
+    ps.statuses = ps.statuses
+      .map((s) => ({ ...s, remaining: s.remaining - 1 }))
+      .filter((s) => s.remaining > 0);
+  }
+
   // Persist participant updates. Use ps.alive && hp > 0 (not just hp > 0) so
   // a voluntary leaver who walked off the field with HP remaining doesn't get
   // resurrected when the turn resolves.
   for (const ps of partState.values()) {
     await prisma.battleParticipant.update({
       where: { battleId_characterId: { battleId: battle.id, characterId: ps.id } },
-      data: { hp: Math.max(0, ps.hp), mp: Math.max(0, ps.mp), alive: ps.alive && ps.hp > 0 },
+      data: {
+        hp: Math.max(0, ps.hp),
+        mp: Math.max(0, ps.mp),
+        alive: ps.alive && ps.hp > 0,
+        statusesJson: JSON.stringify(ps.statuses),
+      },
     });
   }
 
@@ -607,21 +677,28 @@ async function resolveTurn(battleId: string) {
   if (allEnemiesDown) {
     clearTurnTimeout(battle.id);
     log.push({ turn: battle.turn, ts: Date.now(), text: `戦闘に勝利した！` });
-    const isBossBattle = battle.kind === "boss";
+    const isBossBattle = battle.kind === "boss" || battle.kind === "boss_weekly";
+    const isWeeklyBoss = battle.kind === "boss_weekly";
+    const announcementPrefix = isWeeklyBoss
+      ? `[週末のボス討伐 T${battle.bossTier ?? "?"}]`
+      : `[本日のボス討伐]`;
     if (isBossBattle) {
       // First-kill of this slug across the world is an announcement event.
       try {
         if (battle.bossSlug) {
           const already = await prisma.announcement.findFirst({
-            where: { title: { contains: `[本日のボス討伐] ${battle.bossSlug}` } },
+            where: { title: { contains: `${announcementPrefix} ${battle.bossSlug}` } },
             select: { id: true },
           });
           if (!already) {
             const partyName = (battle as any).party?.name ?? "あるパーティー";
+            const bossLabel = isWeeklyBoss
+              ? `今週の${battle.bossTier === 3 ? "頂上" : battle.bossTier === 2 ? "上級" : "中級"}ボス`
+              : "本日のボス";
             const a = await prisma.announcement.create({
               data: {
-                title: `[本日のボス討伐] ${battle.bossSlug} ― ${enemies[0]?.name ?? "強敵"} 討滅`,
-                body: `${partyName} が本日のボス『${enemies[0]?.name ?? "強敵"}』を討ち滅ぼした。世界はその名を覚える。`,
+                title: `${announcementPrefix} ${battle.bossSlug} ― ${enemies[0]?.name ?? "強敵"} 討滅`,
+                body: `${partyName} が${bossLabel}『${enemies[0]?.name ?? "強敵"}』を討ち滅ぼした。世界はその名を覚える。`,
               },
             });
             try { (await import("@/lib/socket")).getIO()?.emit("system:announcement", a); } catch { /* non-fatal */ }
@@ -716,20 +793,29 @@ async function resolveTurn(battleId: string) {
               }
             }
           }
-          // Boss kills always drop something, and the tier is forced epic at
-          // minimum (legendary on a coin flip).
+          // Boss kills always drop something. Daily boss: epic baseline / 35% legendary.
+          // Weekly boss scales with tier: T1 epic baseline / T2 forced legendary 50% / T3 forced legendary.
           if (isBossBattle) {
-            const tier = Math.random() < 0.35 ? "legendary" : "epic";
-            const bossDrop = await rollEquipmentDrop(p.id, avgEnemyLevel, { forcedTier: tier, alwaysDrop: true });
-            if (bossDrop) {
-              log.push({
-                turn: battle.turn,
-                ts: Date.now(),
-                text: `★ ${p.name} はボス討伐の証 《${tierLabel(bossDrop.tier)}》 『${bossDrop.displayName}』 を手にした！`,
-              });
-              if (bossDrop.tier === "legendary") {
-                const a = await awardAchievement("first_legendary", p.id);
-                if (a) log.push({ turn: battle.turn, ts: Date.now(), text: `🏆 ${p.name} は称号「${a.title}」を獲得した。` });
+            let tier: "epic" | "legendary";
+            if (isWeeklyBoss) {
+              const t = battle.bossTier ?? 1;
+              tier = t >= 3 ? "legendary" : (Math.random() < (t === 2 ? 0.6 : 0.4) ? "legendary" : "epic");
+            } else {
+              tier = Math.random() < 0.35 ? "legendary" : "epic";
+            }
+            const dropCount = isWeeklyBoss && (battle.bossTier ?? 1) >= 2 ? 2 : 1;
+            for (let i = 0; i < dropCount; i++) {
+              const bossDrop = await rollEquipmentDrop(p.id, avgEnemyLevel, { forcedTier: tier, alwaysDrop: true });
+              if (bossDrop) {
+                log.push({
+                  turn: battle.turn,
+                  ts: Date.now(),
+                  text: `★ ${p.name} はボス討伐の証 《${tierLabel(bossDrop.tier)}》 『${bossDrop.displayName}』 を手にした！`,
+                });
+                if (bossDrop.tier === "legendary") {
+                  const a = await awardAchievement("first_legendary", p.id);
+                  if (a) log.push({ turn: battle.turn, ts: Date.now(), text: `🏆 ${p.name} は称号「${a.title}」を獲得した。` });
+                }
               }
             }
           }
@@ -752,7 +838,7 @@ async function resolveTurn(battleId: string) {
             // Anyone in the very-first-kill party gets the achievement; we
             // detect that by checking that we *just* announced this slug.
             const ann = await prisma.announcement.findFirst({
-              where: { title: { contains: `[本日のボス討伐] ${battle.bossSlug}` } },
+              where: { title: { contains: `${announcementPrefix} ${battle.bossSlug}` } },
               select: { createdAt: true },
             });
             if (ann && Date.now() - ann.createdAt.getTime() < 60_000) {
@@ -870,28 +956,38 @@ async function getMaxHp(characterId: string) {
 
 function statusLabel(kind: StatusKind): string {
   switch (kind) {
-    case "poison": return "毒";
-    case "burn":   return "火傷";
-    case "stun":   return "スタン";
+    case "poison":  return "毒";
+    case "burn":    return "火傷";
+    case "stun":    return "スタン";
+    case "silence": return "沈黙";
+    case "bleed":   return "出血";
+    case "curse":   return "呪い化";
   }
 }
 
 function inferStatusFromSkill(type: string, element: string | null | undefined): StatusKind | null {
   if (type === "debuff") {
-    if (element === "fire") return "burn";
-    if (element === "dark") return "poison";
+    if (element === "fire")  return "burn";
+    if (element === "dark")  return "curse";
+    if (element === "light") return "silence";
+    if (element === "wind")  return "silence";
+    if (element === "earth") return "bleed";
+    if (element === "water") return "poison";
     return "stun";
   }
   // Attack skills: only on crit (handled by caller). Match by element.
   if (type === "attack" || type === "special") {
-    if (element === "fire") return "burn";
-    if (element === "dark") return "poison";
+    if (element === "fire")  return "burn";
+    if (element === "dark")  return "poison";
     if (element === "light") return "stun";
+    if (element === "earth") return "bleed";
+    if (element === "wind")  return "silence";
+    if (element === "water") return "curse";
   }
   return null;
 }
 
-function applyStatus(target: EnemyState, kind: StatusKind, duration: number, power: number) {
+function applyStatus(target: { statuses?: StatusEffect[] }, kind: StatusKind, duration: number, power: number) {
   if (!target.statuses) target.statuses = [];
   // Refresh existing same-kind status: take the longer remaining, stronger power.
   const existing = target.statuses.find((s) => s.kind === kind);
@@ -908,7 +1004,7 @@ function applyStatus(target: EnemyState, kind: StatusKind, duration: number, pow
 // caller subtracts `damage` from target.hp and adds `lifesteal` to actor.hp.
 function applyEffects(
   baseDmg: number,
-  actor: { effects: AggregatedEffects },
+  actor: { effects: AggregatedEffects; statuses?: StatusEffect[] },
   target: EnemyState,
 ): { damage: number; lifesteal: number; isCrit: boolean; tagText: string } {
   const slayBonus = actor.effects.slay[target.creatureType] ?? 0;
@@ -917,13 +1013,17 @@ function applyEffects(
   const critRate = Math.min(60, baseCritRate + actor.effects.critRateBonus);
   const isCrit = Math.random() * 100 < critRate;
   const critMult = isCrit ? 1.5 + actor.effects.critDamageBonus / 100 : 1.0;
-  const damage = Math.max(1, Math.floor(baseDmg * slayMult * critMult));
+  // 【呪い化】halves outgoing damage for the duration.
+  const cursed = (actor.statuses ?? []).some((s) => s.kind === "curse");
+  const curseMult = cursed ? 0.5 : 1.0;
+  const damage = Math.max(1, Math.floor(baseDmg * slayMult * critMult * curseMult));
   const lifesteal = actor.effects.lifestealPercent > 0
     ? Math.max(0, Math.floor(damage * actor.effects.lifestealPercent / 100))
     : 0;
   const tags: string[] = [];
   if (isCrit) tags.push("【クリティカル！】");
   if (slayBonus > 0) tags.push(`【特効 ×${(slayMult).toFixed(2)}】`);
+  if (cursed) tags.push("【呪い化 ×0.5】");
   return { damage, lifesteal, isCrit, tagText: tags.join("") };
 }
 

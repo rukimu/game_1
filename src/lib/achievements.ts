@@ -38,6 +38,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { slug: "cursed_lv30", title: "呪を引き受ける者", description: "呪い職のまま Lv30 に達した。", titleSlug: "呪を引き受ける者", rarity: "legendary", hidden: true },
   { slug: "cleanse_helper", title: "呪を解く手", description: "他者の呪いを解除する儀式に参加した。", titleSlug: "呪を解く手", rarity: "rare" },
   { slug: "cleanse_thrice", title: "解放者", description: "3 人以上の呪いを解除する儀式に参加した。", titleSlug: "解放者", rarity: "epic" },
+  { slug: "cleanse_five", title: "呪を断つ者", description: "5 人以上の呪いを解除する儀式に参加した。", titleSlug: "呪を断つ者", rarity: "epic" },
   { slug: "cleanse_ten", title: "呪縛の解放者", description: "10 人以上の呪いを解除する儀式に参加した。", titleSlug: "呪縛の解放者", rarity: "legendary" },
 
   // -- Duels --
@@ -48,6 +49,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { slug: "duel_rating_1700", title: "銀の誇り", description: "決闘レート 1700 に到達した。", titleSlug: "銀の誇り", rarity: "rare" },
   { slug: "duel_rating_1900", title: "金の誇り", description: "決闘レート 1900 に到達した。", titleSlug: "金の誇り", rarity: "epic" },
   { slug: "duel_rating_2100", title: "玉座の誇り", description: "決闘レート 2100 に到達した。", titleSlug: "玉座の誇り", rarity: "legendary" },
+  { slug: "arena_top_10", title: "闘技場の十傑", description: "闘技場ランキングの 10 位以内に入った。", titleSlug: "闘技場の十傑", rarity: "rare" },
+  { slug: "arena_top_5", title: "闘技場の五傑", description: "闘技場ランキングの 5 位以内に入った。", titleSlug: "闘技場の五傑", rarity: "epic" },
+  { slug: "arena_top_1", title: "闘技場の頂点", description: "闘技場ランキングの 1 位を獲得した。", titleSlug: "闘技場の頂点", rarity: "legendary" },
 
   // -- Battle / hack-and-slash --
   { slug: "first_blood", title: "初陣", description: "最初の戦闘に勝利した。", rarity: "common" },
@@ -62,6 +66,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { slug: "all_slots_rare", title: "完全装備", description: "全スロットを Rare 以上で固めた。", titleSlug: "完全装備", rarity: "epic", hidden: true },
   { slug: "first_crit", title: "刃のひらめき", description: "戦闘でクリティカルを引き起こした。", rarity: "common" },
   { slug: "first_status_kill", title: "毒の刺", description: "状態異常で敵にとどめを刺した。", rarity: "rare", hidden: true },
+  { slug: "status_silence", title: "言葉を奪う者", description: "敵を【沈黙】状態にした。", rarity: "common" },
+  { slug: "status_bleed", title: "傷の演者", description: "敵を【出血】状態にした。", rarity: "common" },
+  { slug: "status_curse", title: "呪い継ぎし者", description: "敵を【呪い化】状態にした。", titleSlug: "呪い継ぎし者", rarity: "rare" },
 
   // -- Mystery progress --
   { slug: "clue_first", title: "最初の手がかり", description: "シーズンの謎の手がかりを 1 つ集めた。", rarity: "common" },

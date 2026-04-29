@@ -67,6 +67,12 @@ export async function POST(req: Request) {
         if (totalHelps >= 3) {
           await awardAchievement("cleanse_thrice", supporterId);
         }
+        if (totalHelps >= 5) {
+          await awardAchievement("cleanse_five", supporterId);
+        }
+        if (totalHelps >= 10) {
+          await awardAchievement("cleanse_ten", supporterId);
+        }
       } catch { /* non-fatal */ }
     }
     // Server-wide announcement so the rest of the world hears the news.

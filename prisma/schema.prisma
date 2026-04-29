@@ -356,10 +356,12 @@ model Battle {
   id           String   @id @default(cuid())
   partyId      String?
   dungeonRunId String?
-  // normal / boss / duel — drives reward multipliers and announcement text.
+  // normal / boss / boss_weekly / duel — drives reward multipliers and announcement text.
   kind         String   @default("normal")
-  // Tag for boss-of-the-day so multiple players don't re-trigger announcements.
+  // Tag for boss-of-the-day or weekly boss so the engine can dedup announcements.
   bossSlug     String?
+  // Optional difficulty marker for the weekly tiered boss (1/2/3).
+  bossTier     Int?
   status       String   @default("active") // active/ended
   turn         Int      @default(1)
   enemyState   String   // JSON array of enemies w/ hp
@@ -381,6 +383,9 @@ model BattleParticipant {
   mp          Int
   joinedTurn  Int      @default(1)
   alive       Boolean  @default(true)
+  // JSON array of StatusEffect (poison/burn/stun/silence/bleed/curse) carried
+  // across turns. Empty "[]" when the participant has no status.
+  statusesJson String  @default("[]")
   battle      Battle    @relation(fields: [battleId], references: [id], onDelete: Cascade)
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   @@unique([battleId, characterId])
@@ -604,6 +609,10 @@ model SiegeEvent {
   // Winning guild — null until ended.
   winningGuildId String?
   result      String?
+  // Narrative blow-by-blow generated at resolution time so the siege page can
+  // show what actually happened rather than just the final score. JSON array
+  // of { round, line }. Empty "[]" while pending/active.
+  battleLogJson String  @default("[]")
   castle      Castle   @relation(fields: [castleId], references: [id], onDelete: Cascade)
   registrations SiegeRegistration[]
 }

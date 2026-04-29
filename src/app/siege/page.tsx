@@ -37,6 +37,7 @@ export default async function SiegePage() {
               registrations: s.registrations,
               winningGuildName: s.winningGuildName,
               currentOwnerName: s.currentOwnerName,
+              battleLog: s.battleLog,
               myGuildRegistered: !!myGuildId && s.registrations.some((r) => r.guildId === myGuildId),
               canRegister: s.status === "pending" && (myRole === "master" || myRole === "sub"),
             }))}

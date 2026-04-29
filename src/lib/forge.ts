@@ -20,6 +20,7 @@ import {
   type AffixTier,
   type ItemInstance,
 } from "@/lib/affixes";
+import { tickDailyChallenge } from "@/lib/dailyChallenge";
 
 const TIER_ORDER: AffixTier[] = ["common", "rare", "epic", "legendary"];
 
@@ -250,6 +251,8 @@ export async function runForge(
       },
     }),
   ]);
+  // Daily challenge progress: spending gold at the forge counts.
+  try { await tickDailyChallenge({ characterId, goalType: "spend_gold", delta: goldCost }); } catch { /* non-fatal */ }
 
   return {
     ok: true,

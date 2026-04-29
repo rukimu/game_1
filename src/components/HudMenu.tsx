@@ -27,6 +27,7 @@ const ITEMS: Item[] = [
   { href: "/auction", label: "市場", group: "more" },
   { href: "/dungeon", label: "ダンジョン", group: "more", unlock: { kind: "level", min: 3, hint: "Lv3で開放" } },
   { href: "/jobs", label: "転職", group: "more", unlock: { kind: "level", min: 10, hint: "Lv10で開放" } },
+  { href: "/mastery", label: "修練", group: "more", unlock: { kind: "level", min: 15, hint: "Lv15で開放" } },
   { href: "/forge", label: "鍛冶", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
   { href: "/boss", label: "ボス", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放（パーティ必須）" } },
   { href: "/mystery", label: "謎", group: "more", unlock: { kind: "level", min: 4, hint: "Lv4で開放" } },

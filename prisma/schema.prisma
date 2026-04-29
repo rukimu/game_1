@@ -88,6 +88,8 @@ model Character {
   clues           CharacterClue[]
   dungeonRuns     DungeonRun[]
   achievements    CharacterAchievement[]
+  masteryQuests   MasteryQuest[]
+  dailyChallenges DailyChallenge[]
 }
 
 // World-level achievement definitions. Most are seeded statically; some can
@@ -560,6 +562,10 @@ model DungeonRun {
   characterId     String
   partyId         String?
   name            String
+  // Optional themed dungeon key (library/tower/lake/altar/bell). When set,
+  // the run uses the matching enemy bias, boss, and loot table on its
+  // final floor. Null = procedural generic run.
+  theme           String?
   totalFloors     Int
   currentFloor    Int      @default(0)
   status          String   @default("active") // active/cleared/aborted/dead
@@ -578,6 +584,51 @@ model WorldState {
   date        String   @unique
   payload     String   // JSON
   createdAt   DateTime @default(now())
+}
+
+// Mastery quests: per-job-category long-term progression. Three tiers per
+// archetype (Lv15 / Lv30 / Lv45 unlocks). Completing all three of your
+// current category yields a permanent stat boost + a unique title.
+model MasteryQuest {
+  id              String   @id @default(cuid())
+  characterId     String
+  jobCategory     String   // warrior/mage/rogue/cleric/support/...
+  tier            Int      // 1, 2, 3
+  goalType        String   // defeat_enemy / win_battles / use_skill_count / clear_themed_dungeon / explore_towns
+  goalParam       String?
+  goalCount       Int
+  progress        Int      @default(0)
+  completedAt     DateTime?
+  rewardGold      Int      @default(0)
+  rewardExp       Int      @default(0)
+  // Optional title slug to award via Achievement system on completion.
+  rewardTitleSlug String?
+  // Optional permanent stat reward, "atk:2" / "mat:3" / "def:2" etc.
+  rewardStat      String?
+  acceptedAt      DateTime @default(now())
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([characterId, jobCategory, tier])
+  @@index([characterId, completedAt])
+}
+
+// Daily challenges: 3 randomized objectives per character per day. Cleared
+// objectives stack a small bonus; clearing all three on a given day awards
+// a daily bonus chest.
+model DailyChallenge {
+  id              String   @id @default(cuid())
+  characterId     String
+  date            String   // YYYY-MM-DD
+  slotIndex       Int      // 0..2
+  goalType        String   // defeat_enemy / win_battles / spend_gold / drop_gear / clear_dungeon
+  goalParam       String?
+  goalCount       Int
+  progress        Int      @default(0)
+  completedAt     DateTime?
+  rewardExp       Int      @default(0)
+  rewardGold      Int      @default(0)
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([characterId, date, slotIndex])
+  @@index([characterId, date])
 }
 
 model Castle {

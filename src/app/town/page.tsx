@@ -8,6 +8,7 @@ import { getContentGenerationService } from "@/lib/generation/service";
 import { getCurrentSeasonKeywords } from "@/lib/mystery";
 import { getTodayWorldState, jpElementName } from "@/lib/worldstate";
 import { pickTutorialHint } from "@/lib/tutorial";
+import { listTodayChallenges, describeDailyChallenge, tickDailyChallenge } from "@/lib/dailyChallenge";
 import TownActions from "./TownActions";
 import TutorialBox from "./TutorialBox";
 
@@ -87,6 +88,12 @@ export default async function TownPage() {
   // Per-character onboarding hint. Adapts to whether they've fought,
   // looted, joined a party, etc. Hidden after dismissal.
   const tutorialHint = await pickTutorialHint(c.id);
+
+  // Daily challenges: lazy-create today's 3 if missing. Town visit also
+  // counts as one tick of the talk_npc / explore goals — increment progress
+  // before reading so the panel always shows the freshest state.
+  await tickDailyChallenge({ characterId: c.id, goalType: "talk_npc", delta: 1 });
+  const dailyChallenges = await listTodayChallenges(c.id);
   return (
     <main>
       <Hud />
@@ -191,6 +198,37 @@ export default async function TownPage() {
           <div className="panel">
             <div className="text-sm font-bold text-yellow-200 mb-2">冒険</div>
             <Link href="/battle" className="btn-primary block text-center">戦いに出る</Link>
+            <Link href="/mastery" className="btn block text-center mt-2">修練クエスト</Link>
+          </div>
+          <div className="panel">
+            <div className="text-sm font-bold text-yellow-200 mb-2">本日のチャレンジ（3 件）</div>
+            <ul className="space-y-1 text-xs">
+              {dailyChallenges.map((d) => {
+                const pct = Math.min(100, Math.floor((d.progress / d.goalCount) * 100));
+                const done = !!d.completedAt;
+                return (
+                  <li key={d.id} className={`border rounded p-2 ${done ? "border-green-700/60 bg-green-950/15" : "border-yellow-900/40 bg-black/30"}`}>
+                    <div className="flex justify-between gap-1">
+                      <span className={done ? "line-through text-yellow-200/60" : "text-yellow-100"}>
+                        {describeDailyChallenge(d)}
+                      </span>
+                      {done ? (
+                        <span className="text-green-300">★</span>
+                      ) : (
+                        <span className="text-yellow-200/70 tabular-nums">{d.progress}/{d.goalCount}</span>
+                      )}
+                    </div>
+                    {!done && (
+                      <div className="mt-1 h-1 bg-black/50 border border-yellow-900/40 rounded overflow-hidden">
+                        <div className="h-full bg-yellow-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                    <div className="text-[10px] text-yellow-300/70 mt-0.5">EXP +{d.rewardExp} / G +{d.rewardGold}</div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="text-[10px] text-yellow-200/60 mt-1">3 件全クリで追加報酬（EXP +600 / G +500）</div>
           </div>
         </div>
       </div>

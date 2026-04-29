@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { advanceDungeonFloor } from "@/lib/dungeon";
+import { advanceThemedDungeonFloor } from "@/lib/themedDungeon";
 
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const c = await requireActiveCharacter().catch((r) => r);
@@ -9,7 +10,11 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const run = await prisma.dungeonRun.findFirst({ where: { id: params.id, characterId: c.id } });
   if (!run) return NextResponse.json({ error: "no run" }, { status: 404 });
   try {
-    const battle = await advanceDungeonFloor(run.id);
+    // Themed runs use the themed advancer so the final floor spawns a
+    // pre-defined boss instead of a procedural mob.
+    const battle = run.theme
+      ? await advanceThemedDungeonFloor(run.id)
+      : await advanceDungeonFloor(run.id);
     return NextResponse.json({ battleId: battle?.id });
   } catch (e: any) {
     return NextResponse.json({ error: e.message ?? "error" }, { status: 400 });

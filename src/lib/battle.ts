@@ -3,6 +3,8 @@ import { emitBattle } from "@/lib/socket";
 import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { onDungeonBattleEnded } from "@/lib/dungeon";
+import { tickMasteryProgress } from "@/lib/mastery";
+import { tickDailyChallenge } from "@/lib/dailyChallenge";
 import { rollClueDiscovery } from "@/lib/mystery";
 import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance } from "@/lib/affixes";
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
@@ -499,6 +501,8 @@ async function resolveTurn(battleId: string) {
         continue;
       }
       actor.mp -= skill.cost;
+      // Mastery: track skill usage count for use_skill_count quests.
+      try { await tickMasteryProgress({ characterId: actor.id, goalType: "use_skill_count", delta: 1 }); } catch { /* non-fatal */ }
       if (skill.type === "heal") {
         const healAmount = skill.power + Math.floor(actor.mat * 0.4);
         // heal target: lowest hp ally
@@ -777,6 +781,8 @@ async function resolveTurn(battleId: string) {
               ts: Date.now(),
               text: `${p.name}は戦利品 ${flair}『${drop.displayName}』を手に入れた！`,
             });
+            // Daily: drop_gear progress.
+            try { await tickDailyChallenge({ characterId: p.id, goalType: "drop_gear", delta: 1 }); } catch { /* non-fatal */ }
             // tick collect_drop quests
             const collectQs = await prisma.characterQuest.findMany({
               where: { characterId: p.id, completedAt: null, quest: { goalType: "collect_drop" } },
@@ -851,6 +857,13 @@ async function resolveTurn(battleId: string) {
           }
         } catch { /* non-fatal */ }
       }
+      // Mastery + daily challenge progress for the winner.
+      try {
+        await tickMasteryProgress({ characterId: p.id, goalType: "defeat_enemy", delta: enemies.length });
+        await tickMasteryProgress({ characterId: p.id, goalType: "win_battles", delta: 1 });
+        await tickDailyChallenge({ characterId: p.id, goalType: "defeat_enemy", delta: enemies.length });
+        await tickDailyChallenge({ characterId: p.id, goalType: "win_battles", delta: 1 });
+      } catch { /* non-fatal */ }
       // update quest progress for defeat_enemy / win_battles / collect_drop
       const cqs = await prisma.characterQuest.findMany({ where: { characterId: p.id, completedAt: null }, include: { quest: true } });
       for (const cq of cqs) {

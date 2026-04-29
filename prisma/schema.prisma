@@ -309,6 +309,7 @@ model Item {
   generatedBy String  @default("template")
   createdAt   DateTime @default(now())
   inventory   InventoryItem[]
+  guildStorage GuildStorageItem[]
 }
 
 model InventoryItem {
@@ -408,6 +409,25 @@ model Guild {
   createdAt   DateTime @default(now())
   members     GuildMember[]
   castles     CastleOwnership[]
+  storage     GuildStorageItem[]
+}
+
+model GuildStorageItem {
+  id              String   @id @default(cuid())
+  guildId         String
+  itemId          String
+  quantity        Int      @default(1)
+  // Snapshot of the depositing inventory row so per-instance affixes survive.
+  // Empty/null mean "vanilla" (e.g. shop-purchased consumables).
+  displayName     String?
+  instanceJson    String   @default("{}")
+  // Audit trail. depositedByCharacterId is informational (no FK relation so
+  // characters can be deleted without dropping their guild deposits).
+  depositedByCharacterId String?
+  depositedAt     DateTime @default(now())
+  guild           Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  item            Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  @@index([guildId])
 }
 
 model GuildMember {
@@ -437,6 +457,8 @@ model DirectMessage {
   body        String
   readAt      DateTime?
   createdAt   DateTime @default(now())
+  @@index([fromCharacterId, toCharacterId])
+  @@index([toCharacterId, readAt])
 }
 
 model Report {

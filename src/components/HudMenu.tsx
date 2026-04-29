@@ -14,6 +14,7 @@ const ITEMS: Item[] = [
   { href: "/battle", label: "戦闘", group: "primary" },
   { href: "/party", label: "PT", group: "primary" },
 
+  { href: "/messages", label: "DM", group: "more" },
   { href: "/forge", label: "鍛冶", group: "more" },
   { href: "/dungeon", label: "ダンジョン", group: "more" },
   { href: "/boss", label: "ボス", group: "more" },
@@ -29,9 +30,21 @@ const ITEMS: Item[] = [
   { href: "/characters", label: "選択", group: "more" },
 ];
 
-export default function HudMenu({ isAdmin }: { isAdmin: boolean }) {
+export default function HudMenu({ isAdmin, unreadDms = 0 }: { isAdmin: boolean; unreadDms?: number }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  function renderLabel(href: string, label: string) {
+    if (href === "/messages" && unreadDms > 0) {
+      return (
+        <>
+          {label}
+          <span className="ml-1 text-[10px] bg-red-700 text-white rounded px-1.5 py-0.5">{unreadDms}</span>
+        </>
+      );
+    }
+    return label;
+  }
 
   // Close the dropdown on outside click / Escape.
   useEffect(() => {
@@ -58,13 +71,13 @@ export default function HudMenu({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div ref={containerRef} className="ml-auto flex items-center gap-2 flex-wrap relative">
       {ITEMS.filter((i) => i.group === "primary").map((i) => (
-        <Link key={i.href} href={i.href} className="btn">{i.label}</Link>
+        <Link key={i.href} href={i.href} className="btn">{renderLabel(i.href, i.label)}</Link>
       ))}
 
       {/* Desktop: render the "more" group inline. Mobile: collapse behind a toggle. */}
       <div className="hidden sm:flex gap-2 flex-wrap">
         {moreItems.map((i) => (
-          <Link key={i.href} href={i.href} className="btn">{i.label}</Link>
+          <Link key={i.href} href={i.href} className="btn">{renderLabel(i.href, i.label)}</Link>
         ))}
       </div>
 
@@ -86,7 +99,7 @@ export default function HudMenu({ isAdmin }: { isAdmin: boolean }) {
               className="btn text-center"
               onClick={() => setOpen(false)}
             >
-              {i.label}
+              {renderLabel(i.href, i.label)}
             </Link>
           ))}
         </div>

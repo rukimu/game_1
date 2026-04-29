@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { prisma } from "@/lib/prisma";
 import { LEVEL_CAP, expForLevel } from "@/lib/leveling";
+import { countUnreadDms } from "@/lib/dm";
 import HudMenu from "@/components/HudMenu";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
@@ -25,6 +26,7 @@ export default async function Hud() {
   const isMaxLevel = character.level >= LEVEL_CAP;
   const expNeeded = isMaxLevel ? 0 : expForLevel(character.level);
   const expRemaining = Math.max(0, expNeeded - character.exp);
+  const unreadDms = await countUnreadDms(character.id);
 
   return (
     <div className="panel mb-3">
@@ -65,7 +67,7 @@ export default async function Hud() {
 
         <div title={`所持金 ${character.gold}G`}>G {character.gold}</div>
 
-        <HudMenu isAdmin={!!character.user.isAdmin} />
+        <HudMenu isAdmin={!!character.user.isAdmin} unreadDms={unreadDms} />
       </div>
       {!isMaxLevel && (
         <div className="text-[10px] sm:text-xs text-yellow-200/60 mt-1">

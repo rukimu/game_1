@@ -1064,7 +1064,7 @@ async function countWinStreak(characterId: string): Promise<number> {
 // (not exclusively — variety still matters), then layer affixes on top to
 // produce a unique instance. Two players who both find a "古びた剣" will see
 // genuinely different weapons.
-async function rollEquipmentDrop(
+export async function rollEquipmentDrop(
   characterId: string,
   enemyLevel: number,
   opts?: { forcedTier?: "common" | "rare" | "epic" | "legendary"; alwaysDrop?: boolean },

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { getCurrentSeasonKeywords } from "@/lib/mystery";
+import { getTodayWorldState, jpElementName } from "@/lib/worldstate";
 import TownActions from "./TownActions";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,8 @@ export default async function TownPage() {
     : null;
   const archetype = job?.category ?? null;
   const seasonClueWords = await getCurrentSeasonKeywords();
-  const dayKey = new Date().toISOString().slice(0, 10);
+  const world = await getTodayWorldState();
+  const dayKey = world.date;
   const gen = getContentGenerationService();
   const npcLines = town
     ? await Promise.all(
@@ -66,6 +68,15 @@ export default async function TownPage() {
               <p className="text-sm text-yellow-100/80">{town.description}</p>
               <div className="text-xs text-yellow-200/70">
                 危険度 {town.danger} ・ 治安 {town.security} ・ 経済 {town.economy} ・ 宿屋 {town.innFee}G
+              </div>
+              <div className="border-t border-b border-yellow-900/40 py-2 my-2 text-xs text-yellow-200/90 space-y-0.5">
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  <span><span className="text-yellow-300/70">{world.date}</span> の世界:</span>
+                  <span className="text-yellow-100">{world.weatherTone}</span>
+                  <span>弱点属性 <span className="text-yellow-100">{jpElementName(world.weakElement)}</span></span>
+                  <span>動向 <span className="text-yellow-100">{world.monsterTrend}</span></span>
+                </div>
+                <div className="italic text-yellow-100/80">― {world.headline}</div>
               </div>
               <TownActions townId={town.id} />
               <section className="mt-3">

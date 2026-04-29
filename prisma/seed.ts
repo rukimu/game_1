@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { generateAllTowns, generateNpcsForTown } from "../src/lib/townGen";
+import { generateMassJobs } from "../src/lib/jobGen";
+import { generateMassItems } from "../src/lib/itemGen";
 
 const prisma = new PrismaClient();
 
@@ -23,48 +26,52 @@ async function main() {
     await prisma.user.update({ where: { id: existing.id }, data: { isAdmin: true } });
   }
 
-  // Towns
-  const towns = [
-    { name: "始まりの街アルダ", region: "中央", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。" },
-    { name: "湖畔の街ミルレ", region: "西", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。" },
-    { name: "霧の街ヴェルナ", region: "北", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。" },
+  // Towns — generated in bulk via the procedural townGen so the world map
+  // is dense (14 regions × 8 towns = 112 towns by default). The first 3
+  // legacy names are preserved as aliases by upserting before generation.
+  const legacyTowns = [
+    { name: "始まりの街アルダ", region: "中央高原", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。", rumorTrend: "neutral" },
+    { name: "湖畔の街ミルレ", region: "湖畔地方", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。", rumorTrend: "neutral" },
+    { name: "霧の街ヴェルナ", region: "霧の北縁", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。", rumorTrend: "ominous" },
   ];
-  for (const t of towns) {
+  for (const t of legacyTowns) {
     await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
   }
+  const generatedTowns = generateAllTowns(8); // 14 regions * 8 = 112
+  for (const t of generatedTowns) {
+    const exists = await prisma.town.findUnique({ where: { name: t.name } });
+    if (!exists) {
+      await prisma.town.create({ data: t });
+    }
+  }
+  console.log(`  towns: ${legacyTowns.length} legacy + ${generatedTowns.length} generated = ${legacyTowns.length + generatedTowns.length}`);
 
-  // Seed NPCs into each starter town. Their `dialogue` field is a fallback;
-  // the live town page regenerates lines per-visit so the world keeps speaking
-  // about whatever the season's mystery is currently surfacing.
-  const NPC_SEED: Record<string, Array<{ name: string; role: string; dialogue: string }>> = {
-    "始まりの街アルダ": [
-      { name: "ガロン", role: "酒場の主人", dialogue: "ようこそ。今日はちょっと変わった噂が流れているよ。" },
-      { name: "リヤ", role: "宿屋の主人", dialogue: "一晩あたためた寝床と、温かい飯を出すよ。" },
-      { name: "老師ヒース", role: "転職屋の老人", dialogue: "心当たりがあるなら、そこを開いてみるといい。鍵はあんた自身だ。" },
-    ],
-    "湖畔の街ミルレ": [
-      { name: "セリオ", role: "酒場の主人", dialogue: "湖風の街は噂もよく流れる。座って聞いていきなよ。" },
-      { name: "占い師ティナ", role: "占い師", dialogue: "あんたの星には、まだ見ぬ職が浮かんでいる…。" },
-      { name: "詩人ヤン", role: "旅の吟遊詩人", dialogue: "新しい歌を覚えたんだ、聴いていくかい？" },
-    ],
-    "霧の街ヴェルナ": [
-      { name: "ボルト", role: "酒場の主人", dialogue: "霧の夜に来たな。ここでは冗談みたいな話が本当になる。" },
-      { name: "司書クラエル", role: "占い師", dialogue: "禁書の写本が、また一冊消えた。読めない頁ほど消える。" },
-      { name: "宿屋のミラ", role: "宿屋の主人", dialogue: "霧が濃い夜は、外を歩かない方がいい。" },
-    ],
+  // NPCs — procedural per town. Each town gets ~5 NPCs with sampled-without-
+  // replacement names + roles, plus theme-appropriate fallback dialogue.
+  // Live town page regenerates the actual line per visit (Cycle 17 memory).
+  const allTowns = await prisma.town.findMany({ select: { id: true, name: true, region: true } });
+  const themeByRegion: Record<string, string> = {
+    "中央高原": "central", "湖畔地方": "lakeside", "霧の北縁": "mist", "黄金の南海岸": "gold",
+    "黒森地方": "darkforest", "霜の高山": "frost", "塩の砂漠": "desert", "古王国の遺跡群": "ruin",
+    "東風の谷": "valley", "影海岸": "shadow", "聖印の高原": "holy", "灰落としの平原": "ash",
+    "鏡映の湖沼": "mirror", "鐘塔の麓": "bell",
+    "中央": "central", "西": "lakeside", "北": "mist",
   };
-  for (const [townName, npcs] of Object.entries(NPC_SEED)) {
-    const town = await prisma.town.findUnique({ where: { name: townName } });
-    if (!town) continue;
+  let npcTotal = 0;
+  for (const town of allTowns) {
+    const npcs = generateNpcsForTown(town.name, themeByRegion[town.region] ?? "central", 5);
     for (const n of npcs) {
       const exists = await prisma.npc.findFirst({ where: { townId: town.id, name: n.name } });
       if (!exists) {
         await prisma.npc.create({ data: { townId: town.id, name: n.name, role: n.role, dialogue: n.dialogue } });
+        npcTotal++;
       }
     }
   }
+  console.log(`  npcs: +${npcTotal} generated (5 per town target)`);
 
-  // Initial jobs (beginner) so new characters can adopt one
+  // Initial 5 beginner jobs (anchor entries the quiz maps onto). Kept as
+  // upserts so they always exist regardless of generator output.
   const initialJobs = [
     { name: "見習い戦士", category: "warrior", rank: "beginner", description: "前線で剣を振るう道。", baseStats: JSON.stringify({ hp: 40, mp: 8, atk: 12, def: 10, mat: 4, mdf: 6, spd: 6 }) },
     { name: "見習い魔導士", category: "mage", rank: "beginner", description: "古き書と詠唱に身を捧げる道。", baseStats: JSON.stringify({ hp: 25, mp: 30, atk: 5, def: 4, mat: 14, mdf: 10, spd: 6 }) },
@@ -75,8 +82,7 @@ async function main() {
   for (const j of initialJobs) {
     await prisma.job.upsert({ where: { name: j.name }, update: {}, create: j });
   }
-
-  // Pair each beginner job with one starter skill
+  // Starter skills for the 5 anchor jobs.
   const starters = [
     { jobName: "見習い戦士", skill: { name: "斬撃", description: "敵単体に攻撃を加える。", type: "attack", element: "none", power: 14, cost: 2, cooldown: 0, targetType: "enemy" } },
     { jobName: "見習い魔導士", skill: { name: "蒼焔斬", description: "火属性の魔法攻撃。", type: "attack", element: "fire", power: 18, cost: 5, cooldown: 0, targetType: "enemy" } },
@@ -91,9 +97,55 @@ async function main() {
     if (!exists) await prisma.skill.create({ data: { jobId: job.id, ...s.skill } });
   }
 
-  // ----- Items: weapons (with job affinities) + armor + consumables ---------
-  // jobAffinity is JSON. Empty array = universal. Multi-archetype weapons get
-  // bonuses for any matching wielder; non-matching wielders get half-bonus.
+  // Mass-generate the rest of the job universe. ~200 per category × 9 cats
+  // (capped by combinatorial space for rare/cursed/heretic) → ~1500 jobs +
+  // 3-4 procedurally-named skills each = ~5000 skills.
+  const massJobs = generateMassJobs(200);
+  let jobsCreated = 0;
+  let skillsCreated = 0;
+  for (const j of massJobs) {
+    const existing = await prisma.job.findUnique({ where: { name: j.name } });
+    if (existing) continue;
+    const job = await prisma.job.create({
+      data: {
+        name: j.name,
+        category: j.category,
+        rank: j.rank,
+        description: j.description,
+        isCursed: j.isCursed,
+        baseStats: JSON.stringify(j.baseStats),
+      },
+    });
+    jobsCreated++;
+    for (const s of j.skills) {
+      try {
+        await prisma.skill.create({
+          data: { jobId: job.id, ...s, element: s.element ?? null },
+        });
+        skillsCreated++;
+      } catch { /* ignore name uniqueness rare-collision */ }
+    }
+  }
+  console.log(`  jobs: 5 anchor + ${jobsCreated} generated = ${5 + jobsCreated} (skills: ${skillsCreated} attached)`);
+
+  // ----- Items: mass-generated weapons + armor + consumables ----------------
+  // generateMassItems() produces ~600 weapons (13 classes × ~45) + ~225 armor
+  // (7 slots × ~32) + 10 consumables. Combined with per-instance affixes,
+  // the actual unique-instance space is in the hundreds of thousands.
+  const massItems = generateMassItems(45, 32);
+  let itemsCreated = 0;
+  for (const it of massItems) {
+    const existing = await prisma.item.findFirst({ where: { name: it.name } });
+    if (!existing) {
+      await prisma.item.create({ data: it });
+      itemsCreated++;
+    }
+  }
+  console.log(`  items: +${itemsCreated} generated`);
+
+  // ----- Legacy hand-curated items (kept so quest references / seed cookies
+  // that point at "古びた剣" etc. still resolve). The generator may also
+  // produce items with these names; the upsert pattern reconciles.
   const items: Array<{
     name: string;
     description: string;
@@ -255,13 +307,32 @@ async function main() {
     }
   }
 
-  // Initial castle (scaffolding for siege)
-  const castle = await prisma.castle.findFirst({ where: { name: "アルダ城" } });
-  if (!castle) {
-    await prisma.castle.create({
-      data: { name: "アルダ城", region: "中央", description: "中央地方を見下ろす由緒ある城。" },
-    });
+  // Castles — one per region so siege participation has territorial meaning.
+  const castles = [
+    { name: "アルダ城", region: "中央高原", description: "中央地方を見下ろす由緒ある城。" },
+    { name: "湖鏡城", region: "湖畔地方", description: "湖面に映る石壁が独特の景観を持つ。" },
+    { name: "霧塔城", region: "霧の北縁", description: "塔の上半分が常に霧に隠れている。" },
+    { name: "黄金城", region: "黄金の南海岸", description: "海風と陽光に磨かれた壁面が陽に光る。" },
+    { name: "黒森砦", region: "黒森地方", description: "森に呑まれかけた半廃墟の砦。" },
+    { name: "霜帝城", region: "霜の高山", description: "氷柱が天然の城壁となっている。" },
+    { name: "塩塔", region: "塩の砂漠", description: "塩の柱で支えられた奇怪な塔。" },
+    { name: "古王の祠", region: "古王国の遺跡群", description: "城というより巨大な祠跡。" },
+    { name: "東風城", region: "東風の谷", description: "稲穂の海に浮かぶように見える石城。" },
+    { name: "影潮城", region: "影海岸", description: "黒潮を背に建つ侵入を拒む要塞。" },
+    { name: "聖印大聖殿", region: "聖印の高原", description: "城を兼ねた巨大な聖殿。" },
+    { name: "灰煤城", region: "灰落としの平原", description: "煤けた壁面が独特の質感を持つ。" },
+    { name: "鏡映城", region: "鏡映の湖沼", description: "湖底にもう一つの城が映ると噂される。" },
+    { name: "鐘塔本城", region: "鐘塔の麓", description: "三時間に一度、城自身の鐘が鳴る。" },
+  ];
+  let castlesCreated = 0;
+  for (const c of castles) {
+    const exists = await prisma.castle.findFirst({ where: { name: c.name } });
+    if (!exists) {
+      await prisma.castle.create({ data: c });
+      castlesCreated++;
+    }
   }
+  console.log(`  castles: +${castlesCreated} (${castles.length} total)`);
 
   console.log("Seed complete.");
 }

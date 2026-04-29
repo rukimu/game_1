@@ -74,6 +74,36 @@
 
 ## DONE
 
+### Cycle 9 (2026-04-29) — 街に「最近の世界の出来事」表示
+- [x] /town に最新 5 件の Announcement を表示。呪い告知・ボス討伐・謎解明が一目で分かる
+
+### Cycle 8 (2026-04-29) — 本日のボス
+- [x] Battle スキーマに kind / bossSlug を追加
+- [x] src/lib/boss.ts: 日付決定論的なボス生成 (世界状態とトーンを反映)
+- [x] /api/boss/start: パーティ単位 / 1 日 1 回 / 進行中バトルチェック
+- [x] battle.ts のボス勝利パスで初討伐告知 + 確定 epic/legendary 装備
+- [x] /boss ページ + HUD 「ボス」リンク
+
+### Cycle 7 (2026-04-29) — 世界が毎日少し変わる
+- [x] src/lib/worldstate.ts: 日付ごとの WorldState を lazy 生成 (静穏/不穏/祝祭/凶兆)
+- [x] /town に「今日の世界」ヘッドライン表示
+
+### Cycle 6 (2026-04-29) — 決闘 UI 完成
+- [x] /pvp 全面リライト: 受信中/送信中/最近の決闘 を分離
+- [x] 近レベル相手のサジェストボタン (1 クリック挑戦)
+- [x] 戦績カード + 累計勝利数ランキング
+- [x] 決闘シミュ: 装備 + アフィックス効果 (crit/lifesteal) を反映
+
+### Cycle 5 (2026-04-29) — 呪い職を物語化
+- [x] 呪い職就業時のサーバー告知
+- [x] 解除完了時の告知 + 解除協力者全員に 200G 報酬
+- [x] /curse ページで呪われし者一覧を可視化
+
+### Cycle 4 (2026-04-29) — 戦闘深度
+- [x] アフィックスに structured SpecialEffect[] (crit_rate, crit_damage, lifesteal, post_battle_regen, speed_aura, slay)
+- [x] 敵に creatureType を推論して付与
+- [x] battle.ts: applyEffects ヘルパで crit + slay + lifesteal を適用、戦闘後リジェネ
+
 ### Cycle 3 (2026-04-29) — テーマ: ハクスラ × 装備の意味づけ
 
 - [x] **InventoryItem に per-instance フィールド** — `displayName` + `instanceJson` 追加 (`prisma/schema.prisma`)

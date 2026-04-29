@@ -57,6 +57,13 @@ export default async function TownPage() {
         })
       )
     : [];
+  // The world is alive — surface recent announcements (curse onsets,
+  // boss first-kills, mystery-solver flashes) on the town page so a
+  // returning player feels the realm shifting under their feet.
+  const recentEvents = await prisma.announcement.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
   return (
     <main>
       <Hud />
@@ -108,6 +115,22 @@ export default async function TownPage() {
                   {myQuests.map((q) => <li key={q.id}>・{q.quest.title}（{q.progress}/{q.quest.goalCount}）</li>)}
                 </ul>
               </section>
+              {recentEvents.length > 0 && (
+                <section className="mt-3">
+                  <h3 className="text-sm font-bold text-yellow-200 mb-1">最近の世界の出来事</h3>
+                  <ul className="space-y-1">
+                    {recentEvents.map((a) => (
+                      <li key={a.id} className="border border-amber-900/40 bg-black/30 rounded p-2">
+                        <div className="text-xs text-amber-300/80">
+                          {a.createdAt.toISOString().slice(0, 16).replace("T", " ")}
+                        </div>
+                        <div className="text-sm font-bold text-amber-200">{a.title}</div>
+                        <div className="text-xs text-yellow-100/80">{a.body}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">街にいる人々</h3>
                 <ul className="text-xs text-yellow-100/80 space-y-1">

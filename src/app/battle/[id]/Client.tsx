@@ -13,7 +13,21 @@ function getSocket() {
 
 type Skill = { id: string; name: string; type: string; cost: number; description: string };
 
-export default function BattleClient({ battleId, characterId, skills }: { battleId: string; characterId: string; skills: Skill[] }) {
+export default function BattleClient({
+  battleId,
+  characterId,
+  skills,
+  canJoin,
+  canLeave,
+  isParticipant,
+}: {
+  battleId: string;
+  characterId: string;
+  skills: Skill[];
+  canJoin: boolean;
+  canLeave: boolean;
+  isParticipant: boolean;
+}) {
   const [state, setState] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [skillId, setSkillId] = useState<string | null>(null);
@@ -84,6 +98,30 @@ export default function BattleClient({ battleId, characterId, skills }: { battle
     setTimeout(() => router.push("/town"), 30);
   }
 
+  async function joinNow() {
+    setSubmitting(true);
+    setErr(null);
+    const r = await fetch(`/api/battles/${battleId}/join`, { method: "POST" });
+    if (!r.ok) setErr((await r.json().catch(() => ({}))).error ?? "参戦できません");
+    setSubmitting(false);
+    router.refresh();
+  }
+
+  async function leaveNow() {
+    setSubmitting(true);
+    setErr(null);
+    const r = await fetch(`/api/battles/${battleId}/leave`, { method: "POST" });
+    if (!r.ok) {
+      setErr((await r.json().catch(() => ({}))).error ?? "離脱できません");
+      setSubmitting(false);
+      return;
+    }
+    setAuto(false);
+    setSubmitting(false);
+    router.refresh();
+    setTimeout(() => router.push("/town"), 30);
+  }
+
   if (!state) return <div className="panel">読み込み中…</div>;
   const { battle, enemies, log } = state;
 
@@ -119,14 +157,16 @@ export default function BattleClient({ battleId, characterId, skills }: { battle
         <div className="panel">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-bold text-yellow-200">ターン {battle.turn}</div>
-            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={auto}
-                onChange={(e) => setAuto(e.target.checked)}
-              />
-              <span className={auto ? "text-yellow-200" : "text-yellow-200/60"}>自動戦闘</span>
-            </label>
+            {isParticipant && (
+              <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={auto}
+                  onChange={(e) => setAuto(e.target.checked)}
+                />
+                <span className={auto ? "text-yellow-200" : "text-yellow-200/60"}>自動戦闘</span>
+              </label>
+            )}
           </div>
           <div className="space-y-1">
             {enemies.map((e: any, i: number) => (
@@ -136,7 +176,7 @@ export default function BattleClient({ battleId, characterId, skills }: { battle
                   <div className="h-full bg-red-700/80" style={{ width: `${Math.max(0, (e.hp / e.maxHp) * 100)}%` }} />
                 </div>
                 <div className="text-xs tabular-nums w-16 text-right">{e.hp}/{e.maxHp}</div>
-                {e.alive && (
+                {isParticipant && e.alive && (
                   <button
                     className="btn"
                     onPointerDown={() => startHoldAttack(i)}
@@ -149,21 +189,36 @@ export default function BattleClient({ battleId, characterId, skills }: { battle
                     攻撃
                   </button>
                 )}
-                {e.alive && skillId && (
+                {isParticipant && e.alive && skillId && (
                   <button className="btn-primary" onClick={() => send("skill", i)} disabled={submitting}>スキル</button>
                 )}
               </div>
             ))}
           </div>
           <div className="mt-3 flex gap-2 flex-wrap items-center">
-            <button className="btn" onClick={() => send("defend")} disabled={submitting}>防御</button>
-            {skills.length > 0 && (
-              <select className="input w-auto" value={skillId ?? ""} onChange={(e) => setSkillId(e.target.value || null)}>
-                <option value="">スキルを選ぶ</option>
-                {skills.map((s) => <option key={s.id} value={s.id}>{s.name}（cost:{s.cost}）</option>)}
-              </select>
+            {isParticipant && (
+              <>
+                <button className="btn" onClick={() => send("defend")} disabled={submitting}>防御</button>
+                {skills.length > 0 && (
+                  <select className="input w-auto" value={skillId ?? ""} onChange={(e) => setSkillId(e.target.value || null)}>
+                    <option value="">スキルを選ぶ</option>
+                    {skills.map((s) => <option key={s.id} value={s.id}>{s.name}（cost:{s.cost}）</option>)}
+                  </select>
+                )}
+                <span className="text-[10px] text-yellow-200/50 ml-2">攻撃ボタンは長押しで連続発動</span>
+              </>
             )}
-            <span className="text-[10px] text-yellow-200/50 ml-2">攻撃ボタンは長押しで連続発動</span>
+            {!isParticipant && canJoin && (
+              <button className="btn-primary" onClick={joinNow} disabled={submitting}>戦闘に参加する</button>
+            )}
+            {!isParticipant && !canJoin && (
+              <span className="text-xs text-yellow-200/60">観戦中（参加不可）</span>
+            )}
+            {isParticipant && canLeave && (
+              <button className="btn ml-auto" onClick={leaveNow} disabled={submitting} title="離脱すると報酬は得られませんが、HP/MPは維持されます">
+                離脱する
+              </button>
+            )}
           </div>
           {err && <div className="text-red-400 text-xs mt-1">{err}</div>}
         </div>

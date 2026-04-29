@@ -32,23 +32,15 @@
 - **Cycle 18**: インベントリ装備比較ビュー (装備中比 ±N) (`c0e0ba8`)
 - **Cycle 19**: シーズン自動切替 (Season 2/3 テンプレート + 自動ローテーション告知) (`f604ba9`)
 - **Cycle 20**: モバイル HUD (4 primary + collapsible menu) (`2dca9a2`)
+- **Cycle 21A/B/C/D**: テンプレ大量生成（ジョブ 5→1720 / スキル 5→5044 / アイテム 9→858 / 街 3→113 / NPC 565 / 城 14 / 実績 76 / 接辞 96）
+- **Cycle 23**: 戦闘の途中参加・退出 — 同パーティ員は active な通常戦に参戦可能、参戦中は HP/MP を持って離脱可能（報酬は失効）。ボス戦・ダンジョン戦は対象外
 
 ## 進行・次サイクル
 
-### Cycle 21 — AI プロバイダ実装 (オプション)
-- ANTHROPIC_API_KEY が存在する場合に AiContentGenerationService が実テキストを返す
-- フォールバック (タイムアウト・エラー) 時はテンプレートに静かに戻る
-- 影響: 神ゲー指針 4 (テキスト品質)
-
-### Cycle 22 — Postgres + Redis 移行検証
+### Cycle 22 — Postgres + Redis 移行検証 (DEFERRED)
 - prisma schema の datasource を postgresql に切り替えた状態でテスト起動
 - Socket.io に Redis adapter を導入し 2 ノード並行起動を確認
 - 影響: リリース前提
-
-### Cycle 23 — 戦闘の途中参加・退出
-- Battle に joinedTurn は既存。/battle/[id] に「参加する」ボタン
-- ボス戦は禁止フラグ
-- 影響: 神ゲー指針 3
 
 ### Cycle 24 — ギルド倉庫
 - GuildStorage モデル (guildId × itemRef)

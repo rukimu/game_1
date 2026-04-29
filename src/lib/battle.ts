@@ -262,6 +262,112 @@ export async function submitAction(input: ActionInput) {
   return { queued: true };
 }
 
+// Mid-battle join / leave (Cycle 23). Both are blocked for boss fights and
+// dungeon battles — those are tied to a single party / run for simplicity.
+export type JoinResult = { ok: true; alreadyJoined?: boolean } | { ok: false; reason: string };
+
+export async function joinBattle(battleId: string, characterId: string): Promise<JoinResult> {
+  const battle = await prisma.battle.findUnique({
+    where: { id: battleId },
+    include: { participants: true },
+  });
+  if (!battle) return { ok: false, reason: "戦闘が見つかりません" };
+  if (battle.status !== "active") return { ok: false, reason: "戦闘は既に終わっています" };
+  if (battle.kind === "boss") return { ok: false, reason: "ボス戦には途中参加できません" };
+  if (battle.dungeonRunId) return { ok: false, reason: "ダンジョン戦には途中参加できません" };
+  if (!battle.partyId) return { ok: false, reason: "パーティー戦闘ではありません" };
+
+  const member = await prisma.partyMember.findFirst({
+    where: { partyId: battle.partyId, characterId },
+  });
+  if (!member) return { ok: false, reason: "戦闘中のパーティーに所属していません" };
+
+  const existing = battle.participants.find((p) => p.characterId === characterId);
+  if (existing) {
+    if (existing.alive) return { ok: true, alreadyJoined: true };
+    return { ok: false, reason: "あなたは戦闘から離脱済みです" };
+  }
+
+  const character = await prisma.character.findUnique({ where: { id: characterId } });
+  if (!character) return { ok: false, reason: "キャラクターが見つかりません" };
+  if (character.hp <= 0) return { ok: false, reason: "HP が 0 のため参戦できません" };
+
+  await prisma.battleParticipant.create({
+    data: {
+      battleId: battle.id,
+      characterId,
+      hp: character.hp,
+      mp: character.mp,
+      joinedTurn: battle.turn,
+      alive: true,
+    },
+  });
+
+  const log: BattleLogEntry[] = JSON.parse(battle.log || "[]");
+  log.push({ turn: battle.turn, ts: Date.now(), text: `${character.name}が戦闘に加勢した！` });
+  await prisma.battle.update({ where: { id: battle.id }, data: { log: JSON.stringify(log) } });
+
+  emitBattle(battle.id, "battle:state", await getBattleState(battle.id));
+  return { ok: true };
+}
+
+export type LeaveResult = { ok: true } | { ok: false; reason: string };
+
+export async function leaveBattle(battleId: string, characterId: string): Promise<LeaveResult> {
+  const battle = await prisma.battle.findUnique({
+    where: { id: battleId },
+    include: { participants: true },
+  });
+  if (!battle) return { ok: false, reason: "戦闘が見つかりません" };
+  if (battle.status !== "active") return { ok: false, reason: "戦闘は既に終わっています" };
+  if (battle.kind === "boss") return { ok: false, reason: "ボス戦からは離脱できません" };
+  if (battle.dungeonRunId) return { ok: false, reason: "ダンジョン戦からは離脱できません" };
+
+  const me = battle.participants.find((p) => p.characterId === characterId);
+  if (!me || !me.alive) return { ok: false, reason: "あなたはこの戦闘に参加していません" };
+
+  const otherAlive = battle.participants.filter((p) => p.alive && p.characterId !== characterId);
+  if (otherAlive.length === 0) return { ok: false, reason: "最後の戦闘員のため離脱できません" };
+
+  // Persist remaining hp/mp back to the character so leaving is meaningful.
+  await prisma.$transaction([
+    prisma.character.update({
+      where: { id: characterId },
+      data: { hp: Math.max(1, me.hp), mp: Math.max(0, me.mp) },
+    }),
+    prisma.battleParticipant.update({
+      where: { battleId_characterId: { battleId: battle.id, characterId } },
+      data: { alive: false },
+    }),
+    prisma.battleAction.deleteMany({
+      where: { battleId: battle.id, turn: battle.turn, characterId },
+    }),
+  ]);
+
+  const character = await prisma.character.findUnique({ where: { id: characterId } });
+  const log: BattleLogEntry[] = JSON.parse(battle.log || "[]");
+  log.push({
+    turn: battle.turn,
+    ts: Date.now(),
+    text: `${character?.name ?? "誰か"}は戦線から離脱した。報酬は得られない。`,
+  });
+  await prisma.battle.update({ where: { id: battle.id }, data: { log: JSON.stringify(log) } });
+
+  // Leaving may unblock turn resolution: if the remaining alive members have
+  // all submitted their actions, fire the turn now instead of waiting for the
+  // 15s timeout.
+  const submitted = await prisma.battleAction.count({
+    where: { battleId: battle.id, turn: battle.turn },
+  });
+  if (submitted >= otherAlive.length) {
+    // resolveTurn is internal; trigger via the same path autoFill uses.
+    await autoFillAndResolve(battleId);
+  } else {
+    emitBattle(battle.id, "battle:state", await getBattleState(battle.id));
+  }
+  return { ok: true };
+}
+
 export async function autoFillAndResolve(battleId: string) {
   const battle = await prisma.battle.findUnique({
     where: { id: battleId },
@@ -484,11 +590,13 @@ async function resolveTurn(battleId: string) {
     }
   }
 
-  // Persist participant updates
+  // Persist participant updates. Use ps.alive && hp > 0 (not just hp > 0) so
+  // a voluntary leaver who walked off the field with HP remaining doesn't get
+  // resurrected when the turn resolves.
   for (const ps of partState.values()) {
     await prisma.battleParticipant.update({
       where: { battleId_characterId: { battleId: battle.id, characterId: ps.id } },
-      data: { hp: Math.max(0, ps.hp), mp: Math.max(0, ps.mp), alive: ps.hp > 0 },
+      data: { hp: Math.max(0, ps.hp), mp: Math.max(0, ps.mp), alive: ps.alive && ps.hp > 0 },
     });
   }
 
@@ -718,8 +826,15 @@ async function resolveTurn(battleId: string) {
         log.push({ turn: battle.turn, ts: Date.now(), text: `ダンジョンの探索は途絶え、累積報酬の半分が霧散した。` });
       } catch (e) { /* non-fatal */ }
     }
-    // penalties: lose 10% gold, no exp loss for MVP friendliness, revive at 1 HP at inn (next route)
+    // penalties: lose 10% gold, no exp loss for MVP friendliness, revive at 1 HP at inn (next route).
+    // Skip the penalty for voluntary leavers — they walked off the field with HP intact and
+    // already had their character row restored at leave time.
     for (const p of partState.values()) {
+      const dbPart = await prisma.battleParticipant.findUnique({
+        where: { battleId_characterId: { battleId: battle.id, characterId: p.id } },
+        select: { hp: true, alive: true },
+      });
+      if (dbPart && !dbPart.alive && dbPart.hp > 0) continue; // voluntary leaver
       const character = await prisma.character.findUnique({ where: { id: p.id } });
       if (!character) continue;
       const lostGold = Math.floor(character.gold * 0.1);

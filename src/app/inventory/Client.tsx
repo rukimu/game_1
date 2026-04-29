@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+type Stats = { atk: number; def: number; mat: number; mdf: number; hp: number; mp: number };
 type Row = {
   id: string;
   itemId: string;
@@ -18,9 +19,8 @@ type Row = {
   equipped: boolean;
   affineWeapon: boolean;
   quantity: number;
-  bonuses: {
-    atk: number; def: number; mat: number; mdf: number; hp: number; mp: number;
-  };
+  bonuses: Stats;
+  diffVsEquipped: Stats | null;
   specials: string[];
 };
 
@@ -104,6 +104,12 @@ export default function InventoryClient({ rows }: { rows: Row[] }) {
                         {r.bonuses.hp !== 0 && <span>HP {sign(r.bonuses.hp)}</span>}
                         {r.bonuses.mp !== 0 && <span>MP {sign(r.bonuses.mp)}</span>}
                       </div>
+                      {r.diffVsEquipped && hasAnyDiff(r.diffVsEquipped) && (
+                        <div className="text-[11px] mt-1 flex flex-wrap gap-x-2 opacity-80">
+                          <span className="text-yellow-300/70">装備中比:</span>
+                          {diffStats(r.diffVsEquipped)}
+                        </div>
+                      )}
                       {r.specials.length > 0 && (
                         <ul className="mt-1 space-y-0.5">
                           {r.specials.map((s, i) => (
@@ -143,4 +149,27 @@ export default function InventoryClient({ rows }: { rows: Row[] }) {
 
 function sign(n: number) {
   return n > 0 ? `+${n}` : `${n}`;
+}
+
+function hasAnyDiff(d: Stats): boolean {
+  return d.atk !== 0 || d.def !== 0 || d.mat !== 0 || d.mdf !== 0 || d.hp !== 0 || d.mp !== 0;
+}
+
+function diffSpan(label: string, n: number) {
+  if (n === 0) return null;
+  const cls = n > 0 ? "text-green-300" : "text-red-300";
+  return <span className={cls}>{label} {sign(n)}</span>;
+}
+
+function diffStats(d: Stats) {
+  return (
+    <>
+      {diffSpan("攻", d.atk)}
+      {diffSpan("防", d.def)}
+      {diffSpan("魔攻", d.mat)}
+      {diffSpan("魔防", d.mdf)}
+      {diffSpan("HP", d.hp)}
+      {diffSpan("MP", d.mp)}
+    </>
+  );
 }

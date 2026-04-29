@@ -24,10 +24,43 @@ export default async function InventoryPage() {
   const stats = await computeCombatStats(c.id);
 
   // Pre-format each row so the client component stays presentational.
+  // Equipped-by-slot map lets us compute the "equip swap" diff per row.
+  const equippedBySlot = new Map<string, typeof inventory[number]>();
+  for (const inv of inventory) {
+    if (inv.equipped && inv.item.slot) equippedBySlot.set(inv.item.slot, inv);
+  }
+  function effectiveBonuses(inv: typeof inventory[number]) {
+    const inst = parseInstance(inv.instanceJson);
+    const affineWeapon = isAffine(inv.item.weaponClass, inv.item.jobAffinity, archetype);
+    const affMult = affineWeapon ? 1 : 0.5;
+    return {
+      atk: Math.floor((inv.item.atkBonus ?? 0) * affMult) + (inst?.bonusStats.atk ?? 0),
+      def: Math.floor((inv.item.defBonus ?? 0) * affMult) + (inst?.bonusStats.def ?? 0),
+      mat: Math.floor((inv.item.matBonus ?? 0) * affMult) + (inst?.bonusStats.mat ?? 0),
+      mdf: Math.floor((inv.item.mdfBonus ?? 0) * affMult) + (inst?.bonusStats.mdf ?? 0),
+      hp: Math.floor((inv.item.hpBonus ?? 0) * affMult) + (inst?.bonusStats.hp ?? 0),
+      mp: Math.floor((inv.item.mpBonus ?? 0) * affMult) + (inst?.bonusStats.mp ?? 0),
+    };
+  }
   const rows = inventory.map((inv) => {
     const inst = parseInstance(inv.instanceJson);
     const tier = inst?.tier ?? "common";
     const affineWeapon = isAffine(inv.item.weaponClass, inv.item.jobAffinity, archetype);
+    const myBonuses = effectiveBonuses(inv);
+    // Diff vs whatever's equipped in this slot (zero when this is the
+    // currently-equipped piece). NPCs' "what would I gain" question.
+    const equipped = inv.item.slot ? equippedBySlot.get(inv.item.slot) ?? null : null;
+    const eqBonuses = equipped && equipped.id !== inv.id ? effectiveBonuses(equipped) : null;
+    const diff = eqBonuses
+      ? {
+          atk: myBonuses.atk - eqBonuses.atk,
+          def: myBonuses.def - eqBonuses.def,
+          mat: myBonuses.mat - eqBonuses.mat,
+          mdf: myBonuses.mdf - eqBonuses.mdf,
+          hp: myBonuses.hp - eqBonuses.hp,
+          mp: myBonuses.mp - eqBonuses.mp,
+        }
+      : null;
     return {
       id: inv.id,
       itemId: inv.item.id,
@@ -43,15 +76,8 @@ export default async function InventoryPage() {
       equipped: inv.equipped,
       affineWeapon,
       quantity: inv.quantity,
-      // Full effective bonuses including base item + affix instance.
-      bonuses: {
-        atk: (inv.item.atkBonus ?? 0) + (inst?.bonusStats.atk ?? 0),
-        def: (inv.item.defBonus ?? 0) + (inst?.bonusStats.def ?? 0),
-        mat: (inv.item.matBonus ?? 0) + (inst?.bonusStats.mat ?? 0),
-        mdf: (inv.item.mdfBonus ?? 0) + (inst?.bonusStats.mdf ?? 0),
-        hp: (inv.item.hpBonus ?? 0) + (inst?.bonusStats.hp ?? 0),
-        mp: (inv.item.mpBonus ?? 0) + (inst?.bonusStats.mp ?? 0),
-      },
+      bonuses: myBonuses,
+      diffVsEquipped: diff,
       specials: inst?.specials ?? [],
     };
   });

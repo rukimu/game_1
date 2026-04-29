@@ -8,6 +8,14 @@ import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance 
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 import { awardAchievement } from "@/lib/achievements";
 
+export type StatusKind = "poison" | "burn" | "stun";
+
+export type StatusEffect = {
+  kind: StatusKind;
+  remaining: number;   // turns left (decremented at end of each enemy phase)
+  power: number;       // tick damage for poison/burn; for stun this is ignored
+};
+
 export type EnemyState = {
   id: string;
   name: string;
@@ -25,6 +33,7 @@ export type EnemyState = {
   expReward: number;
   goldReward: number;
   alive: boolean;
+  statuses?: StatusEffect[];
 };
 
 export type BattleLogEntry = {
@@ -378,6 +387,15 @@ async function resolveTurn(battleId: string) {
         if (result.lifesteal > 0) {
           log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${actor.name}は ${result.lifesteal} HP を吸収した。` });
         }
+        // Status application: debuff skills always apply, others on crit (15% pity).
+        if (target.alive) {
+          const statusKind = inferStatusFromSkill(skill.type, skill.element);
+          const applies = skill.type === "debuff" || (skill.type === "attack" && result.isCrit && Math.random() < 0.5);
+          if (statusKind && applies) {
+            applyStatus(target, statusKind, Math.max(2, Math.floor(skill.power / 6)), Math.max(2, Math.ceil(actor.mat / 4)));
+            log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${target.name}は【${statusLabel(statusKind)}】状態になった。` });
+          }
+        }
         if (target.hp <= 0) {
           target.hp = 0;
           target.alive = false;
@@ -414,22 +432,55 @@ async function resolveTurn(battleId: string) {
     }
   }
 
-  // Enemy phase
+  // Status tick on enemies before their phase. Poison + burn deal flat
+  // tick damage; stun blocks the enemy's swing this turn. Statuses then
+  // decrement; any expired entries fall off.
   const aliveEnemies = enemies.filter(e => e.alive);
+  for (const enemy of aliveEnemies) {
+    if (!enemy.statuses || enemy.statuses.length === 0) continue;
+    for (const s of enemy.statuses) {
+      if (s.kind === "poison" || s.kind === "burn") {
+        const tick = Math.max(1, s.power);
+        enemy.hp -= tick;
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${enemy.name}は【${statusLabel(s.kind)}】で ${tick} ダメージを受けた。` });
+        if (enemy.hp <= 0) {
+          enemy.hp = 0;
+          enemy.alive = false;
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${enemy.name}は力尽きた。` });
+          break;
+        }
+      }
+    }
+  }
+
   if (aliveEnemies.length > 0) {
     const aliveParts = [...partState.values()].filter(p => p.alive);
     for (const enemy of aliveEnemies) {
+      if (!enemy.alive) continue;
       if (aliveParts.length === 0) break;
-      const target = aliveParts[Math.floor(Math.random() * aliveParts.length)];
-      const def = target.defending ? Math.floor(target.def * 1.6) : target.def;
-      const dmg = applyDamage(enemy.atk, def, 10, enemy.element, null, null);
-      target.hp -= dmg;
-      log.push({ turn: battle.turn, ts: Date.now(), text: `${enemy.name}の攻撃！${target.name}に${dmg}のダメージ。` });
-      if (target.hp <= 0) {
-        target.hp = 0;
-        target.alive = false;
-        log.push({ turn: battle.turn, ts: Date.now(), text: `${target.name}は倒れた…。` });
+      // Stun: skip this enemy's swing this turn.
+      const stunned = (enemy.statuses ?? []).some((s) => s.kind === "stun");
+      if (stunned) {
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${enemy.name}は【スタン】で動けない。` });
+      } else {
+        const target = aliveParts[Math.floor(Math.random() * aliveParts.length)];
+        const def = target.defending ? Math.floor(target.def * 1.6) : target.def;
+        const dmg = applyDamage(enemy.atk, def, 10, enemy.element, null, null);
+        target.hp -= dmg;
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${enemy.name}の攻撃！${target.name}に${dmg}のダメージ。` });
+        if (target.hp <= 0) {
+          target.hp = 0;
+          target.alive = false;
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${target.name}は倒れた…。` });
+        }
       }
+    }
+    // Tick down all remaining statuses on enemies.
+    for (const enemy of enemies) {
+      if (!enemy.statuses || enemy.statuses.length === 0) continue;
+      enemy.statuses = enemy.statuses
+        .map((s) => ({ ...s, remaining: s.remaining - 1 }))
+        .filter((s) => s.remaining > 0);
     }
   }
 
@@ -681,6 +732,43 @@ async function resolveTurn(battleId: string) {
 async function getMaxHp(characterId: string) {
   const c = await prisma.character.findUnique({ where: { id: characterId } });
   return c?.maxHp ?? 30;
+}
+
+// Status helpers --------------------------------------------------------
+
+function statusLabel(kind: StatusKind): string {
+  switch (kind) {
+    case "poison": return "毒";
+    case "burn":   return "火傷";
+    case "stun":   return "スタン";
+  }
+}
+
+function inferStatusFromSkill(type: string, element: string | null | undefined): StatusKind | null {
+  if (type === "debuff") {
+    if (element === "fire") return "burn";
+    if (element === "dark") return "poison";
+    return "stun";
+  }
+  // Attack skills: only on crit (handled by caller). Match by element.
+  if (type === "attack" || type === "special") {
+    if (element === "fire") return "burn";
+    if (element === "dark") return "poison";
+    if (element === "light") return "stun";
+  }
+  return null;
+}
+
+function applyStatus(target: EnemyState, kind: StatusKind, duration: number, power: number) {
+  if (!target.statuses) target.statuses = [];
+  // Refresh existing same-kind status: take the longer remaining, stronger power.
+  const existing = target.statuses.find((s) => s.kind === kind);
+  if (existing) {
+    existing.remaining = Math.max(existing.remaining, duration);
+    existing.power = Math.max(existing.power, power);
+    return;
+  }
+  target.statuses.push({ kind, remaining: duration, power });
 }
 
 // Layer crit + slay + lifesteal on top of an already-computed base damage.

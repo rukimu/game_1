@@ -245,6 +245,11 @@ model Npc {
   role        String
   dialogue    String
   generatedBy String  @default("template")
+  // Most recent visitor — used to color the next visitor's dialogue with
+  // "○○もここに来ていたよ" so the NPC feels aware of the world's traffic.
+  lastSpokenName  String?
+  lastSpokenAt    DateTime?
+  visitCount      Int       @default(0)
   createdAt   DateTime @default(now())
   town        Town    @relation(fields: [townId], references: [id], onDelete: Cascade)
 }

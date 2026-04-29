@@ -45,6 +45,7 @@ export default async function TownPage() {
   const npcLines = town
     ? await Promise.all(
         town.npcs.map(async (n) => {
+          let line = n.dialogue;
           try {
             const dlg = await gen.generateNpcDialogue({
               role: n.role,
@@ -52,13 +53,30 @@ export default async function TownPage() {
               characterArchetype: archetype,
               seed: `${c.id}-${n.id}-${dayKey}`,
             });
-            return { id: n.id, name: n.name, role: n.role, line: dlg.line };
-          } catch {
-            return { id: n.id, name: n.name, role: n.role, line: n.dialogue };
+            line = dlg.line;
+          } catch { /* fall back to seeded dialogue */ }
+          // NPC memory: if someone else came by recently, the NPC mentions it.
+          // 30 minutes is the freshness window — long enough that two players
+          // who are online together feel each other, short enough that the
+          // line doesn't loop forever after one visit.
+          const fresh = n.lastSpokenAt && (Date.now() - n.lastSpokenAt.getTime()) < 30 * 60 * 1000;
+          if (fresh && n.lastSpokenName && n.lastSpokenName !== c.name) {
+            line = `${line}（${n.lastSpokenName} もさっき同じ席に座っていた。）`;
           }
+          return { id: n.id, name: n.name, role: n.role, line };
         })
       )
     : [];
+  // Mark this character as the latest visitor on each NPC. Best-effort —
+  // failures here must not break the page render.
+  if (town) {
+    try {
+      await prisma.npc.updateMany({
+        where: { townId: town.id },
+        data: { lastSpokenName: c.name, lastSpokenAt: new Date(), visitCount: { increment: 1 } },
+      });
+    } catch { /* non-fatal */ }
+  }
   // The world is alive — surface recent announcements (curse onsets,
   // boss first-kills, mystery-solver flashes) on the town page so a
   // returning player feels the realm shifting under their feet.

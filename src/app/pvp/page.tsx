@@ -30,15 +30,17 @@ export default async function PvpPage() {
     else if (d.winnerCharacterId) myLosses++;
   }
 
-  // Suggested opponents: nearby levels (±5), excluding self and currently
-  // cursed players. Sorted by recent activity.
+  // Suggested opponents: nearby rating (±200) AND nearby level (±5),
+  // excluding self and currently cursed players. Sorted by recent activity.
+  const myRating = c.duelRating;
   const suggested = await prisma.character.findMany({
     where: {
       id: { not: c.id },
       level: { gte: Math.max(1, c.level - 5), lte: c.level + 5 },
+      duelRating: { gte: myRating - 200, lte: myRating + 200 },
       isCursed: false,
     },
-    select: { id: true, name: true, level: true, currentJobId: true, currentTownId: true },
+    select: { id: true, name: true, level: true, currentJobId: true, currentTownId: true, duelRating: true },
     orderBy: { createdAt: "desc" },
     take: 12,
   });
@@ -48,26 +50,37 @@ export default async function PvpPage() {
     : [];
   const jobMap = new Map(jobs.map((j) => [j.id, j.name]));
 
-  // Top arena board: aggregate wins for everyone with at least one win.
-  const winners = await prisma.duel.groupBy({
-    by: ["winnerCharacterId"],
-    where: { status: "finished", winnerCharacterId: { not: null } },
-    _count: { _all: true },
-    orderBy: { _count: { winnerCharacterId: "desc" } },
+  // Top arena board: ranked by ELO rating among characters who have at
+  // least one finished duel. Lifetime wins are shown alongside.
+  const ratedTop = await prisma.character.findMany({
+    where: {
+      OR: [
+        { duelsA: { some: { status: "finished" } } },
+        { duelsB: { some: { status: "finished" } } },
+      ],
+    },
+    select: { id: true, name: true, level: true, duelRating: true },
+    orderBy: { duelRating: "desc" },
     take: 10,
   });
-  const winnerIds = winners.map((w) => w.winnerCharacterId).filter((x): x is string => !!x);
-  const winnerChars = winnerIds.length > 0
-    ? await prisma.character.findMany({
-        where: { id: { in: winnerIds } },
-        select: { id: true, name: true, level: true },
-      })
-    : [];
-  const charById = new Map(winnerChars.map((w) => [w.id, w]));
-  const leaderboard = winners.map((w) => {
-    const ch = charById.get(w.winnerCharacterId!);
-    return { id: w.winnerCharacterId!, name: ch?.name ?? "—", level: ch?.level ?? 0, wins: w._count._all };
-  }).filter((r) => r.id);
+  const winsByCid = new Map<string, number>();
+  if (ratedTop.length > 0) {
+    const wins = await prisma.duel.groupBy({
+      by: ["winnerCharacterId"],
+      where: { status: "finished", winnerCharacterId: { in: ratedTop.map((r) => r.id) } },
+      _count: { _all: true },
+    });
+    for (const w of wins) {
+      if (w.winnerCharacterId) winsByCid.set(w.winnerCharacterId, w._count._all);
+    }
+  }
+  const leaderboard = ratedTop.map((r) => ({
+    id: r.id,
+    name: r.name,
+    level: r.level,
+    rating: r.duelRating,
+    wins: winsByCid.get(r.id) ?? 0,
+  }));
 
   const sent = duels.filter((d) => d.challengerCharacterId === c.id);
   const incoming = duels.filter((d) => d.opponentCharacterId === c.id);
@@ -111,6 +124,7 @@ export default async function PvpPage() {
               name: s.name,
               level: s.level,
               jobName: s.currentJobId ? jobMap.get(s.currentJobId) ?? "—" : "—",
+              rating: s.duelRating,
             }))}
           />
         </div>
@@ -123,6 +137,10 @@ export default async function PvpPage() {
               <span className="text-red-300">{myLosses}</span>
               <span className="text-yellow-200/60 text-base mx-1">敗</span>
             </div>
+            <div className="text-sm mt-1">
+              <span className="text-yellow-200/60">レート </span>
+              <span className="text-amber-200 font-bold tabular-nums">{c.duelRating}</span>
+            </div>
             {(myWins + myLosses) > 0 && (
               <div className="text-xs text-yellow-200/60 mt-1">
                 勝率 {Math.round((myWins / (myWins + myLosses)) * 100)}%
@@ -130,9 +148,9 @@ export default async function PvpPage() {
             )}
           </div>
           <div className="panel">
-            <div className="text-sm font-bold text-yellow-200 mb-1">闘技場ランキング (累計勝利数)</div>
+            <div className="text-sm font-bold text-yellow-200 mb-1">闘技場ランキング (レート上位)</div>
             {leaderboard.length === 0 ? (
-              <div className="text-yellow-200/50 text-xs italic">まだ誰も勝者になっていない。</div>
+              <div className="text-yellow-200/50 text-xs italic">まだ誰も決闘を行っていない。</div>
             ) : (
               <ol className="text-sm space-y-0.5">
                 {leaderboard.map((r, idx) => (
@@ -140,7 +158,8 @@ export default async function PvpPage() {
                     <span className="text-yellow-300 tabular-nums">#{idx + 1}</span>
                     <span className="ml-2">{r.name}</span>
                     <span className="text-xs text-yellow-200/60 ml-2">Lv{r.level}</span>
-                    <span className="text-xs text-yellow-300 ml-2 tabular-nums">{r.wins} 勝</span>
+                    <span className="text-xs text-amber-300 ml-2 tabular-nums">R {r.rating}</span>
+                    <span className="text-xs text-yellow-300/60 ml-2 tabular-nums">{r.wins}勝</span>
                   </li>
                 ))}
               </ol>

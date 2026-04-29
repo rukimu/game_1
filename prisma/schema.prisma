@@ -66,6 +66,9 @@ model Character {
   // Lets the town page show contextual onboarding hints until the player
   // either dismisses them or completes the relevant action.
   tutorialState   String?  @default("{\"dismissed\":false,\"step\":0}")
+  // ELO-style duel rating. Starts at 1500; updated each duel via the
+  // standard formula in /api/pvp/duels/[id]/accept.
+  duelRating      Int      @default(1500)
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventory       InventoryItem[]

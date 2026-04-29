@@ -88,10 +88,29 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     effects: bEff,
   };
   const { winner, log } = simulate(a, b);
-  await prisma.duel.update({
-    where: { id: duel.id },
-    data: { status: "finished", winnerCharacterId: winner.id, log: JSON.stringify(log), resolvedAt: new Date() },
+  // ELO update — K=32, 400-pt scale. Winner gains, loser loses; sum stays
+  // zero so the leaderboard reflects relative skill rather than activity.
+  const ratings = await prisma.character.findMany({
+    where: { id: { in: [duel.challengerCharacterId, duel.opponentCharacterId] } },
+    select: { id: true, duelRating: true },
   });
+  const ratingByCid = new Map(ratings.map((r) => [r.id, r.duelRating]));
+  const aRat = ratingByCid.get(duel.challengerCharacterId) ?? 1500;
+  const bRat = ratingByCid.get(duel.opponentCharacterId) ?? 1500;
+  const expectedA = 1 / (1 + Math.pow(10, (bRat - aRat) / 400));
+  const aWon = winner.id === duel.challengerCharacterId;
+  const K = 32;
+  const newA = Math.round(aRat + K * ((aWon ? 1 : 0) - expectedA));
+  const newB = Math.round(bRat + K * ((aWon ? 0 : 1) - (1 - expectedA)));
+  log.push(`レート更新: ${duel.challenger.name} ${aRat}→${newA} / ${duel.opponent.name} ${bRat}→${newB}`);
+  await prisma.$transaction([
+    prisma.duel.update({
+      where: { id: duel.id },
+      data: { status: "finished", winnerCharacterId: winner.id, log: JSON.stringify(log), resolvedAt: new Date() },
+    }),
+    prisma.character.update({ where: { id: duel.challengerCharacterId }, data: { duelRating: newA } }),
+    prisma.character.update({ where: { id: duel.opponentCharacterId }, data: { duelRating: newB } }),
+  ]);
   // Achievement hooks: first duel, win-count tiers.
   for (const cid of [duel.challengerCharacterId, duel.opponentCharacterId]) {
     try { await awardAchievement("first_duel", cid); } catch { /* non-fatal */ }
@@ -103,5 +122,12 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     if (wins >= 5) await awardAchievement("duel_5_wins", winner.id);
     if (wins >= 25) await awardAchievement("duel_25_wins", winner.id);
   } catch { /* non-fatal */ }
-  return NextResponse.json({ winnerName: winner.name, log });
+  return NextResponse.json({
+    winnerName: winner.name,
+    log,
+    ratingChange: {
+      [duel.challenger.name]: { before: aRat, after: newA },
+      [duel.opponent.name]: { before: bRat, after: newB },
+    },
+  });
 }

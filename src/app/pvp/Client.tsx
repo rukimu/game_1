@@ -14,7 +14,7 @@ type Duel = {
   createdAt: string;
 };
 
-type Suggested = { id: string; name: string; level: number; jobName: string };
+type Suggested = { id: string; name: string; level: number; jobName: string; rating: number };
 
 export default function PvpClient({
   sent, incoming, finished, suggested,
@@ -119,7 +119,8 @@ export default function PvpClient({
                   disabled={busy === `challenge:${s.name}`}
                   onClick={() => challenge(s.name)}
                 >
-                  {s.name} <span className="text-yellow-300/70">Lv{s.level} {s.jobName}</span>
+                  {s.name} <span className="text-yellow-300/70">Lv{s.level} {s.jobName}</span>{" "}
+                  <span className="text-amber-300/80">R{s.rating}</span>
                 </button>
               ))}
             </div>

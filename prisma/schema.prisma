@@ -498,6 +498,10 @@ model Season {
   mysteryHint         String?
   mysterySolvedAt     DateTime?
   mysterySolverName   String?
+  // Auto-rotation: a season ends after `expectedDurationDays` from startedAt
+  // OR 7 days after mysterySolvedAt, whichever comes first. Set to 0 to opt
+  // out of auto-rotation (legacy seasons).
+  expectedDurationDays Int     @default(30)
   clues               SeasonClue[]
 }
 

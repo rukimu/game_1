@@ -10,14 +10,22 @@ const SEASON_KEYWORDS_BY_NAME: Record<string, string[]> = {
   "Season 1: 灯の年": [
     "塔", "鐘", "紋章", "禁書", "井戸", "灯", "影", "封印者", "薄明",
   ],
+  "Season 2: 鏡の森": [
+    "鏡", "森", "影", "泉", "もう一つ", "映る", "対", "境界",
+  ],
+  "Season 3: 灰の唄": [
+    "灰", "唄", "詩", "夜", "声", "燃え尽きた", "古き節", "祝祭",
+  ],
 };
 
+// The cache key used to be the season name only, which broke when the
+// world auto-rotated mid-process. Cache by name so a rotation invalidates.
 let _keywordCache: { name: string; words: string[] } | null = null;
 
 export async function getCurrentSeasonKeywords(): Promise<string[]> {
-  if (_keywordCache) return _keywordCache.words;
   const season = await prisma.season.findFirst({ where: { isCurrent: true }, select: { name: true } });
   if (!season) return [];
+  if (_keywordCache && _keywordCache.name === season.name) return _keywordCache.words;
   const words = SEASON_KEYWORDS_BY_NAME[season.name] ?? [];
   _keywordCache = { name: season.name, words };
   return words;

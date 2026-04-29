@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { intBetween, makeRng, pick } from "@/lib/rng";
+import { maybeRotateSeason } from "@/lib/seasonRotation";
 
 export type WorldStatePayload = {
   date: string;                // YYYY-MM-DD
@@ -61,9 +62,12 @@ function todayKey() {
 
 // Returns today's WorldState payload, generating + persisting it on first
 // access. Cheap to call per request — it's a single indexed lookup once the
-// row exists.
+// row exists. Also acts as the daily heartbeat that drives season rotation,
+// so on the first read of each new day a rotated season takes effect.
 export async function getTodayWorldState(): Promise<WorldStatePayload> {
   const date = todayKey();
+  // Best-effort season rotation. Failures must not block world state.
+  try { await maybeRotateSeason(); } catch { /* non-fatal */ }
   const existing = await prisma.worldState.findUnique({ where: { date } });
   if (existing) {
     try {

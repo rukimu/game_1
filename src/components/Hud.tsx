@@ -73,6 +73,7 @@ export default async function Hud() {
           <Link href="/boss" className="btn">ボス</Link>
           <Link href="/party" className="btn">PT</Link>
           <Link href="/guild" className="btn">ギルド</Link>
+          <Link href="/siege" className="btn">攻城戦</Link>
           <Link href="/mystery" className="btn">謎</Link>
           <Link href="/auction" className="btn">市場</Link>
           <Link href="/shop" className="btn">店</Link>

@@ -563,10 +563,28 @@ model CastleOwnership {
 model SiegeEvent {
   id          String   @id @default(cuid())
   castleId    String
+  // pending = registration window open; active = combat phase; ended = resolved.
+  status      String   @default("pending")
   startsAt    DateTime
   endedAt     DateTime?
+  // Winning guild — null until ended.
+  winningGuildId String?
   result      String?
   castle      Castle   @relation(fields: [castleId], references: [id], onDelete: Cascade)
+  registrations SiegeRegistration[]
+}
+
+model SiegeRegistration {
+  id          String   @id @default(cuid())
+  siegeId     String
+  guildId     String
+  // Aggregate "battle score" the guild earned during the active phase. For
+  // MVP this is just the sum of member level + lifetime wins, snapshotted on
+  // resolve. Higher = closer to taking the castle.
+  score       Int      @default(0)
+  registeredAt DateTime @default(now())
+  siege       SiegeEvent @relation(fields: [siegeId], references: [id], onDelete: Cascade)
+  @@unique([siegeId, guildId])
 }
 
 model Trade {

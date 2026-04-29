@@ -314,6 +314,10 @@ model Battle {
   id           String   @id @default(cuid())
   partyId      String?
   dungeonRunId String?
+  // normal / boss / duel — drives reward multipliers and announcement text.
+  kind         String   @default("normal")
+  // Tag for boss-of-the-day so multiple players don't re-trigger announcements.
+  bossSlug     String?
   status       String   @default("active") // active/ended
   turn         Int      @default(1)
   enemyState   String   // JSON array of enemies w/ hp

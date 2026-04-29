@@ -64,24 +64,71 @@ function clearTurnTimeout(battleId: string) {
   turnTimers.delete(battleId);
 }
 
-export async function startBattleForParty(partyId: string, opts?: { enemyCount?: number; level?: number; townId?: string | null }) {
+export async function startBattleForParty(partyId: string, opts?: {
+  enemyCount?: number;
+  level?: number;
+  townId?: string | null;
+  // Boss-mode overrides. If `boss` is provided, the encounter is a single
+  // pre-built enemy with cranked stats and Battle.kind/bossSlug are stamped
+  // accordingly. The fight resolves through the same engine — only rewards
+  // and announcements branch.
+  boss?: {
+    slug: string;
+    name: string;
+    level: number;
+    hp: number;
+    atk: number;
+    def: number;
+    spd: number;
+    element: string | null;
+    weakness: string | null;
+    expReward: number;
+    goldReward: number;
+    creatureType: EnemyState["creatureType"];
+  };
+}) {
   const party = await prisma.party.findUnique({
     where: { id: partyId },
     include: { members: { include: { character: true } } },
   });
   if (!party) throw new Error("party not found");
   if (party.members.length === 0) throw new Error("party empty");
-  // Encounter scales with party size. Solo always faces 1 (still tough).
-  // 2-3 person: 1-3 enemies. Larger: up to 5. Forming a party is a real choice.
   const partySize = party.members.length;
+  const isBoss = !!opts?.boss;
   const minE = partySize === 1 ? 1 : Math.max(1, partySize - 1);
   const maxE = partySize === 1 ? 1 : Math.min(5, partySize + 1);
-  const enemyCount = opts?.enemyCount ?? minE + Math.floor(Math.random() * (maxE - minE + 1));
+  const enemyCount = isBoss ? 1 : (opts?.enemyCount ?? minE + Math.floor(Math.random() * (maxE - minE + 1)));
   const avgLevel = Math.max(1, Math.floor(party.members.reduce((a, m) => a + m.character.level, 0) / party.members.length));
   const level = opts?.level ?? avgLevel;
   const gen = getContentGenerationService();
   const enemies: EnemyState[] = [];
   for (let i = 0; i < enemyCount; i++) {
+    if (isBoss && opts?.boss) {
+      const b = opts.boss;
+      const stored = await prisma.enemy.create({
+        data: {
+          name: b.name,
+          description: `世界の節目に現れた強敵『${b.name}』。`,
+          level: b.level,
+          hp: b.hp,
+          atk: b.atk,
+          def: b.def,
+          spd: b.spd,
+          element: b.element,
+          weakness: b.weakness,
+          expReward: b.expReward,
+          goldReward: b.goldReward,
+        },
+      });
+      enemies.push({
+        id: stored.id, name: stored.name, hp: stored.hp, maxHp: stored.hp,
+        atk: stored.atk, def: stored.def, spd: stored.spd, level: stored.level,
+        element: stored.element, weakness: stored.weakness,
+        creatureType: b.creatureType,
+        expReward: stored.expReward, goldReward: stored.goldReward, alive: true,
+      });
+      continue;
+    }
     const e = await gen.generateEnemy({ level, townId: opts?.townId ?? null, seed: `${partyId}-${Date.now()}-${i}` });
     const stored = await prisma.enemy.create({
       data: {
@@ -119,13 +166,17 @@ export async function startBattleForParty(partyId: string, opts?: { enemyCount?:
   const log: BattleLogEntry[] = [{
     turn: 1,
     ts: Date.now(),
-    text: `${party.members.length}人のパーティーが${enemies.map(e => e.name).join("、")}と遭遇した！`,
+    text: isBoss
+      ? `本日のボス『${enemies[0].name}』が立ちはだかる！`
+      : `${party.members.length}人のパーティーが${enemies.map(e => e.name).join("、")}と遭遇した！`,
   }];
   const battle = await prisma.battle.create({
     data: {
       partyId,
       status: "active",
       turn: 1,
+      kind: isBoss ? "boss" : "normal",
+      bossSlug: isBoss ? opts?.boss?.slug ?? null : null,
       enemyState: JSON.stringify(enemies),
       log: JSON.stringify(log),
     },
@@ -396,6 +447,28 @@ async function resolveTurn(battleId: string) {
   if (allEnemiesDown) {
     clearTurnTimeout(battle.id);
     log.push({ turn: battle.turn, ts: Date.now(), text: `戦闘に勝利した！` });
+    const isBossBattle = battle.kind === "boss";
+    if (isBossBattle) {
+      // First-kill of this slug across the world is an announcement event.
+      try {
+        if (battle.bossSlug) {
+          const already = await prisma.announcement.findFirst({
+            where: { title: { contains: `[本日のボス討伐] ${battle.bossSlug}` } },
+            select: { id: true },
+          });
+          if (!already) {
+            const partyName = (battle as any).party?.name ?? "あるパーティー";
+            const a = await prisma.announcement.create({
+              data: {
+                title: `[本日のボス討伐] ${battle.bossSlug} ― ${enemies[0]?.name ?? "強敵"} 討滅`,
+                body: `${partyName} が本日のボス『${enemies[0]?.name ?? "強敵"}』を討ち滅ぼした。世界はその名を覚える。`,
+              },
+            });
+            try { (await import("@/lib/socket")).getIO()?.emit("system:announcement", a); } catch { /* non-fatal */ }
+          }
+        }
+      } catch { /* non-fatal */ }
+    }
     const totalExp = enemies.reduce((a, e) => a + e.expReward, 0);
     const totalGold = enemies.reduce((a, e) => a + e.goldReward, 0);
     const aliveParticipants = [...partState.values()].filter(p => p.alive);
@@ -467,6 +540,19 @@ async function resolveTurn(battleId: string) {
               ts: Date.now(),
               text: `${p.name}は戦利品 ${flair}『${drop.displayName}』を手に入れた！`,
             });
+          }
+          // Boss kills always drop something, and the tier is forced epic at
+          // minimum (legendary on a coin flip).
+          if (isBossBattle) {
+            const tier = Math.random() < 0.35 ? "legendary" : "epic";
+            const bossDrop = await rollEquipmentDrop(p.id, avgEnemyLevel, { forcedTier: tier, alwaysDrop: true });
+            if (bossDrop) {
+              log.push({
+                turn: battle.turn,
+                ts: Date.now(),
+                text: `★ ${p.name} はボス討伐の証 《${tierLabel(bossDrop.tier)}》 『${bossDrop.displayName}』 を手にした！`,
+              });
+            }
           }
         } catch (e) { /* non-fatal */ }
       }
@@ -610,9 +696,13 @@ async function countWinStreak(characterId: string): Promise<number> {
 // (not exclusively — variety still matters), then layer affixes on top to
 // produce a unique instance. Two players who both find a "古びた剣" will see
 // genuinely different weapons.
-async function rollEquipmentDrop(characterId: string, enemyLevel: number) {
+async function rollEquipmentDrop(
+  characterId: string,
+  enemyLevel: number,
+  opts?: { forcedTier?: "common" | "rare" | "epic" | "legendary"; alwaysDrop?: boolean },
+) {
   const chance = Math.min(0.05 + enemyLevel * 0.005, 0.13);
-  if (Math.random() >= chance) return null;
+  if (!opts?.alwaysDrop && Math.random() >= chance) return null;
 
   // Resolve the character's archetype so we can bias the loot table.
   const character = await prisma.character.findUnique({
@@ -659,11 +749,12 @@ async function rollEquipmentDrop(characterId: string, enemyLevel: number) {
     if (r <= 0) { chosen = w; break; }
   }
 
-  // Roll affixes for this specific instance.
+  // Roll affixes for this specific instance. Boss drops use forcedTier.
   const instance: ItemInstance = rollItemInstance({
     baseName: chosen.name,
     enemyLevel,
     seed: `${characterId}-${chosen.id}-${Date.now()}-${Math.random()}`,
+    forcedTier: opts?.forcedTier,
   });
   await prisma.inventoryItem.create({
     data: {

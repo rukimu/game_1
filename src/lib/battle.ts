@@ -4,6 +4,7 @@ import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { onDungeonBattleEnded } from "@/lib/dungeon";
 import { rollClueDiscovery } from "@/lib/mystery";
+import { getEquipmentBonuses } from "@/lib/equipment";
 
 export type EnemyState = {
   id: string;
@@ -234,9 +235,10 @@ async function resolveTurn(battleId: string) {
   let enemies: EnemyState[] = JSON.parse(battle.enemyState || "[]");
   let log: BattleLogEntry[] = JSON.parse(battle.log || "[]");
 
-  // Build participant runtime state
+  // Build participant runtime state, including equipment bonuses
   const partState = new Map<string, { id: string; hp: number; mp: number; defending: boolean; alive: boolean; spd: number; atk: number; mat: number; def: number; mdf: number; name: string; }>();
   for (const p of battle.participants) {
+    const bonus = await getEquipmentBonuses(p.characterId);
     partState.set(p.characterId, {
       id: p.characterId,
       hp: p.hp,
@@ -244,10 +246,10 @@ async function resolveTurn(battleId: string) {
       defending: false,
       alive: p.alive,
       spd: p.character.spd,
-      atk: p.character.atk,
-      mat: p.character.mat,
-      def: p.character.def,
-      mdf: p.character.mdf,
+      atk: p.character.atk + bonus.atk,
+      mat: p.character.mat + bonus.mat,
+      def: p.character.def + bonus.def,
+      mdf: p.character.mdf + bonus.mdf,
       name: p.character.name,
     });
   }
@@ -483,5 +485,7 @@ function p_level(_p: any) { return 0; }
 
 async function getMaxHp(characterId: string) {
   const c = await prisma.character.findUnique({ where: { id: characterId } });
-  return c?.maxHp ?? 30;
+  if (!c) return 30;
+  const bonus = await getEquipmentBonuses(characterId);
+  return c.maxHp + bonus.hp;
 }

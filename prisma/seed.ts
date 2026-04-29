@@ -62,9 +62,15 @@ async function main() {
 
   // Starter items
   const items = [
-    { name: "薬草", description: "HPを少し回復する。", category: "consumable", rarity: "common", basePrice: 20, hpBonus: 0 },
+    { name: "薬草", description: "HPを30回復する。", category: "consumable", rarity: "common", basePrice: 20, hpBonus: 30 },
+    { name: "魔素草", description: "MPを15回復する。", category: "consumable", rarity: "common", basePrice: 30, mpBonus: 15 },
     { name: "古びた剣", description: "新人の最初の相棒。", category: "equip", slot: "weapon", rarity: "common", atkBonus: 3, basePrice: 30 },
     { name: "布の服", description: "最低限の防具。", category: "equip", slot: "body", rarity: "common", defBonus: 2, basePrice: 20 },
+    { name: "革の兜", description: "頭を守る簡素な兜。", category: "equip", slot: "head", rarity: "common", defBonus: 1, basePrice: 25 },
+    { name: "鉄の小手", description: "腕を守る軽い小手。", category: "equip", slot: "arm", rarity: "common", atkBonus: 1, defBonus: 1, basePrice: 35 },
+    { name: "旅人の靴", description: "長旅に耐える丈夫な靴。", category: "equip", slot: "foot", rarity: "common", defBonus: 1, basePrice: 25 },
+    { name: "見習いのローブ", description: "魔力を高める粗末なローブ。", category: "equip", slot: "body", rarity: "common", matBonus: 3, mdfBonus: 1, basePrice: 40 },
+    { name: "守りの護符", description: "厄を払うと言われる小さな護符。", category: "equip", slot: "charm", rarity: "common", mdfBonus: 2, hpBonus: 5, basePrice: 60 },
   ];
   for (const it of items) {
     const exists = await prisma.item.findFirst({ where: { name: it.name } });

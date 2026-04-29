@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { prisma } from "@/lib/prisma";
 import { LEVEL_CAP, expForLevel } from "@/lib/leveling";
+import HudMenu from "@/components/HudMenu";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -65,25 +65,7 @@ export default async function Hud() {
 
         <div title={`所持金 ${character.gold}G`}>G {character.gold}</div>
 
-        <div className="ml-auto flex gap-2 flex-wrap">
-          <Link href="/town" className="btn">街</Link>
-          <Link href="/inventory" className="btn">所持品</Link>
-          <Link href="/forge" className="btn">鍛冶</Link>
-          <Link href="/dungeon" className="btn">ダンジョン</Link>
-          <Link href="/boss" className="btn">ボス</Link>
-          <Link href="/party" className="btn">PT</Link>
-          <Link href="/guild" className="btn">ギルド</Link>
-          <Link href="/siege" className="btn">攻城戦</Link>
-          <Link href="/mystery" className="btn">謎</Link>
-          <Link href="/auction" className="btn">市場</Link>
-          <Link href="/shop" className="btn">店</Link>
-          <Link href="/pvp" className="btn">闘技</Link>
-          <Link href="/jobs" className="btn">転職</Link>
-          <Link href="/curse" className="btn">呪い</Link>
-          <Link href="/achievements" className="btn">称号</Link>
-          {character.user.isAdmin && <Link href="/admin" className="btn">管理</Link>}
-          <Link href="/characters" className="btn">選択</Link>
-        </div>
+        <HudMenu isAdmin={!!character.user.isAdmin} />
       </div>
       {!isMaxLevel && (
         <div className="text-[10px] sm:text-xs text-yellow-200/60 mt-1">

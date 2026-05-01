@@ -133,6 +133,14 @@ model Job {
   baseStats    String  // JSON: {atk, def, mat, mdf, spd, hp, mp}
   generatedBy  String  @default("template")
   seasonId     String?
+  // Cycle 31: curated jobs are hand-crafted "personalities" (e.g.
+  // 眼鏡戦士・パセリ) with their own quirk/outfit/bio. Distinct from
+  // procedurally generated jobs which fill the bulk catalog.
+  curated      Boolean @default(false)
+  quirk        String?  // "眼鏡" / "猫好き" / "甘党" 等のキーワード
+  signatureOutfit String?  // 文字列コスメ "丸眼鏡 + 革鎧" 等。C35 のドット絵で置換予定
+  signatureBio    String?  // 80-150 字の背景物語、テンプレ bio とは別軸
+  pixelArtId      String?  // Cycle 35 (pixel art) 用の参照 ID、現状 null
   createdAt    DateTime @default(now())
   skills       Skill[]
   history      CharacterJobHistory[]

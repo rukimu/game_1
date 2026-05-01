@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { generateAllTowns, generateNpcsForTown } from "../src/lib/townGen";
 import { generateMassJobs } from "../src/lib/jobGen";
 import { generateMassItems } from "../src/lib/itemGen";
+import { CURATED_JOBS } from "./curatedJobs";
 
 const prisma = new PrismaClient();
 
@@ -96,6 +97,63 @@ async function main() {
     const exists = await prisma.skill.findFirst({ where: { jobId: job.id, name: s.skill.name } });
     if (!exists) await prisma.skill.create({ data: { jobId: job.id, ...s.skill } });
   }
+
+  // Cycle 31: hand-curated personality jobs (眼鏡戦士, 猫好き魔導師 etc.)
+  // — distinct from the procedural mass pool. Phase 1 ships 12 entries
+  // here; Phase 2 will bulk-generate ~90 more via the AI pipeline in
+  // docs/team/CURATED_JOB_BULK.md.
+  let curatedCreated = 0;
+  let curatedSkillsCreated = 0;
+  for (const cj of CURATED_JOBS) {
+    const baseStatsJson = JSON.stringify(cj.baseStats);
+    const job = await prisma.job.upsert({
+      where: { name: cj.name },
+      update: {
+        curated: true,
+        quirk: cj.quirk,
+        signatureOutfit: cj.signatureOutfit,
+        signatureBio: cj.signatureBio,
+        category: cj.category,
+        rank: cj.rank,
+        description: cj.description,
+        baseStats: baseStatsJson,
+      },
+      create: {
+        name: cj.name,
+        category: cj.category,
+        rank: cj.rank,
+        description: cj.description,
+        curated: true,
+        quirk: cj.quirk,
+        signatureOutfit: cj.signatureOutfit,
+        signatureBio: cj.signatureBio,
+        baseStats: baseStatsJson,
+      },
+    });
+    curatedCreated++;
+    for (const s of cj.uniqueSkills) {
+      const exists = await prisma.skill.findFirst({
+        where: { jobId: job.id, name: s.name },
+      });
+      if (!exists) {
+        await prisma.skill.create({
+          data: {
+            jobId: job.id,
+            name: s.name,
+            description: s.description,
+            type: s.type,
+            element: s.element,
+            power: s.power,
+            cost: s.cost,
+            cooldown: s.cooldown ?? 0,
+            targetType: s.targetType ?? "enemy",
+          },
+        });
+        curatedSkillsCreated++;
+      }
+    }
+  }
+  console.log(`Curated jobs: ${curatedCreated} upserted, ${curatedSkillsCreated} unique skills created.`);
 
   // Mass-generate the rest of the job universe. ~200 per category × 9 cats
   // (capped by combinatorial space for rare/cursed/heretic) → ~1500 jobs +

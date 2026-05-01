@@ -52,27 +52,72 @@
 
 ## P1 (次サイクル候補)
 
-- 決闘 PvP の検索・受理 UI（API はあるが UI 不在）
-- 呪い職解除をパーティ 3 人必須化 + 解除時サーバー告知
-- ガイドツール (新規プレイヤー向け「次にやること」)
-- インベントリ・装備装着 UI
-- ダンジョン UI の体験向上 (現在は "進む / 撤退" 二択のみ — 道中描写を追加)
-- 経験値 Lv30+ のグラインド緩和
+- ダンジョン UI の体験向上 (現在は「進む / 撤退」二択のみ。道中描写の追加)
+- 経験値 Lv30+ のグラインド緩和 (C2 で曲線平準化済、追加緩和は実プレイ検証待ち)
+- 装備合成の経済バランス検証 (C12 を実プレイで詰める)
+- forge の preview→commit 確定一致 (deterministic-roll)
 
 ## P2 (構想中)
 
-- 攻城戦本実装 (Castle / Siege テーブル活用)
-- AI プロバイダ実装 (Anthropic / OpenAI)
+- **Cycle 30**: スキル継承システム (NEXT — 過去職スキル最大 3 + コンボ + 熟練度ボーナス)
+- **Cycle 31**: 手作り固有職 100 体 (curated job)
+- **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
+- **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
+- **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
 - マルチパスクエスト (職業・履歴で分岐)
-- NPC 会話の進化 (複数プレイヤーが同 NPC に会うと話題が進化)
-- シーズン自動切替 cron
+- レート分布バッジの公開ボード
+- 出血の重ね掛け / 呪い化の伝播
 
 ## DROPPED (今は捨てる)
 
-- 孤立テーブル一括削除 — Castle/Siege は P2 で活かす方針なので削除しない。WorldState/DirectMessage/Report/TownState は機能未確定なので保留 (削除リスク > 価値)
+- 孤立テーブル一括削除 — Castle/Siege は C15 で活用済、DirectMessage は C25 で活用、WorldState は C7 で活用。Report/TownState は機能未確定なので保留 (削除リスク > 価値)
 - AiContentGenerationService の完全置換 — API キー無し前提のテンプレート世界で十分な品質を得る方が優先
+- AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 29 (2026-04-29) — ワールドレイドバトル + 横断フック
+- [x] `src/lib/raid.ts` 新規: 非同期 DPS race エンジン (攻撃 5s / 特技 15s / 回復 10s, KO + 90s 遅延復活, ボス AOE 遅延ティック)
+- [x] HTTP API 7 本: `/api/raids/{active,[id],join,start,attack,skill,heal}` (BigInt は Number 化)
+- [x] `src/app/raid/[id]/{page.tsx,Client.tsx}`: 1.5s ポーリング + 4Hz 局所クロック, 貢献度サイドバー, 結果画面
+- [x] `/town` 出現バナー: `spawnRaidIfDue` を冒頭で呼ぶ (10% 湧き / 60min CD)
+- [x] `battle.ts` パーティ多様性シナジー: alive jobCategory ユニーク 3 で def/mdf+10%, 5 で +20%
+- [x] アチーブ 4 種: `raid_first` / `raid_top_dmg` / `raid_5_kills` / `raid_legend`
+- [x] デイリーチャレンジ `raid_join` テンプレ追加 (EXP 300-500 / G 200-400)
+
+### Cycle 28 (2026-04-29) — 中盤密度: テーマ別ダンジョン + Mastery + Daily
+- [x] `src/lib/themedDungeon.ts` 新規: 5 種 (忘却の図書館 / 霜帝の塔 / 鏡映の湖底 / 灰の唄の祭壇 / 鐘塔の地下、Lv25-50、固有ボス、伝説確定タイプあり)
+- [x] `src/lib/mastery.ts` 新規: 27 クエスト (9 archetype × 3 tier), Lv15/30/45 順次開放, T3 で専用称号
+- [x] `src/lib/dailyChallenge.ts` 新規: 7 テンプレから毎日 3 抽選, 全クリ EXP+600 / G+500 + 隠し achievement
+- [x] `/dungeon` にテーマ選択, `/mastery` ページ追加
+
+### Cycle 27 (2026-04-29) — TOP5 オンボーディング致命的修正
+- [x] スキル説明ツールチップ追加
+- [x] 職業適性表を `/inventory` に常設
+- [x] HUD ナビにレベル & 解放ゲート表示
+- [x] クイズやり直し導線, モバイル HUD 縦積み崩れ修正
+- [x] `docs/team/ROADMAP_MAX.md` 新規: 8 軸評価 + C27-C38 計画
+
+### Cycle 26 (2026-04-29) — 戦闘・コンテンツ深度の総合拡張
+- [x] 状態異常 6 種化: 沈黙 / 出血 / 呪い化追加, 敵→プレイヤー付与
+- [x] 週末ボス T1〜T3 開放制 (T1→T2→T3 開放, T2+ で 2 個ドロップ, T3 伝説確定)
+- [x] 攻城戦に narrative 戦況ログ (ラウンド別 champion 攻撃描写)
+- [x] インベントリ ソート・フィルタ, forge プレビュー
+- [x] レート上位 1/5/10 自動称号, 呪い解除 5 回称号
+
+### Cycle 24+25 (2026-04-29) — ギルド倉庫 + DM UI
+- [x] **C24**: `GuildStorageItem` テーブル追加, `/guild` に倉庫セクション (装備中以外/取引可を affix 含めて預け入れ・引き出し)
+- [x] **C25**: `/messages` ページ (スレッド一覧・履歴・送信), HUD 未読バッジ, socket 受信通知 (メタデータのみ)
+
+### Cycle 23 (2026-04-29) — 戦闘の途中参加・離脱
+- [x] 同パーティ員は active な通常戦に参戦可能, 離脱時は HP/MP を維持して街に戻る (以降の報酬失効)
+- [x] ボス戦・ダンジョン戦は対象外
+
+### Cycle 21 (2026-04-29) — テンプレ大量生成路線
+- [x] **C21A**: テンプレプール拡張 (jobs 653→4957, rumors 14→39, roles 8→20)
+- [x] **C21B**: 大量シード (115 towns / 564 NPCs / 1720 jobs / 5039 skills / 848 items / 14 castles)
+- [x] **C21C/D**: 76 achievements / 96 affixes / 拡張ボス・ダンジョンプール
+- [x] 元 C21 案 (AI プロバイダ実装) は DROPPED — テンプレ大量生成路線へ方針変更
 
 ### Cycle 20 (2026-04-29) — モバイル HUD
 - [x] HudMenu.tsx 新規: 4 primary + collapsible (3-col grid) for sm 未満

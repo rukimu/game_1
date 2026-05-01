@@ -41,14 +41,21 @@ export async function POST(req: Request) {
   let bio: string | null = null;
   if (parsed.data.quizAnswers) {
     const result = scoreQuiz(parsed.data.quizAnswers);
-    jobName = result.jobName;
     quizScores = result;
     bio = pickBio(result.topArchetype);
+    // Only fall back to the quiz-suggested job if the caller didn't
+    // explicitly request one (e.g. a curated pick from C31-b).
+    if (!jobName) jobName = result.jobName;
   }
   if (!jobName) return NextResponse.json({ error: "職業が決まりませんでした" }, { status: 400 });
 
   const job = await prisma.job.findUnique({ where: { name: jobName } });
   if (!job) return NextResponse.json({ error: "職業が見つかりません" }, { status: 400 });
+  // Cycle 31: a curated job's signature bio replaces the procedural
+  // quiz-template — that's the whole point of a hand-crafted personality.
+  if (job.curated && job.signatureBio) {
+    bio = job.signatureBio;
+  }
   const base = applyJobBaseStats(JSON.parse(job.baseStats));
   const town = await prisma.town.findFirst({ orderBy: { danger: "asc" } });
   const character = await prisma.character.create({

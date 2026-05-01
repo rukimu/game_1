@@ -4,6 +4,16 @@ import { useRouter } from "next/navigation";
 
 type Char = { id: string; name: string; level: number; jobName: string; isCursed: boolean };
 type Question = { id: string; prompt: string; options: { id: string; label: string }[] };
+type CuratedCandidate = {
+  name: string;
+  category: string;
+  rank: string;
+  description: string;
+  quirk: string | null;
+  signatureOutfit: string | null;
+  signatureBio: string | null;
+  skills: { name: string; description: string; type: string; element: string | null; cost: number }[];
+};
 
 export default function CharacterClient({ characters, slots }: { characters: Char[]; slots: number }) {
   const router = useRouter();
@@ -14,12 +24,40 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
   const [step, setStep] = useState(0); // 0=name, 1..N=questions, last=submit
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<{ jobName: string; bio: string | null } | null>(null);
+  const [curatedCandidates, setCuratedCandidates] = useState<CuratedCandidate[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (creating && quiz.length === 0) {
       fetch("/api/quiz").then((r) => r.json()).then((d) => setQuiz(d.questions ?? []));
     }
   }, [creating, quiz.length]);
+
+  // Cycle 31-b: once the player reaches the summary screen with all
+  // questions answered, fetch curated suggestions matching their top
+  // archetype. Lets them pick a hand-crafted personality instead of
+  // the procedural starter job.
+  useEffect(() => {
+    if (!creating) return;
+    if (quiz.length === 0) return;
+    if (step - 1 < quiz.length) return;
+    if (Object.keys(answers).length < quiz.length) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/characters/curated-suggestions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quizAnswers: answers }),
+        });
+        if (!cancelled && r.ok) {
+          const d = await r.json();
+          setCuratedCandidates(d.candidates ?? []);
+        }
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [creating, step, quiz.length, answers]);
 
   async function select(id: string) {
     await fetch(`/api/characters/${id}/select`, { method: "POST" });
@@ -38,24 +76,33 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
     setStep(0);
     setErr(null);
     setResult(null);
+    setCuratedCandidates([]);
   }
-  async function submit() {
+  async function submit(curatedJobName?: string) {
     setErr(null);
     if (Object.keys(answers).length < quiz.length) {
       setErr("すべての設問に回答してください");
       return;
     }
+    setSubmitting(true);
+    const body: { name: string; quizAnswers: Record<string, string>; jobName?: string } = {
+      name,
+      quizAnswers: answers,
+    };
+    if (curatedJobName) body.jobName = curatedJobName;
     const res = await fetch("/api/characters", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, quizAnswers: answers }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
       setErr(d.error ?? "作成に失敗しました");
+      setSubmitting(false);
       return;
     }
     const data = await res.json();
+    setSubmitting(false);
     // Auto-select the freshly-created character so the upcoming redirect to
     // /town actually has an active character to render. Errors here are
     // non-fatal — the user can still pick from the list manually.
@@ -148,9 +195,48 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
               );
             })}
           </div>
+          {curatedCandidates.length > 0 && (
+            <section className="border border-purple-700/50 rounded p-2 bg-purple-950/20 space-y-2">
+              <div className="text-xs text-purple-200 font-bold">あなたに似た固有職</div>
+              <div className="text-[10px] text-purple-200/70">
+                指名するとテンプレ職ではなく、手作りの背景物語と固有スキルを持って始められます。
+              </div>
+              <ul className="space-y-2">
+                {curatedCandidates.map((c) => (
+                  <li key={c.name} className="border border-purple-900/40 rounded p-2 bg-black/30">
+                    <div className="font-bold text-yellow-100">{c.name}</div>
+                    <div className="text-[10px] text-yellow-300/70">
+                      {c.quirk && <>癖: {c.quirk}　/　</>}
+                      {c.signatureOutfit}
+                    </div>
+                    <div className="text-xs text-yellow-100/85 mt-1">{c.description}</div>
+                    {c.signatureBio && (
+                      <div className="text-[10px] text-yellow-100/70 mt-1 leading-relaxed">
+                        {c.signatureBio}
+                      </div>
+                    )}
+                    {c.skills.length > 0 && (
+                      <div className="mt-1 text-[10px] text-purple-200/80">
+                        固有スキル: {c.skills.map((s) => `${s.name}(${s.type}/MP${s.cost})`).join("・")}
+                      </div>
+                    )}
+                    <button
+                      className="btn-primary mt-2 text-xs"
+                      disabled={submitting}
+                      onClick={() => submit(c.name)}
+                    >
+                      {submitting ? "作成中…" : `${c.name} で始める`}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {err && <div className="text-red-400 text-xs">{err}</div>}
           <div className="flex gap-2 flex-wrap">
-            <button className="btn-primary" onClick={submit}>運命を委ねる</button>
+            <button className="btn-primary" onClick={() => submit()} disabled={submitting}>
+              {submitting ? "作成中…" : (curatedCandidates.length > 0 ? "テンプレ職で運命を委ねる" : "運命を委ねる")}
+            </button>
             <button className="btn" onClick={() => setStep(1)}>1問目から見直す</button>
             <button className="btn" onClick={restartQuiz} title="全回答をクリアして最初の設問へ">最初からやり直す</button>
             <button className="btn" onClick={reset}>やめる</button>

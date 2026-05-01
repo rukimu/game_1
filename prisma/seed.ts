@@ -102,6 +102,24 @@ async function main() {
   // — distinct from the procedural mass pool. Phase 1 ships 12 entries
   // here; Phase 2 will bulk-generate ~90 more via the AI pipeline in
   // docs/team/CURATED_JOB_BULK.md.
+  //
+  // Housekeeping: drop curated rows whose name is no longer in the
+  // catalog (renames during early C31 dev — e.g. "眼鏡戦士・パセリ"
+  // → "眼鏡戦士"). Skills are removed first because Skill.jobId is
+  // SetNull on delete and we don't want orphan rows clinging on.
+  const validCuratedNames = new Set(CURATED_JOBS.map((cj) => cj.name));
+  const staleCurated = await prisma.job.findMany({
+    where: { curated: true, NOT: { name: { in: Array.from(validCuratedNames) } } },
+    select: { id: true, name: true },
+  });
+  for (const j of staleCurated) {
+    await prisma.skill.deleteMany({ where: { jobId: j.id } });
+    await prisma.job.delete({ where: { id: j.id } });
+  }
+  if (staleCurated.length > 0) {
+    console.log(`Curated jobs: cleaned ${staleCurated.length} stale entries (${staleCurated.map((j) => j.name).join(", ")}).`);
+  }
+
   let curatedCreated = 0;
   let curatedSkillsCreated = 0;
   for (const cj of CURATED_JOBS) {

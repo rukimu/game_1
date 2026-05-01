@@ -9,6 +9,7 @@ import { rollClueDiscovery } from "@/lib/mystery";
 import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance } from "@/lib/affixes";
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 import { awardAchievement } from "@/lib/achievements";
+import { parseInheritedSkillIds, tickSkillProficiency } from "@/lib/skillInherit";
 
 export type StatusKind = "poison" | "burn" | "stun" | "silence" | "bleed" | "curse";
 
@@ -421,6 +422,9 @@ async function resolveTurn(battleId: string) {
     spd: number; atk: number; mat: number; def: number; mdf: number; name: string;
     effects: AggregatedEffects;
     statuses: StatusEffect[];
+    // Skill ids inherited from a past job. Used to charge a 1.5x MP penalty
+    // and to tag the log entry. Snapshotted at turn-resolve time. Cycle 30.
+    inheritedSkillIds: Set<string>;
   };
   const partState = new Map<string, PartActor>();
   for (const p of battle.participants) {
@@ -443,6 +447,7 @@ async function resolveTurn(battleId: string) {
       name: p.character.name,
       effects,
       statuses,
+      inheritedSkillIds: new Set(parseInheritedSkillIds(p.character.inheritedSkillIds)),
     });
   }
 
@@ -523,13 +528,24 @@ async function resolveTurn(battleId: string) {
         continue;
       }
       const skill = await prisma.skill.findUnique({ where: { id: action.skillId } });
-      if (!skill || actor.mp < skill.cost) {
+      if (!skill) {
         log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}はスキルを使えなかった。` });
         continue;
       }
-      actor.mp -= skill.cost;
-      // Mastery: track skill usage count for use_skill_count quests.
+      // Cycle 30: inherited skills cost 1.5x MP and are tagged 【継承】 in
+      // the log so players can see which slot fired.
+      const isInherited = actor.inheritedSkillIds.has(skill.id);
+      const effectiveCost = isInherited ? Math.ceil(skill.cost * 1.5) : skill.cost;
+      if (actor.mp < effectiveCost) {
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は${skill.name}を試みたが、MPが足りなかった。` });
+        continue;
+      }
+      actor.mp -= effectiveCost;
+      const skillName = isInherited ? `${skill.name}【継承】` : skill.name;
       try { await tickMasteryProgress({ characterId: actor.id, goalType: "use_skill_count", delta: 1 }); } catch { /* non-fatal */ }
+      // Cycle 30: per-(character, skill) usage tally — feeds the proficiency
+      // bonus consumed in C30-d.
+      try { await tickSkillProficiency(actor.id, skill.id); } catch { /* non-fatal */ }
       if (skill.type === "heal") {
         const healAmount = skill.power + Math.floor(actor.mat * 0.4);
         // heal target: lowest hp ally
@@ -537,17 +553,17 @@ async function resolveTurn(battleId: string) {
         const t = targets[0];
         if (t) {
           t.hp = Math.min(t.hp + healAmount, await getMaxHp(t.id));
-          log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skill.name}！${t.name}のHPが${healAmount}回復した。` });
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skillName}！${t.name}のHPが${healAmount}回復した。` });
         }
       } else if (skill.type === "buff") {
         actor.atk = Math.floor(actor.atk * 1.2);
-        log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は${skill.name}で力を高めた！` });
+        log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}は${skillName}で力を高めた！` });
       } else {
         // attack/debuff/special => damage to enemy
         const idx = action.targetIndex ?? enemies.findIndex(e => e.alive);
         const target = enemies[idx];
         if (!target || !target.alive) {
-          log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skill.name}は対象が居なかった。` });
+          log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skillName}は対象が居なかった。` });
           continue;
         }
         const baseDmg = applyDamage(Math.max(actor.atk, actor.mat), target.def, skill.power, skill.element, target.weakness, target.element);
@@ -559,7 +575,7 @@ async function resolveTurn(battleId: string) {
         log.push({
           turn: battle.turn,
           ts: Date.now(),
-          text: `${actor.name}の${skill.name}！${target.name}に${result.damage}のダメージ。${result.tagText}`,
+          text: `${actor.name}の${skillName}！${target.name}に${result.damage}のダメージ。${result.tagText}`,
         });
         if (result.lifesteal > 0) {
           log.push({ turn: battle.turn, ts: Date.now(), text: `  └ ${actor.name}は ${result.lifesteal} HP を吸収した。` });

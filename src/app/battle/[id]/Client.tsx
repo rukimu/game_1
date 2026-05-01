@@ -11,7 +11,15 @@ function getSocket() {
   return sharedSocket;
 }
 
-type Skill = { id: string; name: string; type: string; cost: number; description: string };
+type Skill = {
+  id: string;
+  name: string;
+  type: string;
+  cost: number;       // effective MP cost (includes the 1.5x inheritance penalty)
+  baseCost?: number;  // raw Skill.cost before the penalty
+  description: string;
+  inherited?: boolean;
+};
 
 function labelForType(t: string): string {
   switch (t) {
@@ -220,7 +228,7 @@ export default function BattleClient({
                     <option value="">スキルを選ぶ</option>
                     {skills.map((s) => (
                       <option key={s.id} value={s.id} title={s.description}>
-                        {s.name}（{labelForType(s.type)}/{s.cost}MP）
+                        {s.inherited ? "★ " : ""}{s.name}（{labelForType(s.type)}/{s.cost}MP{s.inherited ? "・継承" : ""}）
                       </option>
                     ))}
                   </select>
@@ -245,11 +253,12 @@ export default function BattleClient({
             const s = skills.find((x) => x.id === skillId);
             if (!s) return null;
             return (
-              <div className="mt-2 border border-yellow-900/40 rounded p-2 bg-black/30 text-xs">
+              <div className={`mt-2 border rounded p-2 text-xs ${s.inherited ? "border-purple-700/60 bg-purple-950/30" : "border-yellow-900/40 bg-black/30"}`}>
                 <div className="font-bold text-yellow-200">
+                  {s.inherited && <span className="text-purple-300 mr-1">★継承</span>}
                   {s.name}{" "}
                   <span className="text-yellow-300/80 text-[10px]">
-                    [{labelForType(s.type)} / {s.cost}MP]
+                    [{labelForType(s.type)} / {s.cost}MP{s.inherited && s.baseCost ? `（基本${s.baseCost}MP×1.5）` : ""}]
                   </span>
                 </div>
                 <div className="text-yellow-100/85 mt-0.5">{s.description || "（説明なし）"}</div>

@@ -2,6 +2,7 @@ import Hud from "@/components/Hud";
 import { redirect } from "next/navigation";
 import { getActiveCharacter } from "@/lib/activeCharacter";
 import { prisma } from "@/lib/prisma";
+import { getInheritedSkills } from "@/lib/skillInherit";
 import BattleClient from "./Client";
 
 export default async function BattlePage({ params }: { params: { id: string } }) {
@@ -12,8 +13,14 @@ export default async function BattlePage({ params }: { params: { id: string } })
     include: { participants: { include: { character: true } } },
   });
   if (!battle) redirect("/town");
-  // load my skills
-  const skills = c.currentJobId ? await prisma.skill.findMany({ where: { jobId: c.currentJobId } }) : [];
+  // load my skills (current job + inherited slots, dedup'd by id)
+  const currentSkills = c.currentJobId ? await prisma.skill.findMany({ where: { jobId: c.currentJobId } }) : [];
+  const inheritedSkills = await getInheritedSkills(c.id);
+  const currentIdSet = new Set(currentSkills.map((s) => s.id));
+  const skills = [
+    ...currentSkills.map((s) => ({ ...s, inherited: false })),
+    ...inheritedSkills.filter((s) => !currentIdSet.has(s.id)).map((s) => ({ ...s, inherited: true })),
+  ];
 
   // Mid-battle join/leave eligibility (Cycle 23). Boss + dungeon battles
   // are excluded; the UI hides the buttons via `joinable=false`.
@@ -36,7 +43,15 @@ export default async function BattlePage({ params }: { params: { id: string } })
       <BattleClient
         battleId={battle.id}
         characterId={c.id}
-        skills={skills.map((s) => ({ id: s.id, name: s.name, type: s.type, cost: s.cost, description: s.description }))}
+        skills={skills.map((s) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          cost: s.inherited ? Math.ceil(s.cost * 1.5) : s.cost,
+          baseCost: s.cost,
+          description: s.description,
+          inherited: s.inherited,
+        }))}
         canJoin={canJoin}
         canLeave={canLeave}
         isParticipant={!!myPart?.alive}

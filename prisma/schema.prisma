@@ -69,6 +69,9 @@ model Character {
   // ELO-style duel rating. Starts at 1500; updated each duel via the
   // standard formula in /api/pvp/duels/[id]/accept.
   duelRating      Int      @default(1500)
+  // JSON array of Skill ids inherited from past jobs. Slot cap by level
+  // (Lv1+: 1, Lv30+: 2, Lv50+: 3). Resolved via src/lib/skillInherit.ts.
+  inheritedSkillIds String?
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventory       InventoryItem[]
@@ -91,6 +94,7 @@ model Character {
   masteryQuests   MasteryQuest[]
   dailyChallenges DailyChallenge[]
   raidParticipants RaidParticipant[]
+  proficiencies   SkillProficiency[]
 }
 
 // World-level achievement definitions. Most are seeded statically; some can
@@ -150,6 +154,22 @@ model Skill {
   generatedBy String  @default("template")
   createdAt   DateTime @default(now())
   job         Job?    @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  proficiencies SkillProficiency[]
+}
+
+// Per-character usage tally for any skill (current job, past job, or
+// inherited slot). Drives the +5/+10/+15% bonus at 10/30/50 uses,
+// applied in src/lib/battle.ts via getProficiencyBonusPct.
+model SkillProficiency {
+  id          String   @id @default(cuid())
+  characterId String
+  skillId     String
+  usageCount  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  @@unique([characterId, skillId])
+  @@index([characterId])
 }
 
 model CharacterJobHistory {

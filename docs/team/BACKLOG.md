@@ -59,8 +59,7 @@
 
 ## P2 (構想中)
 
-- **Cycle 30**: スキル継承システム (NEXT — 過去職スキル最大 3 + コンボ + 熟練度ボーナス)
-- **Cycle 31**: 手作り固有職 100 体 (curated job)
+- **Cycle 31**: 手作り固有職 100 体 (NEXT — curated job「眼鏡戦士」「猫好き魔導師」等)
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
 - **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
@@ -75,6 +74,12 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 30 (2026-04-29) — スキル継承システム
+- [x] **C30-a**: `Character.inheritedSkillIds` (JSON) + `SkillProficiency(characterId, skillId, usageCount)` モデル + `src/lib/skillInherit.ts` 新規（slot 算定 Lv1+:1/30+:2/50+:3、`getInheritableSkills` / `setInheritedSkills` / `tickSkillProficiency` / `getProficiencyBonusPct`）
+- [x] **C30-b**: `/jobs` UI に継承スロット操作（職別グループのチェックボックス、編集モード、保存時バリデーション）+ `POST /api/jobs/inherit`
+- [x] **C30-c**: 戦闘で継承スキル使用、MP コスト 1.5x、`tickSkillProficiency` で使用ごとに加算、UI で `★`/紫枠の色分け
+- [x] **C30-d**: 熟練度 +5/+10/+15% (10/30/50 回、SAME-cast) + チェーンコンボ +10%（同ターン内で異なる type 連続）+ ログに `[熟練+N%]` `[連携+10%]` タグ
 
 ### Cycle 29 (2026-04-29) — ワールドレイドバトル + 横断フック
 - [x] `src/lib/raid.ts` 新規: 非同期 DPS race エンジン (攻撃 5s / 特技 15s / 回復 10s, KO + 90s 遅延復活, ボス AOE 遅延ティック)

@@ -7,6 +7,16 @@
 
 ---
 
+## Cycle 30 — スキル継承システム (2026-04-29)
+
+過去職スキルを現職スロットに持ち込めるビルド独自性システムを a〜d の 4 サブサイクルで実装。軸 B（キャラビルド）★★★ → ★★★★。
+
+- **C30-a**: スキーマ + ライブラリ — `Character.inheritedSkillIds` (JSON) + `SkillProficiency(characterId, skillId, usageCount)` + `src/lib/skillInherit.ts`（slot 算定 Lv1+:1 / Lv30+:2 / Lv50+:3、`getInheritableSkills`、`setInheritedSkills`、`tickSkillProficiency`、`getProficiencyBonusPct`）
+- **C30-b**: `/jobs` UI に継承スロット操作（職別グループのチェックボックス、編集モード）+ `POST /api/jobs/inherit`（スロット上限・継承可能セットでバリデーション）
+- **C30-c**: 戦闘統合 — 継承スキルを `getAvailableSkills` に合流、MP コスト 1.5x、`tickSkillProficiency` で使用ごとに加算、戦闘 UI で `★`/紫枠の色分け + `【継承】` ログタグ
+- **C30-d**: 熟練度ボーナス +5/+10/+15%（10/30/50 回、SAME-cast）+ チェーンコンボ +10%（同ターン内で異なる type の連続）+ ログに `[熟練+N%]` `[連携+10%]` タグ
+- 触ったファイル: `src/lib/skillInherit.ts` (新規), `src/lib/battle.ts`, `src/app/jobs/{page.tsx,Client.tsx}`, `src/app/api/jobs/inherit/route.ts` (新規), `src/app/battle/[id]/{page.tsx,Client.tsx}`
+
 ## Cycle 29 — ワールドレイドバトル + 横断フック (2026-04-29)
 
 街湧きの非同期 DPS race 型レイドを a〜d の 4 サブサイクルで実装。

@@ -9,7 +9,7 @@ import { rollClueDiscovery } from "@/lib/mystery";
 import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance } from "@/lib/affixes";
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 import { awardAchievement } from "@/lib/achievements";
-import { parseInheritedSkillIds, tickSkillProficiency } from "@/lib/skillInherit";
+import { getProficiencyBonusPct, parseInheritedSkillIds, tickSkillProficiency } from "@/lib/skillInherit";
 
 export type StatusKind = "poison" | "burn" | "stun" | "silence" | "bleed" | "curse";
 
@@ -505,6 +505,10 @@ async function resolveTurn(battleId: string) {
     return sb - sa;
   });
 
+  // Cycle 30-d: tracks the last skill's type within this turn for the
+  // chain-combo bonus — varied chains beat single-skill spam.
+  let lastSkillType: string | null = null;
+
   for (const action of ordered) {
     const actor = partState.get(action.characterId);
     if (!actor || !actor.alive) continue;
@@ -541,13 +545,28 @@ async function resolveTurn(battleId: string) {
         continue;
       }
       actor.mp -= effectiveCost;
-      const skillName = isInherited ? `${skill.name}【継承】` : skill.name;
       try { await tickMasteryProgress({ characterId: actor.id, goalType: "use_skill_count", delta: 1 }); } catch { /* non-fatal */ }
-      // Cycle 30: per-(character, skill) usage tally — feeds the proficiency
-      // bonus consumed in C30-d.
-      try { await tickSkillProficiency(actor.id, skill.id); } catch { /* non-fatal */ }
+      // Cycle 30-d: proficiency tally drives the SAME-cast power bonus —
+      // the 10th use of a skill is itself a 5%-buffed cast.
+      let proficiencyBonusPct = 0;
+      try {
+        const usage = await tickSkillProficiency(actor.id, skill.id);
+        proficiencyBonusPct = getProficiencyBonusPct(usage);
+      } catch { /* non-fatal */ }
+      // Cycle 30-d: chain bonus when the previous skill (any actor in this
+      // turn) had a different type. Encourages varied play over spamming.
+      const comboBonusPct = lastSkillType !== null && lastSkillType !== skill.type ? 10 : 0;
+      const totalPowerBonusPct = proficiencyBonusPct + comboBonusPct;
+      const effectivePower = totalPowerBonusPct > 0
+        ? Math.floor(skill.power * (1 + totalPowerBonusPct / 100))
+        : skill.power;
+      const skillTags: string[] = [];
+      if (isInherited) skillTags.push("【継承】");
+      if (proficiencyBonusPct > 0) skillTags.push(`[熟練+${proficiencyBonusPct}%]`);
+      if (comboBonusPct > 0) skillTags.push(`[連携+${comboBonusPct}%]`);
+      const skillName = `${skill.name}${skillTags.join("")}`;
       if (skill.type === "heal") {
-        const healAmount = skill.power + Math.floor(actor.mat * 0.4);
+        const healAmount = effectivePower + Math.floor(actor.mat * 0.4);
         // heal target: lowest hp ally
         const targets = [...partState.values()].filter(t => t.alive).sort((a, b) => a.hp - b.hp);
         const t = targets[0];
@@ -566,7 +585,7 @@ async function resolveTurn(battleId: string) {
           log.push({ turn: battle.turn, ts: Date.now(), text: `${actor.name}の${skillName}は対象が居なかった。` });
           continue;
         }
-        const baseDmg = applyDamage(Math.max(actor.atk, actor.mat), target.def, skill.power, skill.element, target.weakness, target.element);
+        const baseDmg = applyDamage(Math.max(actor.atk, actor.mat), target.def, effectivePower, skill.element, target.weakness, target.element);
         const result = applyEffects(baseDmg, actor, target);
         target.hp -= result.damage;
         if (result.lifesteal > 0) {
@@ -601,6 +620,8 @@ async function resolveTurn(battleId: string) {
           log.push({ turn: battle.turn, ts: Date.now(), text: `${target.name}を倒した！` });
         }
       }
+      // Cycle 30-d: remember this skill's type so the next caster can chain.
+      lastSkillType = skill.type;
       continue;
     }
     // attack

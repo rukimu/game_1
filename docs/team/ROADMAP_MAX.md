@@ -9,11 +9,11 @@
 
 | 軸 | 現状 | 目標 | 主担当サイクル |
 | --- | --- | --- | --- |
-| A. コアループ | ★★★★☆ | ★★★★★ | C29, C32 |
+| A. コアループ | ★★★★★ | ★★★★★ | C29 ✅, C32 ✅ |
 | B. キャラビルド | ★★★★★ | ★★★★★ | C30 ✅ (skill inherit), C31 ✅ (curated jobs Phase 1) |
 | C. ハクスラ偶発性 | ★★★★★ | ★★★★★ (維持) | — |
 | D. 物語・世界観 | ★★★★☆ | ★★★★★ | C33 (curated NPC), C34 (lore docs) |
-| E. 協調プレイ | ★★★★☆ | ★★★★★ | C29 ✅ (raid), C32 (siege ops) |
+| E. 協調プレイ | ★★★★★ | ★★★★★ | C29 ✅ (raid), C32 ✅ (siege ops) |
 | F. やりこみ・エンドゲーム | ★★★★☆ | ★★★★★ | C28 ✅, C30 (skill inherit), C36 (endless) |
 | G. 公平・経済 | ★★★★☆ | ★★★★★ | C37 (rate-limit, monitoring) |
 | H. UX・プレゼン | ★★★☆☆ | ★★★★★ | C27 ✅, C35 (pixel art), C38 (a11y) |
@@ -178,24 +178,35 @@
 
 ---
 
-### Cycle 32 — 攻城戦に本物の戦闘 UI（プレイヤー操作）
+### Cycle 32 — 攻城戦に本物の戦闘 UI ✅ DONE
 
-**狙い**: 現在 narrative log だけのシージに、プレイヤーの操作介入を入れる。
+**狙い**: narrative log だけのシージに、プレイヤーの操作介入を入れる。
 
-1. **シージ戦闘画面 `/siege/[id]/battle`**
-   - リアルタイムターン制（30 秒/ターン、ギルド単位で全員行動）
-   - ギルドメンバーは「攻撃する敵ギルド員を選択」「全体攻撃」「単体強攻撃」「援護」の 4 選択肢
-   - HP は各ギルドメンバーの `level + duel_wins/2` の合計が初期値、削り合いで決着
-2. **特殊行動**
-   - ギルドマスター: 1 回だけ「号令」(味方全体攻撃 +20%)
-   - サブ: 1 回だけ「治療」(味方ギルドの HP 30% 回復)
-3. **観戦モード**
-   - 未参加プレイヤーは見るだけ可、応援チャットあり
-4. **戦況可視化**
-   - 各ギルドの体力ゲージ・撃破済みメンバー数をリアルタイム表示
-5. **既存 narrative log は副生成物として残す**
+**実装結果（C32-a/b/c/d 4 サブサイクル）**:
 
-**指標**: シージ参加率 +3 倍
+1. ✅ **エンジン基盤** — `prisma/schema.prisma` + `src/lib/siegeBattle.ts`
+   - `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `SiegeEvent.battle` 一対一
+   - HP = `sum(level + wins/2)` をギルド単位の damage budget に（既存 score 式を流用）
+   - 30s/ターン、ターン切れで自動 resolve、`finalizeRaidIfDue` パターンの lazy advance
+2. ✅ **6 アクション**
+   - 通常: attack (1×) / aoe (0.5× × 全敵) / heavy (1.5×) / support (自陣 +5%)
+   - 特殊: rally (master、味方攻撃 +20%、1 戦闘 1 回) / cure (sub、自陣 +30%、1 戦闘 1 回)
+3. ✅ **HTTP API** — `src/app/api/siege/[id]/battle/{route.ts,action/route.ts}`
+   - GET: lazy-create 込みで view 取得（pending → active 遷移も `maybeAdvancePhase` で）
+   - POST action: 6 アクション送信、エラーは engine の explicit code（`rally_requires_master` 等）を 400 で
+4. ✅ **戦闘 UI** — `src/app/siege/[id]/battle/{page.tsx,Client.tsx}`
+   - 1.5s ポーリング + 4Hz 局所クロックでターンカウントダウン
+   - ギルドカード: HP バー（緑/黄/赤）+ 自陣ハイライト + rally/cure 使用済バッジ
+   - アクションパネル（参戦者 + 自陣 alive のみ）+ 戦闘ログ末尾 30 件 + アクション一覧サイドバー
+   - 観戦モード: 未参加 / 自陣陣形崩壊で read-only
+5. ✅ **応援チャット** — `siege:[id]` チャンネル、既存 `Chat` コンポーネントを流用
+   - `canAccess` で誰でも投稿可、レート制限 + 禁止語フィルタは継承
+
+**スコープ調整**:
+- 「ギルド単位で全員行動」→ 全員が 1 ターンに 1 アクション、ターン切れで自動進行する形に。全員提出の同時 resolve は副タイマーが煩雑なのでパス
+- narrative log は SiegeEvent 終結ロジックでそのまま残し、戦闘 UI 上では戦闘ログ（`SiegeBattle.logJson`）が主役
+
+**指標**: シージ参加率 +3 倍（実プレイ評価待ち）
 
 ---
 
@@ -370,5 +381,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 31 完了 (C31-a/b/c/d + Phase 2 b1〜b8 = 100 curated jobs)
-**次の着手**: Cycle 32 (攻城戦に本物の戦闘 UI) を実装。
+**現状の最新コミット**: Cycle 32 完了 (C32-a/b/c/d、siege battle UI + chat)
+**次の着手**: Cycle 33 (世界観の手作り厚み — 手作りユニーク NPC 30 体 + lore docs) を実装。

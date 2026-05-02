@@ -28,6 +28,13 @@ function canAccess(channel: string, character: any): boolean {
     const [a, b] = channel.slice(3).split(":");
     return character.id === a || character.id === b;
   }
+  if (channel.startsWith("siege:")) {
+    // Cycle 32: siege battle cheer chat. Spectators and participants
+    // alike can post — the whole point is letting non-registered guilds
+    // root for a side. Rate limit + ban-word filter still apply via the
+    // existing send path.
+    return true;
+  }
   return false;
 }
 

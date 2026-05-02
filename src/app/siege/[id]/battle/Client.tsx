@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Chat from "@/components/Chat";
 
 type GuildRow = {
   guildId: string;
@@ -272,6 +273,7 @@ export default function SiegeBattleClient({
             ターン制 30s。各メンバーは 1 ターン 1 アクション。ターン終了か全員提出で進行。
           </div>
         </div>
+        <Chat channel={`siege:${siegeId}`} title="応援チャット" />
       </aside>
     </div>
   );

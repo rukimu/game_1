@@ -7,6 +7,16 @@
 
 ---
 
+## Cycle 34 — 真のエンドゲーム + 無限階ダンジョン (2026-05-02)
+
+Lv50 以降の continued-play 軸を 4 サブサイクルで実装。軸 F（やりこみ・エンドゲーム）★★★★ → ★★★★★。
+
+- **C34-a**: 奈落エンジン基盤 — `AbyssRun` / `AbyssWeeklyRecord` モデル + `Battle.abyssRunId` リレーション + `src/lib/abyss.ts`（指数報酬 1.15^floor、+1 level/floor、各 10 階固有ボス、`onAbyssBattleEnded` で勝利→報酬累積/敗北→半減+死亡、`retreatAbyss` で全額持ち帰り、ISO 週ごとの `AbyssWeeklyRecord`）+ `battle.ts` フック
+- **C34-b**: `/abyss` UI + HTTP API 3 本（enter / advance / retreat）+ HUD 「奈落」リンク Lv50+ ゲート / 状態別 CTA / ボス階予告 / 週次ランキング Top20
+- **C34-c**: アセンション（`Character.generation` + `ascensionBonusJson` + `src/lib/ascension.ts`、Lv→1 リセット + +5HP/+2atk/+2mat 等 × 世代数の永久ボーナス、`/ascension` UI 2 段階確認、Announcement broadcast）+ 称号コンプ「歩く伝承」（mythic hidden、`awardAchievement` 末尾で auto-grant）+ `/canon` 季節カノン年表（中心の謎 / 解明者 / 解明日）+ HUD 「転生」「年表」リンク
+- **C34-d**: ROADMAP_MAX 軸 F 更新 + catch-up
+- 触ったファイル: `prisma/schema.prisma`, `src/lib/{abyss.ts,ascension.ts,achievements.ts,battle.ts}`, `src/app/{abyss,ascension,canon}/{page.tsx,Client.tsx}`, `src/app/api/{abyss/{enter,advance,retreat},character/ascend}/route.ts`, `src/components/HudMenu.tsx`
+
 ## Cycle 33 — 世界観の手作り厚み (2026-05-02)
 
 curated NPC 30 体 + 5 都市 lore docs + 季節ダイアログ拡充で軸 D（物語・世界観）を補強。a〜d の 4 サブサイクル。軸 D ★★★★ → ★★★★★。

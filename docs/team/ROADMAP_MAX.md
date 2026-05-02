@@ -14,7 +14,7 @@
 | C. ハクスラ偶発性 | ★★★★★ | ★★★★★ (維持) | — |
 | D. 物語・世界観 | ★★★★★ | ★★★★★ | C33 ✅ (curated NPC + lore docs) |
 | E. 協調プレイ | ★★★★★ | ★★★★★ | C29 ✅ (raid), C32 ✅ (siege ops) |
-| F. やりこみ・エンドゲーム | ★★★★☆ | ★★★★★ | C28 ✅, C30 (skill inherit), C36 (endless) |
+| F. やりこみ・エンドゲーム | ★★★★★ | ★★★★★ | C28 ✅, C30 ✅, C34 ✅ (abyss + ascension + canon) |
 | G. 公平・経済 | ★★★★☆ | ★★★★★ | C37 (rate-limit, monitoring) |
 | H. UX・プレゼン | ★★★☆☆ | ★★★★★ | C27 ✅, C35 (pixel art), C38 (a11y) |
 
@@ -241,25 +241,40 @@
 
 ---
 
-### Cycle 34 — 真のエンドゲーム＋無限階ダンジョン
+### Cycle 34 — 真のエンドゲーム + 無限階ダンジョン ✅ DONE
 
 **狙い**: Lv50 以降の「やる事がある」を作る。
 
-1. **無限階ダンジョン「奈落」**
-   - 階を進むほど指数的に強くなる、撤退ボタンあり
-   - 各 10 階で固有ボス、報酬は階数に比例
-   - 週次でランキングリセット
-2. **アセンション（転生）システム**
-   - Lv50 到達時に「世代を進める」選択肢
-   - 一部 stat / アチーブメント引継ぎ、新たな bonus 開放
-3. **称号コンプ報酬**
-   - 全 90+ 称号獲得で世界唯一の「歩く伝承」称号
-4. **シーズン総決算**
-   - シーズン終了時に最も貢献したプレイヤー Top 10 が殿堂入り（永久記録）
-5. **季節カノン**
-   - 過去シーズンの解明結果を `/canon` で閲覧、世界年表化
+**実装結果（C34-a/b/c/d 4 サブサイクル）**:
 
-**指標**: Lv50 後継続プレイ率 +30%
+1. ✅ **無限階ダンジョン「奈落」** — `prisma/schema.prisma` + `src/lib/abyss.ts`
+   - `AbyssRun` + `AbyssWeeklyRecord` モデル + `Battle.abyssRunId` リレーション
+   - 1.15^floor の指数報酬曲線、+1 level/floor の難度曲線
+   - 各 10 階で固有ボス（`ABYSS_BOSSES` 10 体ローテーション）
+   - `battle.ts` の win 経路で `onAbyssBattleEnded(true)` → 報酬累積、defeat で `(false)` → 累積半減 + 死亡
+   - `retreatAbyss`: 全額持ち帰り、battle 中はブロック
+   - ISO 週ごとの `AbyssWeeklyRecord` で max floor / total gold / attempts を記録
+2. ✅ **`/abyss` UI + HTTP API** — `src/app/{api/abyss/{enter,advance,retreat}/route.ts,abyss/{page.tsx,Client.tsx}}`
+   - 3 状態（no run / active / battle live）に応じた CTA
+   - 「★ボス階」予告、累積表示、後退戻り、週次ランキング Top20
+   - HUD 「奈落」リンク Lv50+ ゲート
+3. ✅ **アセンション（転生）** — `src/lib/ascension.ts`
+   - `Character.generation` + `ascensionBonusJson` 拡張
+   - Lv50 から「世代を進める」選択、Lv→1 リセット + 永久ボーナス（+5 HP/+2 atk/+2 mat 等 × 世代数）
+   - 称号 / アチーブ / インベントリ / ギルドは引継ぎ、呪い職中は不可
+   - `/ascension` UI（2 段階確認）+ `POST /api/character/ascend` + Announcement broadcast
+4. ✅ **称号コンプ報酬「歩く伝承」** — `src/lib/achievements.ts`
+   - mythic + hidden の `title_collector` 追加
+   - `awardAchievement` 末尾で「全非メタ称号取得済」を check して auto-grant
+5. ✅ **季節カノン `/canon`** — `src/app/canon/page.tsx`
+   - 過去〜現在の全シーズンを年表表示（中心の謎 / 解明者名 / 解明日）
+   - 状態別 border カラー（amber=current / green=solved / gray=unsolved past）
+
+**スコープ調整**:
+- 「シーズン総決算 Top10 殿堂入り」は schema 未追加で C34 では除外。`/canon` の枠組みだけ用意し、Hall of Fame モデルは将来 (C36+) で導入予定
+- 奈落のボス階は battle.ts の boss-tag を流用せず、難度 + reward 曲線の指数化のみで「ボス感」を出す簡略化
+
+**指標**: Lv50 後継続プレイ率 +30%（実プレイ評価待ち）
 
 ---
 
@@ -392,5 +407,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 33 完了 (C33-a/b/c/d、curated NPC 30 + lore docs + seasonal dialogue 拡充)
-**次の着手**: Cycle 34 (真のエンドゲーム — 無限階ダンジョン / アセンション / 称号コンプ報酬) を実装。
+**現状の最新コミット**: Cycle 34 完了 (C34-a/b/c/d、abyss + ascension + title_collector + canon)
+**次の着手**: Cycle 35 (ドット絵アセット — 職業/敵/装備の pixel art) を実装。

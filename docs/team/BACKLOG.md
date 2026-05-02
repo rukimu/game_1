@@ -59,7 +59,9 @@
 
 ## P2 (構想中)
 
-- **Cycle 34**: 真のエンドゲーム + 無限階ダンジョン (NEXT — 奈落 / アセンション / 称号コンプ / シーズン総決算 / 季節カノン)
+- **Cycle 35**: ドット絵アセット (NEXT — 職業/敵/装備の SVG/JSON pixel art)
+- **Cycle 36-38**: 経済バランス / 運用基盤 / a11y
+- **シーズン Hall of Fame** (C34 で見送り、将来 C36+ で殿堂入りシステム導入予定)
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
@@ -75,6 +77,12 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 34 (2026-05-02) — 真のエンドゲーム + 無限階ダンジョン
+- [x] **C34-a**: `AbyssRun` / `AbyssWeeklyRecord` モデル + `Battle.abyssRunId` リレーション + `src/lib/abyss.ts`（1.15^floor 指数報酬、+1 level/floor 難度、各 10 階固有ボス、`onAbyssBattleEnded` で勝利→累積 / 敗北→半減+死亡、`retreatAbyss` 全額持ち帰り、ISO 週ランキング）+ `battle.ts` フック
+- [x] **C34-b**: `/abyss` UI + HTTP API 3 本（enter / advance / retreat、Lv50+ ゲート）+ HUD 「奈落」リンク / 状態別 CTA / ボス階予告 / 週次ランキング Top20
+- [x] **C34-c**: アセンション（`Character.generation` + `/ascension` Lv→1 リセット + 永久ボーナス + 2 段階確認 + Announcement）+ 称号コンプ「歩く伝承」（mythic hidden auto-grant）+ `/canon` 季節カノン年表 + HUD 「転生」「年表」リンク
+- [x] **C34-d**: ROADMAP_MAX 軸 F ★★★★ → ★★★★★
 
 ### Cycle 33 (2026-05-02) — 世界観の手作り厚み (curated NPC + lore docs)
 - [x] **C33-a**: `Npc.curated` / `bio` / `relationsJson` 拡張 + `prisma/curatedNpcs.ts` 新規（5 主要都市 × 6 NPC = 30 体、各 60-120 字 bio + 関係グラフ JSON）+ curated towns 2 つ（鐘塔の都ベルクラート / 古王国の都ヴェスペル）+ `src/lib/curatedNpc.ts` ヘルパ + seed 投入

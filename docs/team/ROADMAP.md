@@ -42,20 +42,22 @@
 - **Cycle 29**: ワールドレイドバトル — `/town` 訪問時 10% 湧き / 60min 再湧き CD / 10 分集合 + 30 分戦闘 / 非同期 DPS race（攻撃 5s / 特技 15s / 回復 10s）/ ボス HP 共有 / KO + 90s 遅延復活 / 貢献度ランキングで個別ドロップ tier（Top1 legendary / Top2-5 epic / 残り rare）/ パーティ多様性シナジー（3 系統 +10% / 5 系統 +20%）/ レイド系アチーブ 4 種 / デイリー `raid_join`（C29-a〜d、`b2e26f2`〜`668e93c`）
 - **Cycle 30**: スキル継承システム — 過去職スキルを現職スロットに持ち込み（Lv1+:1 / Lv30+:2 / Lv50+:3）/ 継承スキルは MP コスト 1.5x / 熟練度 +5/+10/+15%（10/30/50 回、SAME-cast）/ チェーンコンボ +10%（同ターン内で異なる skill type 連続）/ ログに `【継承】` `[熟練+N%]` `[連携+10%]` タグ（C30-a〜d、`029aa89`〜`7c96f95`）
 - **Cycle 31**: 手作り固有職 (Phase 1 + 2 = 100 体) — `Job.curated` 拡張 + `prisma/curatedJobs.ts` で 8 カテゴリ × 計 100 体（眼鏡戦士 / 猫好き魔導師 / 影語り / 鍛冶娘 / 元医者戦士 / 双頭魔導師 / 占い師の旅芸人 / 古竜の血を引く者 等、各 80-150 字 signature bio + 1 unique skill = 100 unique skill）/ クイズ結果 → top archetype の curated 候補提示 + 「○○ で始める」指名選択 / HUD・`/jobs`・`/characters` に `★固有` バッジ + `《outfit》` 表示 / 量産パイプライン文書 `CURATED_JOB_BULK.md`（C31-a〜d Phase 1 = `fe5e6d9`〜`a21b73c`、C31-d.b1〜b8 Phase 2 = `5dedfd5`〜`0770260`）
+- **Cycle 32**: 攻城戦に本物の戦闘 UI — `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `src/lib/siegeBattle.ts` / 6 アクション(attack 1× / aoe 0.5× 全敵 / heavy 1.5× / support 自陣 +5% / rally master +20% / cure sub +30%) / `/siege/[id]/battle` UI（1.5s ポーリング、ギルド HP バー、アクションパネル、観戦モード）/ `siege:[id]` 応援チャット（既存 Chat 流用、誰でも投稿可）/ 30s/ターン lazy advance（`c22138b`〜`aa84b7f`、C32-a〜d）
 
 ## 進行・次サイクル
 
-### Cycle 32 — 攻城戦に本物の戦闘 UI (NEXT)
-- 現在の攻城戦は narrative 戦況ログ + スコア決着のみ。プレイヤーの操作介入が無い
-- リアルタイムターン制（30s/ターン、ギルド単位）+ 攻撃/全体攻撃/単体強攻撃/援護の 4 選択肢
-- ギルマス「号令」/ サブ「治療」の特殊行動、観戦モード + 応援チャット
-- 既存 narrative log は副生成物として残す
-- 評価軸 A（コアループ）/ E（協調プレイ）への寄与
-- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 32 セクション
+### Cycle 33 — 世界観の手作り厚み (NEXT)
+- 手作りユニーク NPC 30 体（主要 5 街に各 6 人、固有名 + 固有背景 + 固有関係）
+- NPC 関係グラフ（一部 NPC が他 NPC と関係あり、噂で繋がる）
+- シーズン 2/3 の謎セット完成（鏡の森 S2 / 灰の唄 S3 の各 7 手がかり + 中心物語）
+- Lore データベース `docs/lore/*.md`（世界の歴史・地理・宗教・言語のメモ）
+- NPC 季節ダイアログのバリエーション拡充
+- 評価軸 D（物語・世界観）★★★★ → ★★★★★ を狙う
+- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 33 セクション
 
 ### 以降の候補（詳細は `docs/team/ROADMAP_MAX.md`）
-- **Cycle 33**: 世界観の手作り厚み（手作りユニーク NPC 30 体 + lore docs）
 - **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
+- **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 
 ## 停止条件

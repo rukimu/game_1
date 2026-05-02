@@ -7,6 +7,16 @@
 
 ---
 
+## Cycle 32 — 攻城戦に本物の戦闘 UI (2026-05-02)
+
+narrative log だけだったシージにプレイヤーの操作介入を導入。a〜d の 4 サブサイクルで実装。軸 A（コアループ）★★★★ → ★★★★★、軸 E（協調プレイ）★★★★ → ★★★★★。
+
+- **C32-a**: スキーマ + エンジン基盤 — `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `SiegeEvent.battle` 一対一 / `src/lib/siegeBattle.ts` 新規（startSiegeBattle / submitSiegeAction / resolveSiegeTurn / endSiegeBattle / getSiegeBattleView）/ HP = `sum(level + wins/2)` を damage budget に / 30s ターン、lazy advance（C29 raid パターン）/ 6 アクション: attack(1×) / aoe(0.5× 全敵) / heavy(1.5×) / support(自陣 +5%) / rally(master、味方 +20%、1 回限り) / cure(sub、自陣 +30%、1 回限り)
+- **C32-b**: HTTP API 2 本 — `GET /api/siege/[id]/battle`（lazy-create 込み）/ `POST /api/siege/[id]/battle/action`（engine の explicit エラーコードを 400 で surfacing）
+- **C32-c**: 戦闘 UI `/siege/[id]/battle` — 1.5s ポーリング + 4Hz クロック / ギルドカード（HP バー緑/黄/赤、自陣ハイライト、rally/cure 使用済バッジ）/ アクションパネル（参戦者 + 自陣 alive のみ、target 選択、master/sub 限定特殊行動）/ 戦闘ログ末尾 30 + アクション一覧サイドバー / 観戦モード（未参加 / 陣形崩壊で read-only）/ `/siege` 一覧から「戦闘画面へ」リンク追加
+- **C32-d**: 応援チャット — `siege:[id]` チャンネルで `canAccess` 全員許可（参戦者・観戦者ともに投稿可、既存 Chat コンポーネント流用、rate limit + 禁止語フィルタ継承）+ ROADMAP_MAX 軸 A/E 更新
+- 触ったファイル: `prisma/schema.prisma`, `src/lib/siegeBattle.ts` (新規), `src/app/api/siege/[id]/battle/{route.ts,action/route.ts}` (新規), `src/app/siege/[id]/battle/{page.tsx,Client.tsx}` (新規), `src/app/siege/Client.tsx`, `src/app/api/chat/[channel]/route.ts`
+
 ## Cycle 31 — 手作り固有職 (Phase 1 + 2 = 100 体到達) (2026-04-29)
 
 curated job 量産の枠組みを a〜d で構築し、Phase 1 で 12 体、Phase 2 で 88 体を追加して **計 100 体** 到達。軸 B（キャラビルド）★★★★ → ★★★★★。

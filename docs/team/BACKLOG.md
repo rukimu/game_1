@@ -59,7 +59,7 @@
 
 ## P2 (構想中)
 
-- **Cycle 32**: 攻城戦に本物の戦闘 UI (NEXT — 現在は narrative log + スコア決着のみ、プレイヤー操作介入を実装)
+- **Cycle 33**: 世界観の手作り厚み (NEXT — 手作りユニーク NPC 30 体 + lore docs)
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
@@ -75,6 +75,12 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 32 (2026-05-02) — 攻城戦に本物の戦闘 UI
+- [x] **C32-a**: `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` モデル + `SiegeEvent.battle` 一対一 + `src/lib/siegeBattle.ts` 新規（startSiegeBattle / submitSiegeAction / resolveSiegeTurn / endSiegeBattle / getSiegeBattleView、HP = sum(level + wins/2)、30s ターン、6 アクション attack/aoe/heavy/support/rally/cure）
+- [x] **C32-b**: HTTP API 2 本（`GET /api/siege/[id]/battle` lazy-create / `POST /api/siege/[id]/battle/action` engine エラーコード surfacing）
+- [x] **C32-c**: 戦闘 UI `/siege/[id]/battle`（1.5s ポーリング + 4Hz クロック、ギルドカード HP バー、アクションパネル、戦闘ログ、観戦モード）+ `/siege` 一覧から「戦闘画面へ」リンク
+- [x] **C32-d**: `siege:[id]` 応援チャット（`canAccess` 全員許可、既存 Chat 流用）+ ROADMAP_MAX 軸 A/E ★★★★ → ★★★★★
 
 ### Cycle 31 (2026-04-29) — 手作り固有職 (Phase 1 + 2 = 100 体)
 - [x] **C31-a**: `Job` に `curated` / `quirk` / `signatureOutfit` / `signatureBio` / `pixelArtId` 追加 + `prisma/curatedJobs.ts` (12 体: 眼鏡戦士・巨漢戦士・猫好き魔導師・不眠魔導師・甘党盗賊・影語り・老師・歌う司祭・鍛冶娘・旅芸人・禁書館の番人・星詠み) + `src/lib/curatedJob.ts` ヘルパ + seed 投入

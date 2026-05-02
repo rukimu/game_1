@@ -72,6 +72,12 @@ model Character {
   // JSON array of Skill ids inherited from past jobs. Slot cap by level
   // (Lv1+: 1, Lv30+: 2, Lv50+: 3). Resolved via src/lib/skillInherit.ts.
   inheritedSkillIds String?
+  // Cycle 34: ascension generation count. 0 = first life, 1+ each
+  // ascension. Drives the cumulative bonus from getAscensionBonusForGen.
+  generation        Int      @default(0)
+  // Cumulative ascension bonus snapshot. JSON: { atk, def, mat, mdf, hp, mp }
+  // applied on top of the job baseline at level reset.
+  ascensionBonusJson String?
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   inventory       InventoryItem[]

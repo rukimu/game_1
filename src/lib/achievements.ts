@@ -142,6 +142,10 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { slug: "found_secret_well", title: "井戸の底を知る者", description: "ある井戸の底に手を触れた。", titleSlug: "井戸の底を知る者", rarity: "mythic", hidden: true },
   { slug: "spoke_to_all_npcs_in_town", title: "声を集めた者", description: "ある街の全 NPC に話しかけた。", rarity: "rare", hidden: true },
   { slug: "midnight_traveler", title: "夜歩く者", description: "夜中の世界状態を 7 日連続で目撃した。", titleSlug: "夜歩く者", rarity: "epic", hidden: true },
+
+  // Cycle 34: completion meta-achievement. Auto-granted from
+  // awardAchievement when every other achievement has been earned.
+  { slug: "title_collector", title: "歩く伝承", description: "全ての称号を集めた者。世界はこの名を覚えている。", titleSlug: "歩く伝承", rarity: "mythic", hidden: true },
 ];
 
 let _seeded = false;
@@ -189,6 +193,21 @@ export async function awardAchievement(
     await prisma.characterAchievement.create({
       data: { characterId, achievementId: ach.id },
     });
+    // Cycle 34: completion check — if this grant pushed the holder over
+    // every non-collector achievement, auto-award the meta title.
+    if (slug !== "title_collector") {
+      try {
+        const totalNonMeta = await prisma.achievement.count({
+          where: { slug: { not: "title_collector" } },
+        });
+        const heldNonMeta = await prisma.characterAchievement.count({
+          where: { characterId, achievement: { slug: { not: "title_collector" } } },
+        });
+        if (heldNonMeta >= totalNonMeta) {
+          await awardAchievement("title_collector", characterId);
+        }
+      } catch { /* non-fatal */ }
+    }
     return { slug: ach.slug, title: ach.title, rarity: ach.rarity };
   } catch (e) {
     return null;

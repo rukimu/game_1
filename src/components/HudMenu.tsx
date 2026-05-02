@@ -35,6 +35,8 @@ const ITEMS: Item[] = [
   { href: "/guild", label: "ギルド", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
   { href: "/siege", label: "攻城戦", group: "more", unlock: { kind: "guild", hint: "ギルド加入で開放" } },
   { href: "/abyss", label: "奈落", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" } },
+  { href: "/ascension", label: "転生", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" } },
+  { href: "/canon", label: "年表", group: "more" },
   { href: "/curse", label: "呪い", group: "more" },
   { href: "/achievements", label: "称号", group: "more" },
   { href: "/characters", label: "選択", group: "more" },

@@ -90,6 +90,8 @@ model Character {
   duelsB          Duel[] @relation("DuelB")
   clues           CharacterClue[]
   dungeonRuns     DungeonRun[]
+  abyssRuns       AbyssRun[]
+  abyssRecords    AbyssWeeklyRecord[]
   achievements    CharacterAchievement[]
   masteryQuests   MasteryQuest[]
   dailyChallenges DailyChallenge[]
@@ -394,6 +396,9 @@ model Battle {
   id           String   @id @default(cuid())
   partyId      String?
   dungeonRunId String?
+  // Cycle 34: tags battles spawned by an Abyss run so abyss.ts can hook
+  // the post-battle reward / death path. Null for non-abyss fights.
+  abyssRunId   String?
   // normal / boss / boss_weekly / duel — drives reward multipliers and announcement text.
   kind         String   @default("normal")
   // Tag for boss-of-the-day or weekly boss so the engine can dedup announcements.
@@ -409,6 +414,7 @@ model Battle {
   result       String?  // win/lose
   party        Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
   dungeonRun   DungeonRun? @relation(fields: [dungeonRunId], references: [id], onDelete: SetNull)
+  abyssRun     AbyssRun?   @relation(fields: [abyssRunId], references: [id], onDelete: SetNull)
   participants BattleParticipant[]
   actions      BattleAction[]
 }
@@ -613,6 +619,42 @@ model DungeonRun {
   endedAt         DateTime?
   character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   battles         Battle[]
+}
+
+// Cycle 34: infinite-floor endgame dungeon "奈落". Difficulty and reward
+// scale exponentially with floor. Retreat at any time to bank rewards;
+// death halves accumulated rewards and ends the run. Each 10th floor
+// spawns a fixed boss. Weekly leaderboard tracks max floor reached.
+model AbyssRun {
+  id              String   @id @default(cuid())
+  characterId     String
+  partyId         String?
+  currentFloor    Int      @default(0)
+  status          String   @default("active") // active/aborted/dead
+  accumulatedExp  Int      @default(0)
+  accumulatedGold Int      @default(0)
+  currentBattleId String?
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  battles         Battle[]
+}
+
+// Per-character weekly best. weekKey is ISO week (YYYY-Www) so the global
+// ranking resets every Monday. Updated on retreat / death whenever the
+// run beats the prior week's max.
+model AbyssWeeklyRecord {
+  id            String   @id @default(cuid())
+  characterId   String
+  weekKey       String   // YYYY-Www
+  maxFloor      Int      @default(0)
+  totalGold     Int      @default(0)
+  totalExp      Int      @default(0)
+  attempts      Int      @default(0)
+  updatedAt     DateTime @updatedAt
+  character     Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  @@unique([characterId, weekKey])
+  @@index([weekKey, maxFloor])
 }
 
 model WorldState {

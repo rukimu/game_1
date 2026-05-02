@@ -3,6 +3,7 @@ import { emitBattle } from "@/lib/socket";
 import { awardExpAndGold } from "@/lib/leveling";
 import { getContentGenerationService } from "@/lib/generation/service";
 import { onDungeonBattleEnded } from "@/lib/dungeon";
+import { onAbyssBattleEnded } from "@/lib/abyss";
 import { tickMasteryProgress } from "@/lib/mastery";
 import { tickDailyChallenge } from "@/lib/dailyChallenge";
 import { rollClueDiscovery } from "@/lib/mystery";
@@ -973,6 +974,11 @@ async function resolveTurn(battleId: string) {
         });
       } catch (e) { /* non-fatal */ }
     }
+    // Cycle 34: bank the floor reward into the AbyssRun and free its
+    // currentBattleId so the player can advance to the next floor.
+    if (battle.abyssRunId) {
+      try { await onAbyssBattleEnded(battle.id, true); } catch (e) { /* non-fatal */ }
+    }
     await prisma.battle.update({
       where: { id: battle.id },
       data: { status: "ended", endedAt: new Date(), result: "win", enemyState: JSON.stringify(enemies), log: JSON.stringify(log) },
@@ -987,6 +993,14 @@ async function resolveTurn(battleId: string) {
       try {
         await onDungeonBattleEnded({ runId: battle.dungeonRunId, result: "lose", totalExp: 0, totalGold: 0 });
         log.push({ turn: battle.turn, ts: Date.now(), text: `ダンジョンの探索は途絶え、累積報酬の半分が霧散した。` });
+      } catch (e) { /* non-fatal */ }
+    }
+    // Cycle 34: abyss death halves the run's accumulated reward and
+    // ends the run as "dead". Halved reward is paid out via awardExpAndGold.
+    if (battle.abyssRunId) {
+      try {
+        await onAbyssBattleEnded(battle.id, false);
+        log.push({ turn: battle.turn, ts: Date.now(), text: `奈落の挑戦は閉ざされ、累積報酬の半分が霧散した。` });
       } catch (e) { /* non-fatal */ }
     }
     // penalties: lose 10% gold, no exp loss for MVP friendliness, revive at 1 HP at inn (next route).

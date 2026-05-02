@@ -149,7 +149,7 @@
 
 ---
 
-### Cycle 31 — 手作り固有職 (AI 量産パイプライン Phase 1) ✅ DONE
+### Cycle 31 — 手作り固有職 (Phase 1 + 2 = 100 体達成) ✅ DONE
 
 **狙い**: 「眼鏡戦士」「猫好き魔導師」のような、**愛着の湧く個性的な職**をテンプレ生成と分けて 100-300 体用意する。
 
@@ -166,9 +166,12 @@
 6. ✅ **`POST /api/characters` 拡張** — `jobName` 明示時は curated 優先、`signatureBio` で quiz 由来 bio を上書き
 7. ✅ **HUD / `/jobs` / `/characters` UI 統合** — `★固有` バッジ + 紫イタリック `《signatureOutfit》` 表示
 8. ✅ **量産パイプライン定義** — `docs/team/CURATED_JOB_BULK.md`（JSON フォーマット / プロンプトテンプレ / 検証 / 投入手順）
+9. ✅ **Phase 2 = 88 体 bulk 投入** — `prisma/curatedJobs.ts` を 8 バッチ (b1〜b8) に分けて拡張、計 100 体到達
+   - warrior 2→13 / mage 2→13 / rogue 2→13 / cleric 2→12 / craft 1→13 / support 1→12 / heretic 1→12 / rare 1→12
+   - 各 entry に 1 unique skill = 計 100 unique skill
 
 **スコープ調整**:
-- 元プラン「Phase 1 で 100 体」→ Phase 1 は **フレームワーク確立 + 12 体**、Phase 2 (`CURATED_JOB_BULK.md` の手順に沿った AI 量産) で 88 体追加して 100 体に到達する 2 段階構成に変更
+- 元プラン「Phase 1 で 100 体」→ 実際は Phase 1 = フレームワーク + 12 体、Phase 2 = 88 体 bulk 投入の 2 段階に分け、合計 100 体達成
 - pixel art ID は schema にだけ追加、実際のドット絵は C35 で連携
 
 **指標**: ユーザの「愛着のある自キャラ」割合 +50%（実プレイ評価待ち / Phase 2 完了後にも再評価）
@@ -367,5 +370,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 31 完了 (C31-a/b/c/d、Phase 1 = 12 curated jobs)
-**次の着手**: Cycle 32 (攻城戦に本物の戦闘 UI) を実装。Phase 2 の curated bulk gen は並行で随時。
+**現状の最新コミット**: Cycle 31 完了 (C31-a/b/c/d + Phase 2 b1〜b8 = 100 curated jobs)
+**次の着手**: Cycle 32 (攻城戦に本物の戦闘 UI) を実装。

@@ -165,9 +165,10 @@ JSON 配列のみ。
 
 ## 6. 進捗トラッキング
 
-- 投入数の確認: `await countCuratedJobs()` (`src/lib/curatedJob.ts`) を `scripts/smoke_curated.ts` あたりで呼ぶ smoke を将来作る (P2)。
-- 100 体到達で評価軸 B（キャラビルド）★★★★★ 確定（C30 + C31）。
-- 300 体到達で C33（lore docs）と合流して軸 D（物語・世界観）★★★★★ を狙える。
+- **2026-04-29**: Phase 2 完了。`prisma/curatedJobs.ts` に 8 バッチ (b1〜b8) で合計 88 体追加し、Phase 1 の 12 体と合わせて **計 100 体**到達。各 entry に 1 unique skill = 100 unique skill。`npm run seed` で `Curated jobs: 100 upserted` を確認済み。
+- 投入数の確認: `await countCuratedJobs()` (`src/lib/curatedJob.ts`) を `scripts/smoke_curated.ts` あたりで呼ぶ smoke を将来作る (P3)。
+- 100 体到達で評価軸 B（キャラビルド）★★★★★ 確定（C30 + C31）✅。
+- 300 体到達 (Phase 3、任意) で C33（lore docs）と合流して軸 D（物語・世界観）★★★★★ を狙える。
 
 ---
 

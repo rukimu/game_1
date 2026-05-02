@@ -71,34 +71,37 @@ ROADMAP_MAX の 16/32/48/64 サイズ階層に最も自然に乗る。<br />
   <div class="item"><div id="case2-sword"></div><div class="label">剣</div></div>
 </div>
 
-<h2>案 3 — SFC/16bit 風（24 色、shading あり、32×32）</h2>
+<h2>案 3' — モダン・インディー風（HD-2D 寄り、24 色 cohesive palette） <span class="recommend">★ 推奨（リファイン版）</span></h2>
 <p class="case-meta">
-グラデ・光沢で表現力◎。curated NPC・curated job の個性が出る。<br />
-重い・調整時間多い・既存テキスト UI からやや浮く可能性。<br />
-<strong>palette</strong> (主要):</p>
+Sea of Stars / Octopath Traveler 系の現代インディー寄り。1px 黒輪郭 + 4 段階 shading + 統一 palette。<br />
+プロポーションを強化（兜 + 鎧 + 脚 + ブーツが明確）、暖色＋冷色の対比でキャラ感を出す。<br />
+重い分、curated NPC・curated job の個性表現に十分耐える。<br />
+<strong>palette</strong> (24 色):</p>
 <div class="palette">
   <span style="background:transparent;border-color:#666"></span>
-  <span style="background:#000"></span>
-  <span style="background:#3a2010"></span>
-  <span style="background:#5a3a1a"></span>
-  <span style="background:#8a5a2a"></span>
-  <span style="background:#101030"></span>
-  <span style="background:#202060"></span>
-  <span style="background:#4040a0"></span>
-  <span style="background:#702010"></span>
-  <span style="background:#c83020"></span>
-  <span style="background:#f08070"></span>
-  <span style="background:#205020"></span>
-  <span style="background:#308040"></span>
-  <span style="background:#60c060"></span>
-  <span style="background:#606068"></span>
-  <span style="background:#a0a0a8"></span>
-  <span style="background:#d8d8e0"></span>
-  <span style="background:#806020"></span>
-  <span style="background:#c89030"></span>
-  <span style="background:#f0c040"></span>
-  <span style="background:#fff8c0"></span>
-  <span style="background:#f8f0d8"></span>
+  <span style="background:#1a1830"></span>
+  <span style="background:#3a2840"></span>
+  <span style="background:#2a1610"></span>
+  <span style="background:#5a3020"></span>
+  <span style="background:#4a1828"></span>
+  <span style="background:#a02848"></span>
+  <span style="background:#d85878"></span>
+  <span style="background:#ffb0c8"></span>
+  <span style="background:#2a3548"></span>
+  <span style="background:#4a5b78"></span>
+  <span style="background:#88a0bc"></span>
+  <span style="background:#d8e8f8"></span>
+  <span style="background:#6a4810"></span>
+  <span style="background:#b88030"></span>
+  <span style="background:#f0c860"></span>
+  <span style="background:#fff0a8"></span>
+  <span style="background:#1a4830"></span>
+  <span style="background:#3a8858"></span>
+  <span style="background:#80c890"></span>
+  <span style="background:#c8f0d8"></span>
+  <span style="background:#784830"></span>
+  <span style="background:#d8a880"></span>
+  <span style="background:#fff"></span>
 </div>
 
 <div class="row" style="margin-top:16px">
@@ -131,6 +134,14 @@ function render(targetId, grid, palette, scale) {
     }
   }
   document.getElementById(targetId).appendChild(svg);
+}
+
+// Center-pad a string into a 32-wide row, padding with "." (transparent).
+function c(s) {
+  const w = 32;
+  if (s.length >= w) return s.slice(0, w);
+  const left = Math.floor((w - s.length) / 2);
+  return ".".repeat(left) + s + ".".repeat(w - left - s.length);
 }
 
 // ===== 案 1: シルエット＋アクセント (16x16, 3 色) =====
@@ -267,123 +278,134 @@ render("case2-warrior", c2Warrior, PAL2, 16);
 render("case2-slime", c2Slime, PAL2, 16);
 render("case2-sword", c2Sword, PAL2, 16);
 
-// ===== 案 3: SFC 16bit 風 (32x32, 24 色 shading あり) =====
-// 兜の赤を 3 段階, 鎧の銀を 3 段階, 緑のスライムを 3 段階, etc
+// ===== 案 3': モダン・インディー風 (HD-2D 寄り、32x32) =====
+// 1px 黒輪郭 + 4 段階 shading + 統一 palette. 暖色(兜・金) ↔ 冷色(鎧)
+// の対比でキャラ感を出す。プロポーション: 兜 8px / 鎧 8px / 脚 8px。
 const PAL3 = {
-  ".": null, "K": "#000",
-  "B": "#3a2010", "b": "#5a3a1a", "C": "#8a5a2a",
-  "u": "#101030", "U": "#202060", "V": "#4040a0",
-  "R": "#702010", "r": "#c83020", "p": "#f08070",
-  "G": "#205020", "g": "#308040", "L": "#60c060",
-  "K2": "#606068", "S": "#a0a0a8", "W": "#d8d8e0",
-  "y": "#806020", "Y": "#c89030", "F": "#f0c040", "f": "#fff8c0",
-  "X": "#f8f0d8",
+  ".": null, " ": null,
+  "K": "#1a1830",   // 黒輪郭(青寄り)
+  "D": "#3a2840",   // 暗紫
+  "B": "#2a1610",   // 茶 dark
+  "b": "#5a3020",   // 茶 mid
+  "R": "#4a1828",   // 兜暗赤
+  "r": "#a02848",   // 兜中赤
+  "p": "#d85878",   // 兜明赤
+  "P": "#ffb0c8",   // 紅光
+  "U": "#2a3548",   // 鎧暗
+  "S": "#4a5b78",   // 鎧中
+  "s": "#88a0bc",   // 鎧明
+  "W": "#d8e8f8",   // 鎧光
+  "y": "#6a4810",   // 金暗
+  "Y": "#b88030",   // 金中
+  "F": "#f0c860",   // 金明
+  "f": "#fff0a8",   // 金光
+  "G": "#1a4830",   // 緑暗
+  "g": "#3a8858",   // 緑中
+  "L": "#80c890",   // 緑明
+  "l": "#c8f0d8",   // 緑光
+  "h": "#784830",   // 肌暗
+  "H": "#d8a880",   // 肌明
+  "e": "#000",      // 目
+  "X": "#fff",      // 白光
 };
 
-// 32x32 grid for warrior with shading
+// Modern indie warrior: full-body silhouette with helmet → cuirass →
+// belt → greaves → boots, all in a unified cool-vs-warm palette.
 const c3Warrior = [
-  "................................",
-  "................................",
-  "..........KKKKKKKKKKKK..........",
-  ".........KRRRRRRRRRRRRK.........",
-  "........KRrrrrrrrrrrrrRK........",
-  "........KrrrrrrrrrrrrrrK........",  // 兜の本体
-  ".......KRrrSSSSSSSSrrrRK........",  // 銀のバイザー
-  ".......KRrSWWWWWWWWSrrRK........",
-  ".......KRrSWXXKKXXWSrrRK........",  // 目
-  ".......KRrSWWWWWWWWSrrRK........",
-  ".......KRrrrSSSSrrrrrRRK........",
-  "........KRrrrrrrrrrrRRK.........",  // 顎
-  "........KKRRRRRRRRRRKK..........",
-  "........KSSSSSSSSSSSSK..........",  // 鎧の上端
-  ".......KSWWWSSSSSSWWWSK.........",  // 鎧光沢
-  "......KSSWWSSFFFFSSWWSSK........",  // 黄金の胸飾り
-  "......KSSWSSFFFfFFSSWSSK........",
-  "......KSSSSSSFFFFSSSSSSK........",
-  "......KSSSSSSSSSSSSSSSSK........",
-  "......KSSSSSSSKKKKSSSSSK........",  // ベルト溝
-  ".......KSSSSSSSSSSSSSSK.........",
-  "........KSbbbbbbbbbbSK..........",  // 茶ベルト
-  "........KCYYYYYYYYYCK...........",  // 黄金バックル
-  ".........KSSSSSSSSSSK...........",
-  ".........KSWSSSSSSWSK...........",  // 脚甲
-  ".........KSSSSSSSSSK............",
-  "..........KKKKKKKKKK............",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
+  c(""),
+  c(""),
+  c(""),
+  c("KKKKKKKKKK"),                   // 3  helmet outline
+  c("KKRRRRRRRRRRKK"),               // 4
+  c("KRRrrrrrrrrrrRRK"),             // 5  helmet body
+  c("KRrrrppppppprrrRK"),            // 6  helmet highlight
+  c("KRrSSSSSSSSSSrrRK"),            // 7  visor base
+  c("KRrSsssssssssSrrK"),            // 8  visor mid
+  c("KRrSWWWeeeeWWWSrK"),            // 9  visor highlight + eyes
+  c("KRrSssssssssssSrK"),            // 10 visor lower
+  c("KKRRrrrrrrrrrRRKK"),            // 11 chin
+  c("KKK........KKK"),               // 12 chin underline
+  c("KhHHhK"),                       // 13 neck
+  c("KKSSSSSSSSSSSSSSKK"),           // 14 shoulders
+  c("KSSWSSSSSSSSSSSSWSSK"),         // 15 cuirass top + arm hint
+  c("KSSSSWWFFFFFFFFWWSSSSK"),       // 16 chest gold band
+  c("KSSSSWFFffPPffFFWSSSSK"),       // 17 gold highlight + heart
+  c("KSSSSWWFFFFFFFFWWSSSSK"),       // 18
+  c("KSSSSSSSSSSSSSSSSSSSK"),        // 19
+  c("KSbbbbbbbbbbbbbbbbSK"),         // 20 belt
+  c("KSbYYFFFFFFFFFFFFYYbSK"),       // 21 buckle
+  c("KSSSSSSSSSSSSSSSSSSSK"),        // 22 hip plate
+  c("KSSSS    SSSSK"),               // 23 thigh split (transparent)
+  c("KSSSS    SSSSK"),               // 24
+  c("KsSSS    SSSsK"),               // 25 greaves
+  c("KKsS      SsKK"),               // 26 shin
+  c("KKKKK    KKKKK"),               // 27 boot top
+  c("KbbbK    KbbbK"),               // 28 boot sole
+  c(""),
+  c(""),
+  c(""),
 ];
 
+// Slime with rim-light + cohesive cool→warm green ramp.
 const c3Slime = [
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "..............GGGGGG............",
-  "............GGGgggggGG..........",
-  "..........GGgggggggggggG........",
-  ".........GGgggLLLLLgggggG.......",  // ハイライト
-  "........GgggLLLLLLLLLgggG.......",
-  ".......GgggLLLLLLLLLLLgggG......",
-  ".......GggLLgggggggggLLggG......",
-  "......GggLgggWWggggWWgggLggG....",  // 目（白）
-  "......GggLggKKWggggWKKggLggG....",  // 瞳
-  "......GggLggKWWggggWWKgLgggG....",
-  "......GggLgggWWggggWWgggLggG....",
-  ".......GgggLLgggggggggLLgggG....",
-  ".......GggggLLLgggggLLLggggG....",
-  "........GggggggKKKKgggggggG.....",  // 口
-  "........GgggggggggggggggggG.....",
-  ".........GgggggggggggggggG......",
-  "..........GGgggggggggggGG.......",
-  "...........GGGgggggggGGG........",
-  "............GGGGGGGGGG..........",
-  ".............KKKKKKKK...........",  // 影
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
-  "................................",
+  c(""), c(""), c(""), c(""),
+  c("KKKKKKKK"),                     // 4
+  c("KKgggggggggKK"),                // 5
+  c("KgggLLLLLLLLLgggK"),            // 6
+  c("KggLLllllllllllLLggK"),         // 7 highlight
+  c("KggLgggggggggggggLggK"),        // 8
+  c("KggLgggWWWggggWWWggLggK"),      // 9 eyes white
+  c("KggLggWeeWggggWeeWggLggK"),     // 10 pupils
+  c("KggLgggWWWggggWWWggLggK"),      // 11
+  c("KggLggggggggggggggggLggK"),     // 12
+  c("KggLLggggggggggggggLLggK"),     // 13
+  c("KgggLLgggggKKKKgggggLLgggK"),   // 14 mouth start
+  c("KggggLLgggKKKKKKgggLLggggK"),   // 15
+  c("KgggggggggKKKKKKgggggggggK"),   // 16
+  c("KKgggggggggKKKKgggggggggKK"),   // 17
+  c("KKKgggggggggggggggggggKKK"),    // 18
+  c("KKKKgggggggggggggggKKKK"),      // 19
+  c("KKKKKKKKKKKKKKKKKKKK"),         // 20 cast shadow
+  c(""), c(""), c(""), c(""),
+  c(""), c(""), c(""), c(""),
+  c(""), c(""), c(""),
 ];
 
+// Vertical sword: tip → blade (shaded) → guard (gold) → grip (leather)
+// → pommel. Sized to read at 32x32.
 const c3Sword = [
-  "................................",
-  "................................",
-  "..............................K.",
-  ".............................KSK",
-  "............................KSWK",
-  "...........................KSWWK",
-  "..........................KSWWK.",
-  ".........................KSWWK..",
-  "........................KSWWK...",
-  ".......................KSWWK....",
-  "......................KSWWK.....",
-  ".....................KSWWK......",
-  "....................KSWWK.......",
-  "...................KSWWK........",
-  "..................KSWWK.........",
-  ".................KSWWK..........",
-  "................KSWWK...........",
-  "...............KSWWK............",
-  "..............KSWWK.............",
-  ".............KSWWK..............",
-  "............KSWWK...............",  // 刃
-  "...........KSWWK................",
-  "...YYYYYYYYYYWK.................",  // 黄金の鍔
-  "..YFFFFFFFFFFFFY................",
-  "..YFFFFFFFFFFFFY................",
-  "...YYYYYYYYYYYY.................",
-  "....KCbbbbbbbCK.................",  // 茶の柄
-  "....KCBBBBBBBCK.................",
-  "....KCBBBBBBBCK.................",
-  "....KCBBBBBBBCK.................",
-  ".....KYYYYYYYK..................",  // 柄頭の金
-  "................................",
+  c(""),
+  c(""),
+  c("KSK"),                          // 2  tip
+  c("KSWSK"),                        // 3
+  c("KSWWSK"),                       // 4  blade (2px wide w/ shade)
+  c("KSWWSK"),                       // 5
+  c("KSWWSK"),                       // 6
+  c("KSWWSK"),                       // 7
+  c("KSWWSK"),                       // 8
+  c("KSWWSK"),                       // 9
+  c("KSWWSK"),                       // 10
+  c("KSWWSK"),                       // 11
+  c("KSWWSK"),                       // 12
+  c("KSWWSK"),                       // 13
+  c("KSWWSK"),                       // 14
+  c("KSWWSK"),                       // 15
+  c("KSWWSK"),                       // 16
+  c("KSWWSK"),                       // 17
+  c("KSWWSK"),                       // 18
+  c("KSSSSK"),                       // 19 fuller fade
+  c("KKYYYYYYYYKK"),                 // 20 guard outer
+  c("KYFFFFFFFFFFYK"),               // 21 guard top
+  c("KYFffffffffffFYK"),             // 22 guard highlight
+  c("KYFFFFFFFFFFFYK"),              // 23
+  c("KKYYYYYYYYYYKK"),               // 24 guard outer
+  c("KKbBBBBbbKK"),                  // 25 grip top
+  c("KbBBBBBBBbK"),                  // 26
+  c("KbBBBBBBBbK"),                  // 27
+  c("KbBBBBBBBbK"),                  // 28
+  c("KKYYFFFFYYKK"),                 // 29 pommel gold
+  c(""),
+  c(""),
 ];
 
 render("case3-warrior", c3Warrior, PAL3, 8);

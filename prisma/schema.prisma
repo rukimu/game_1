@@ -282,6 +282,12 @@ model Npc {
   lastSpokenName  String?
   lastSpokenAt    DateTime?
   visitCount      Int       @default(0)
+  // Cycle 33: hand-curated NPCs (酒場の主人カイ etc.) carry their own
+  // background bio and a tiny relation graph. Procedural NPCs leave these
+  // null. relationsJson = [{ name, relation, note }].
+  curated         Boolean   @default(false)
+  bio             String?
+  relationsJson   String?
   createdAt   DateTime @default(now())
   town        Town    @relation(fields: [townId], references: [id], onDelete: Cascade)
 }

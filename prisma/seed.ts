@@ -4,6 +4,7 @@ import { generateAllTowns, generateNpcsForTown } from "../src/lib/townGen";
 import { generateMassJobs } from "../src/lib/jobGen";
 import { generateMassItems } from "../src/lib/itemGen";
 import { CURATED_JOBS } from "./curatedJobs";
+import { CURATED_NPCS, CURATED_TOWNS } from "./curatedNpcs";
 
 const prisma = new PrismaClient();
 
@@ -38,6 +39,11 @@ async function main() {
   for (const t of legacyTowns) {
     await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
   }
+  // Cycle 33: curated towns added on top of legacy. Provides the home
+  // address for the new C33 hand-curated NPCs (鐘塔の都, 古王国の都).
+  for (const t of CURATED_TOWNS) {
+    await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
+  }
   const generatedTowns = generateAllTowns(8); // 14 regions * 8 = 112
   for (const t of generatedTowns) {
     const exists = await prisma.town.findUnique({ where: { name: t.name } });
@@ -70,6 +76,39 @@ async function main() {
     }
   }
   console.log(`  npcs: +${npcTotal} generated (5 per town target)`);
+
+  // Cycle 33: hand-curated NPCs (酒場の主人カイ etc.) on top of the
+  // procedural NPC pool. Resolved by townName → townId. Idempotent —
+  // existing rows get their curated metadata refreshed.
+  let curatedNpcsCreated = 0;
+  let curatedNpcsUpdated = 0;
+  for (const cn of CURATED_NPCS) {
+    const town = await prisma.town.findUnique({ where: { name: cn.townName } });
+    if (!town) {
+      console.warn(`  curated npc "${cn.name}" references missing town "${cn.townName}".`);
+      continue;
+    }
+    const existing = await prisma.npc.findFirst({
+      where: { townId: town.id, name: cn.name },
+    });
+    const fields = {
+      role: cn.role,
+      dialogue: cn.dialogue,
+      curated: true,
+      bio: cn.bio,
+      relationsJson: cn.relations ? JSON.stringify(cn.relations) : null,
+    };
+    if (existing) {
+      await prisma.npc.update({ where: { id: existing.id }, data: fields });
+      curatedNpcsUpdated++;
+    } else {
+      await prisma.npc.create({
+        data: { townId: town.id, name: cn.name, ...fields },
+      });
+      curatedNpcsCreated++;
+    }
+  }
+  console.log(`  curated npcs: ${curatedNpcsCreated} created, ${curatedNpcsUpdated} updated (catalog ${CURATED_NPCS.length}).`);
 
   // Initial 5 beginner jobs (anchor entries the quiz maps onto). Kept as
   // upserts so they always exist regardless of generator output.

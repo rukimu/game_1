@@ -164,6 +164,23 @@ export const QUEST_TEMPLATES = [
   { kind: "endure", text: "ギルドの試練として、本日中に{count}回戦って勝つこと。", goalType: "win_battles" },
 ];
 
+// Cycle 33-d: variety pack for the season-keyword sprinkle inside
+// generateNpcDialogue. Each template uses {word} as the keyword slot.
+export const SEASON_NPC_TEMPLATES = [
+  "最近は『{word}』の話ばかりだよ。",
+  "『{word}』の話、あんたも聞いたかい？",
+  "ああ、『{word}』ねえ。あれは厄介だ。",
+  "誰も口にしないけど、皆『{word}』を気にしてる。",
+  "『{word}』の影が、街にも落ちてきている気がするよ。",
+  "私の祖母は『{word}』を別の名で呼んでいた。",
+  "『{word}』は今シーズンの大事な手がかりだそうだ。",
+  "『{word}』──夢にまで出てくるよ、最近は。",
+  "酒場の連中が『{word}』のことを声を潜めて話していた。",
+  "『{word}』を見たって？ それは、あんたの目が良いんだ。",
+  "占い師は『{word}』が世界の鍵だと言っていた。冗談じゃないらしい。",
+  "『{word}』──昔の童歌にも出てくる言葉さ。",
+];
+
 export const NPC_TEMPLATES = [
   { role: "酒場の主人", line: "ようこそ。今日はちょっと変わった噂が流れているよ。" },
   { role: "宿屋の主人", line: "一晩{innFee}Gでベッドと温かい飯を出すよ。" },

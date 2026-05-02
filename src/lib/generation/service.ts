@@ -8,6 +8,7 @@ import {
   NPC_TEMPLATES,
   QUEST_TEMPLATES,
   ROLES,
+  SEASON_NPC_TEMPLATES,
   RUMOR_TEMPLATES,
   SEASONAL_RUMOR_TEMPLATES,
   SKILL_PARTS,
@@ -50,7 +51,7 @@ export interface ContentGenerationService {
   generateEnemy(ctx: GenerationContext): Promise<GeneratedEnemy>;
   generateQuest(ctx: GenerationContext & { townName?: string; otherTownName?: string }): Promise<GeneratedQuest>;
   generateRumor(ctx: GenerationContext & { townName: string }): Promise<string>;
-  generateNpcDialogue(ctx: GenerationContext & { role?: string }): Promise<{ role: string; line: string }>;
+  generateNpcDialogue(ctx: GenerationContext & { role?: string; baseLine?: string }): Promise<{ role: string; line: string }>;
   generateDungeonName(ctx: GenerationContext): Promise<string>;
   generateItemName(ctx: GenerationContext & { slot: keyof typeof ITEM_NAMES }): Promise<string>;
 }
@@ -177,18 +178,24 @@ class TemplateContentGenerationService implements ContentGenerationService {
     return v.value;
   }
 
-  async generateNpcDialogue(ctx: GenerationContext & { role?: string }): Promise<{ role: string; line: string }> {
+  async generateNpcDialogue(ctx: GenerationContext & { role?: string; baseLine?: string }): Promise<{ role: string; line: string }> {
     const seed = ctx.seed ?? `${Date.now()}-${Math.random()}`;
     const rng = makeRng(seed);
     const npc = pick(NPC_TEMPLATES, rng);
     const role = ctx.role ?? npc.role;
-    let line = roleLineFor(role, rng) ?? npc.line;
+    // Cycle 33-d: curated NPCs pass their own base dialogue via baseLine
+    // so we keep their personality intact while still layering season +
+    // archetype color on top.
+    let line = ctx.baseLine ?? roleLineFor(role, rng) ?? npc.line;
     // Sprinkle a season keyword into ~40% of NPC lines so the central mystery
-    // surfaces in casual chatter, not just in tavern rumors.
+    // surfaces in casual chatter, not just in tavern rumors. C33-d expanded
+    // this from a single template to 12 variants so repeat visits don't
+    // sound like a broken record.
     const seasonWords = ctx.seasonClueWords ?? [];
     if (seasonWords.length > 0 && rng() < 0.4) {
       const word = pick(seasonWords, rng);
-      line = `${line} 最近は『${word}』の話ばかりだよ。`;
+      const tmpl = pick(SEASON_NPC_TEMPLATES, rng);
+      line = `${line} ${tmpl.replace("{word}", word)}`;
     }
     // ~35% chance the NPC reads the player's archetype off them. Pure flavor —
     // never reveals stats — but it makes the world feel as if it knows you.

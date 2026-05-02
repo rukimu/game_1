@@ -12,7 +12,7 @@
 | A. コアループ | ★★★★★ | ★★★★★ | C29 ✅, C32 ✅ |
 | B. キャラビルド | ★★★★★ | ★★★★★ | C30 ✅ (skill inherit), C31 ✅ (curated jobs Phase 1) |
 | C. ハクスラ偶発性 | ★★★★★ | ★★★★★ (維持) | — |
-| D. 物語・世界観 | ★★★★☆ | ★★★★★ | C33 (curated NPC), C34 (lore docs) |
+| D. 物語・世界観 | ★★★★★ | ★★★★★ | C33 ✅ (curated NPC + lore docs) |
 | E. 協調プレイ | ★★★★★ | ★★★★★ | C29 ✅ (raid), C32 ✅ (siege ops) |
 | F. やりこみ・エンドゲーム | ★★★★☆ | ★★★★★ | C28 ✅, C30 (skill inherit), C36 (endless) |
 | G. 公平・経済 | ★★★★☆ | ★★★★★ | C37 (rate-limit, monitoring) |
@@ -210,23 +210,34 @@
 
 ---
 
-### Cycle 33 — 世界観の手作り厚み (curated NPCs + lore docs)
+### Cycle 33 — 世界観の手作り厚み ✅ DONE
 
 **狙い**: 街・NPC・季節がテンプレ感を脱する。
 
-1. **手作りユニーク NPC 30 体**
-   - 主要 5 街に各 6 人、固有名 + 固有背景 + 固有関係
-   - 「酒場の主人カイ（元盗賊、娘が呪い職になった）」のような関係性ある NPC
-2. **NPC 関係グラフ**
-   - 一部 NPC が他 NPC と関係あり、噂で繋がる
-3. **シーズン 2/3 の謎セット完成**
-   - 鏡の森（S2）、灰の唄（S3）の各 7 手がかり + 中心物語
-4. **Lore データベース `docs/lore/*.md`**
-   - 世界の歴史・地理・宗教・言語のメモ。テンプレ生成の参考データに使う
-5. **NPC 季節ダイアログのバリエーション拡充**
-   - 季節キーワードごとに 3-5 種の台詞テンプレを別途追加
+**実装結果（C33-a/b/c/d 4 サブサイクル）**:
 
-**指標**: 「世界に厚みがある」感想率向上
+1. ✅ **スキーマ拡張 + 30 体 curated NPC** — `prisma/schema.prisma` + `prisma/curatedNpcs.ts`
+   - `Npc.curated` / `bio` / `relationsJson` 追加
+   - 5 主要都市 (アルダ / ミルレ / ヴェルナ / 鐘塔の都ベルクラート / 古王国の都ヴェスペル) × 6 NPC = 30 体
+   - 各 NPC に 60-120 字の固有 bio + 関係グラフ ([{name, relation, note?}] の JSON)
+   - curated towns 2 つ (ベルクラート / ヴェスペル) を legacy に追加
+2. ✅ **`/town` 統合** — `src/app/town/page.tsx`
+   - curated NPC は紫枠 `<details>` で展開、bio + 関係マップを表示
+   - procedural NPC は従来表示、機能差は curated だけにバッジ
+3. ✅ **シーズン 1-3 完成済（C19 で実装）+ lore docs** — `docs/lore/*.md`
+   - `world.md`: 14 地方 + 5 都市 + 暦 + 宗教 + 古王朝の概説
+   - `seasons.md`: シーズン 1-3 の中心の謎・7 手がかり・内部設定 + S4-S6 forward-look
+   - `towns.md`: 5 主要都市の歴史 / 物語上の役割 / NPC 配属
+   - `curated_npcs.md`: 関係グラフ ASCII 図 + クロスタウン隠し関係 + 命名規則
+4. ✅ **NPC 季節ダイアログのバリエーション拡充** — `src/lib/generation/{templates.ts,service.ts}`
+   - `SEASON_NPC_TEMPLATES` 12 種の追記文テンプレ（旧 1 種 → 12 種）
+   - `generateNpcDialogue` に `baseLine` 引数追加 — curated NPC の固有 dialogue を保ちつつ季節キーワードを上乗せ
+
+**スコープ調整**:
+- 「シーズン 2/3 の謎セット」は C19 (seasonRotation.ts) で既出だったため、C33 では確認のみで再実装せず
+- NPC 関係グラフは別テーブル化せず JSON 列で持つことで FK 整合のオーバーヘッドを回避
+
+**指標**: 「世界に厚みがある」感想率向上 — 30 NPC × bio + lore 4 ファイル + 関係グラフで充足
 
 ---
 
@@ -381,5 +392,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 32 完了 (C32-a/b/c/d、siege battle UI + chat)
-**次の着手**: Cycle 33 (世界観の手作り厚み — 手作りユニーク NPC 30 体 + lore docs) を実装。
+**現状の最新コミット**: Cycle 33 完了 (C33-a/b/c/d、curated NPC 30 + lore docs + seasonal dialogue 拡充)
+**次の着手**: Cycle 34 (真のエンドゲーム — 無限階ダンジョン / アセンション / 称号コンプ報酬) を実装。

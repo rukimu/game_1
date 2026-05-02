@@ -51,6 +51,9 @@ export default async function TownPage() {
           try {
             const dlg = await gen.generateNpcDialogue({
               role: n.role,
+              // Cycle 33-d: curated NPCs preserve their hand-written line as
+              // the base; season/archetype color still layers on top.
+              baseLine: n.curated ? n.dialogue : undefined,
               seasonClueWords,
               characterArchetype: archetype,
               seed: `${c.id}-${n.id}-${dayKey}`,

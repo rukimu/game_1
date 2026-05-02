@@ -112,6 +112,16 @@ export default function SiegeClient({ sieges }: { sieges: Siege[] }) {
           {s.myGuildRegistered && (
             <div className="mt-2 text-xs text-green-300">★ あなたのギルドは登録済み</div>
           )}
+          {s.status === "active" && (
+            <div className="mt-2">
+              <a className="btn-primary text-xs" href={`/siege/${s.id}/battle`}>
+                戦闘画面へ
+              </a>
+              <span className="text-[10px] text-yellow-200/60 ml-2">
+                {s.myGuildRegistered ? "30秒ターン制で操作介入" : "観戦のみ"}
+              </span>
+            </div>
+          )}
           {s.status === "ended" && s.battleLog.length > 0 && (
             <details className="mt-3 border border-yellow-900/40 rounded bg-black/30 p-2">
               <summary className="cursor-pointer text-xs font-bold text-yellow-300/80">

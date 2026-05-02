@@ -10,7 +10,7 @@
 | 軸 | 現状 | 目標 | 主担当サイクル |
 | --- | --- | --- | --- |
 | A. コアループ | ★★★★☆ | ★★★★★ | C29, C32 |
-| B. キャラビルド | ★★★★☆ | ★★★★★ | C30 ✅ (skill inherit), C31 (curated jobs) |
+| B. キャラビルド | ★★★★★ | ★★★★★ | C30 ✅ (skill inherit), C31 ✅ (curated jobs Phase 1) |
 | C. ハクスラ偶発性 | ★★★★★ | ★★★★★ (維持) | — |
 | D. 物語・世界観 | ★★★★☆ | ★★★★★ | C33 (curated NPC), C34 (lore docs) |
 | E. 協調プレイ | ★★★★☆ | ★★★★★ | C29 ✅ (raid), C32 (siege ops) |
@@ -149,30 +149,29 @@
 
 ---
 
-### Cycle 31 — 手作り固有職 100 体 (AI 量産パイプライン)
+### Cycle 31 — 手作り固有職 (AI 量産パイプライン Phase 1) ✅ DONE
 
 **狙い**: 「眼鏡戦士」「猫好き魔導師」のような、**愛着の湧く個性的な職**をテンプレ生成と分けて 100-300 体用意する。
 
-**実装プラン**:
-1. **`prisma/curatedJobs.ts` を新設**
-   - 固有職定義（name / category / rank / quirk / unique skill / signature outfit / 1段落の bio / pixel art ID）
-2. **クイズ結果と curated job のマッチング**
-   - クイズの心理プロファイルから「あなたに似た固有職」を提示
-   - 既存テンプレ職とは別軸で「指名選択」も可能
-3. **固有スキル**
-   - 各固有職に 1-2 個の専用スキル（既存スキルプールから流用ではなく）
-   - 例: 眼鏡戦士「観察眼」(敵の弱点属性を 1 ターン公開) / 猫好き魔導師「招き猫の歌」(味方の運+10)
-4. **固有 bio**
-   - 1 職につき 80-150 文字の背景物語
-5. **固有 outfit cosmetic**
-   - 装備とは別、cosmetic 表示用の文字列（"丸眼鏡 + 革鎧" 等）
-6. **量産パイプライン**
-   - 設定書（性格・特徴・好物）を渡して Claude に bulk 生成させる前提
-   - JSON 配列で出力 → seed に取り込み
+**実装結果（C31-a/b/c/d 4 サブサイクル）**:
 
-**目標数**: Phase 1 で 100 種、Phase 2 で 300 種
+1. ✅ **スキーマ拡張** — `prisma/schema.prisma`
+   - `Job` に `curated` / `quirk` / `signatureOutfit` / `signatureBio` / `pixelArtId` (C35 用) を追加
+2. ✅ **`prisma/curatedJobs.ts`** — 8 カテゴリで Phase 1 として 12 体定義
+   - 眼鏡戦士 / 巨漢戦士 / 猫好き魔導師 / 不眠魔導師 / 甘党盗賊 / 影語り / 老師 / 歌う司祭 / 鍛冶娘 / 旅芸人 / 禁書館の番人 / 星詠み
+   - 各 80-150 字の signature bio（複数形 voice、職業 = クラス記述）+ signature outfit + 1 unique skill
+3. ✅ **`src/lib/curatedJob.ts`** — getCuratedJobs / byName / byCategory / byQuirk / count
+4. ✅ **`POST /api/characters/curated-suggestions`** — クイズ回答 → トップ archetype に合致する curated 職を返す
+5. ✅ **キャラ作成 UI** — summary 画面に紫枠「あなたに似た固有職」セクション、各候補に「○○ で始める」ボタンで指名選択
+6. ✅ **`POST /api/characters` 拡張** — `jobName` 明示時は curated 優先、`signatureBio` で quiz 由来 bio を上書き
+7. ✅ **HUD / `/jobs` / `/characters` UI 統合** — `★固有` バッジ + 紫イタリック `《signatureOutfit》` 表示
+8. ✅ **量産パイプライン定義** — `docs/team/CURATED_JOB_BULK.md`（JSON フォーマット / プロンプトテンプレ / 検証 / 投入手順）
 
-**指標**: ユーザの「愛着のある自キャラ」割合 +50%
+**スコープ調整**:
+- 元プラン「Phase 1 で 100 体」→ Phase 1 は **フレームワーク確立 + 12 体**、Phase 2 (`CURATED_JOB_BULK.md` の手順に沿った AI 量産) で 88 体追加して 100 体に到達する 2 段階構成に変更
+- pixel art ID は schema にだけ追加、実際のドット絵は C35 で連携
+
+**指標**: ユーザの「愛着のある自キャラ」割合 +50%（実プレイ評価待ち / Phase 2 完了後にも再評価）
 
 ---
 
@@ -368,5 +367,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 30 完了 (C30-a/b/c/d)
-**次の着手**: Cycle 31 (手作り固有職 100 体) を実装。
+**現状の最新コミット**: Cycle 31 完了 (C31-a/b/c/d、Phase 1 = 12 curated jobs)
+**次の着手**: Cycle 32 (攻城戦に本物の戦闘 UI) を実装。Phase 2 の curated bulk gen は並行で随時。

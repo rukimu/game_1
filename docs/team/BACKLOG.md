@@ -59,7 +59,7 @@
 
 ## P2 (構想中)
 
-- **Cycle 33**: 世界観の手作り厚み (NEXT — 手作りユニーク NPC 30 体 + lore docs)
+- **Cycle 34**: 真のエンドゲーム + 無限階ダンジョン (NEXT — 奈落 / アセンション / 称号コンプ / シーズン総決算 / 季節カノン)
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
@@ -75,6 +75,12 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 33 (2026-05-02) — 世界観の手作り厚み (curated NPC + lore docs)
+- [x] **C33-a**: `Npc.curated` / `bio` / `relationsJson` 拡張 + `prisma/curatedNpcs.ts` 新規（5 主要都市 × 6 NPC = 30 体、各 60-120 字 bio + 関係グラフ JSON）+ curated towns 2 つ（鐘塔の都ベルクラート / 古王国の都ヴェスペル）+ `src/lib/curatedNpc.ts` ヘルパ + seed 投入
+- [x] **C33-b**: `/town` で curated NPC を紫枠 `<details>` 展開（bio + 関係マップ表示、procedural NPC は従来表示）
+- [x] **C33-c**: `docs/lore/{world,seasons,towns,curated_npcs}.md` 4 ファイル新規（14 地方 + 5 都市 + 暦 + 宗教 + 古王朝 / S1-3 中心の謎・内部設定 + S4-S6 forward-look / 5 都市の歴史 / 関係グラフ ASCII 図 + クロスタウン隠し関係 + 命名規則）
+- [x] **C33-d**: `SEASON_NPC_TEMPLATES` 12 種に拡充（旧 1 種）+ `generateNpcDialogue` に `baseLine` 引数（curated dialogue を保ちつつ季節キーワード上乗せ）+ ROADMAP_MAX 軸 D ★★★★ → ★★★★★
 
 ### Cycle 32 (2026-05-02) — 攻城戦に本物の戦闘 UI
 - [x] **C32-a**: `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` モデル + `SiegeEvent.battle` 一対一 + `src/lib/siegeBattle.ts` 新規（startSiegeBattle / submitSiegeAction / resolveSiegeTurn / endSiegeBattle / getSiegeBattleView、HP = sum(level + wins/2)、30s ターン、6 アクション attack/aoe/heavy/support/rally/cure）

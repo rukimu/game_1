@@ -7,6 +7,16 @@
 
 ---
 
+## Cycle 33 — 世界観の手作り厚み (2026-05-02)
+
+curated NPC 30 体 + 5 都市 lore docs + 季節ダイアログ拡充で軸 D（物語・世界観）を補強。a〜d の 4 サブサイクル。軸 D ★★★★ → ★★★★★。
+
+- **C33-a**: スキーマ拡張（`Npc.curated/bio/relationsJson` 追加）+ `prisma/curatedNpcs.ts` 新規（5 主要都市 × 6 NPC = 30 体、60-120 字 bio + 関係グラフ）+ `prisma/curatedTowns.ts` 統合（2 街追加: 鐘塔の都ベルクラート / 古王国の都ヴェスペル）+ `src/lib/curatedNpc.ts` ヘルパ + seed 投入
+- **C33-b**: `/town` で curated NPC を紫枠 `<details>` 展開（bio + 関係グラフを表示、procedural NPC は従来表示）
+- **C33-c**: `docs/lore/*.md` 新規 4 ファイル — `world.md`（14 地方 + 暦 + 宗教 + 古王朝）/ `seasons.md`（S1-3 の中心の謎・内部設定 + S4-S6 forward-look）/ `towns.md`（5 主要都市の歴史と物語上の役割）/ `curated_npcs.md`（関係グラフ ASCII 図 + クロスタウン隠し関係 + 命名規則）
+- **C33-d**: `SEASON_NPC_TEMPLATES` 12 種に拡充（旧 1 種）+ `generateNpcDialogue` に `baseLine` 引数（curated dialogue を保ちつつ季節キーワード上乗せ）+ ROADMAP_MAX 軸 D 更新
+- 触ったファイル: `prisma/{schema.prisma,curatedNpcs.ts,seed.ts}`, `src/lib/{curatedNpc.ts,generation/{templates.ts,service.ts}}`, `src/app/town/page.tsx`, `docs/lore/{world,seasons,towns,curated_npcs}.md` (新規)
+
 ## Cycle 32 — 攻城戦に本物の戦闘 UI (2026-05-02)
 
 narrative log だけだったシージにプレイヤーの操作介入を導入。a〜d の 4 サブサイクルで実装。軸 A（コアループ）★★★★ → ★★★★★、軸 E（協調プレイ）★★★★ → ★★★★★。

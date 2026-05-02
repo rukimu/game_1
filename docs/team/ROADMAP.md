@@ -43,20 +43,20 @@
 - **Cycle 30**: スキル継承システム — 過去職スキルを現職スロットに持ち込み（Lv1+:1 / Lv30+:2 / Lv50+:3）/ 継承スキルは MP コスト 1.5x / 熟練度 +5/+10/+15%（10/30/50 回、SAME-cast）/ チェーンコンボ +10%（同ターン内で異なる skill type 連続）/ ログに `【継承】` `[熟練+N%]` `[連携+10%]` タグ（C30-a〜d、`029aa89`〜`7c96f95`）
 - **Cycle 31**: 手作り固有職 (Phase 1 + 2 = 100 体) — `Job.curated` 拡張 + `prisma/curatedJobs.ts` で 8 カテゴリ × 計 100 体（眼鏡戦士 / 猫好き魔導師 / 影語り / 鍛冶娘 / 元医者戦士 / 双頭魔導師 / 占い師の旅芸人 / 古竜の血を引く者 等、各 80-150 字 signature bio + 1 unique skill = 100 unique skill）/ クイズ結果 → top archetype の curated 候補提示 + 「○○ で始める」指名選択 / HUD・`/jobs`・`/characters` に `★固有` バッジ + `《outfit》` 表示 / 量産パイプライン文書 `CURATED_JOB_BULK.md`（C31-a〜d Phase 1 = `fe5e6d9`〜`a21b73c`、C31-d.b1〜b8 Phase 2 = `5dedfd5`〜`0770260`）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI — `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `src/lib/siegeBattle.ts` / 6 アクション(attack 1× / aoe 0.5× 全敵 / heavy 1.5× / support 自陣 +5% / rally master +20% / cure sub +30%) / `/siege/[id]/battle` UI（1.5s ポーリング、ギルド HP バー、アクションパネル、観戦モード）/ `siege:[id]` 応援チャット（既存 Chat 流用、誰でも投稿可）/ 30s/ターン lazy advance（`c22138b`〜`aa84b7f`、C32-a〜d）
+- **Cycle 33**: 世界観の手作り厚み — `Npc.curated/bio/relationsJson` 拡張 + 5 主要都市 × 6 NPC = 30 体 (`prisma/curatedNpcs.ts`、60-120 字 bio + 関係グラフ JSON) + curated towns 2 つ追加（鐘塔の都ベルクラート / 古王国の都ヴェスペル）/ `/town` で curated NPC を紫枠 `<details>` 展開 / `docs/lore/{world,seasons,towns,curated_npcs}.md` 4 ファイルで世界設定資料 / `SEASON_NPC_TEMPLATES` 12 種に拡充 + `generateNpcDialogue` の `baseLine` 引数で curated dialogue 保持（`020bc4b`〜C33-d、C33-a〜d）
 
 ## 進行・次サイクル
 
-### Cycle 33 — 世界観の手作り厚み (NEXT)
-- 手作りユニーク NPC 30 体（主要 5 街に各 6 人、固有名 + 固有背景 + 固有関係）
-- NPC 関係グラフ（一部 NPC が他 NPC と関係あり、噂で繋がる）
-- シーズン 2/3 の謎セット完成（鏡の森 S2 / 灰の唄 S3 の各 7 手がかり + 中心物語）
-- Lore データベース `docs/lore/*.md`（世界の歴史・地理・宗教・言語のメモ）
-- NPC 季節ダイアログのバリエーション拡充
-- 評価軸 D（物語・世界観）★★★★ → ★★★★★ を狙う
-- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 33 セクション
+### Cycle 34 — 真のエンドゲーム + 無限階ダンジョン (NEXT)
+- 無限階ダンジョン「奈落」(階を進むほど指数的に強くなる、撤退ボタンあり、各 10 階で固有ボス)
+- アセンション(転生)システム — Lv50 到達時に世代を進める選択肢、stat 引継ぎ + 新たな bonus 開放
+- 称号コンプ報酬(全 90+ 称号獲得で「歩く伝承」称号)
+- シーズン総決算 + 季節カノン `/canon`(過去シーズンの解明結果を世界年表化)
+- 評価軸 F(やりこみ・エンドゲーム) ★★★★ → ★★★★★ を狙う
+- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 34 セクション
 
 ### 以降の候補（詳細は `docs/team/ROADMAP_MAX.md`）
-- **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
+- **Cycle 35〜38**: pixel art / 経済バランス / 運用基盤 / a11y
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 

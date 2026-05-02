@@ -65,7 +65,24 @@ export default async function TownPage() {
           if (fresh && n.lastSpokenName && n.lastSpokenName !== c.name) {
             line = `${line}（${n.lastSpokenName} もさっき同じ席に座っていた。）`;
           }
-          return { id: n.id, name: n.name, role: n.role, line };
+          // Cycle 33: curated NPCs surface their bio + relation graph
+          // for a richer "this NPC has a story" feel.
+          let relations: { name: string; relation: string; note?: string }[] = [];
+          if (n.curated && n.relationsJson) {
+            try {
+              const parsed = JSON.parse(n.relationsJson);
+              if (Array.isArray(parsed)) relations = parsed;
+            } catch { /* ignore */ }
+          }
+          return {
+            id: n.id,
+            name: n.name,
+            role: n.role,
+            line,
+            curated: n.curated,
+            bio: n.bio,
+            relations,
+          };
         })
       )
     : [];
@@ -195,7 +212,33 @@ export default async function TownPage() {
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">街にいる人々</h3>
                 <ul className="text-xs text-yellow-100/80 space-y-1">
                   {npcLines.length === 0 && <li className="text-yellow-200/50">まだ誰もいない。</li>}
-                  {npcLines.map((n) => <li key={n.id}>＊{n.name}（{n.role}）：「{n.line}」</li>)}
+                  {npcLines.map((n) => (
+                    n.curated ? (
+                      <li key={n.id}>
+                        <details className="border border-purple-900/40 rounded p-2 bg-purple-950/20">
+                          <summary className="cursor-pointer">
+                            <span className="text-purple-300 mr-1">★</span>
+                            {n.name}（{n.role}）：「{n.line}」
+                          </summary>
+                          {n.bio && (
+                            <div className="mt-1 text-[11px] text-purple-100/85 leading-relaxed">{n.bio}</div>
+                          )}
+                          {n.relations.length > 0 && (
+                            <div className="mt-1 text-[10px] text-purple-200/80">
+                              関係: {n.relations.map((r, i) => (
+                                <span key={i}>
+                                  {i > 0 && <span className="text-purple-200/40"> / </span>}
+                                  {r.name}（{r.relation}）
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </details>
+                      </li>
+                    ) : (
+                      <li key={n.id}>＊{n.name}（{n.role}）：「{n.line}」</li>
+                    )
+                  ))}
                 </ul>
               </section>
               <section className="mt-3">

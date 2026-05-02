@@ -756,6 +756,60 @@ model SiegeEvent {
   battleLogJson String  @default("[]")
   castle      Castle   @relation(fields: [castleId], references: [id], onDelete: Cascade)
   registrations SiegeRegistration[]
+  // Cycle 32: real-time interactive battle attached to the active phase.
+  // Null until startSiegeBattle runs; one-to-one.
+  battle      SiegeBattle?
+}
+
+// Cycle 32: real-time siege battle state. One per SiegeEvent. Replaces the
+// score-only narrative resolution with turn-based player intervention.
+model SiegeBattle {
+  id            String    @id @default(cuid())
+  siegeId       String    @unique
+  status        String    @default("lobby")  // lobby / active / resolved
+  turn          Int       @default(0)
+  turnEndsAt    DateTime?
+  winningGuildId String?
+  // Per-guild "ギルマス号令" once-per-battle tracker. JSON: { [guildId]: true }.
+  rallyUsedJson String    @default("{}")
+  // Per-guild "サブ治療" once-per-battle tracker. JSON: { [guildId]: true }.
+  cureUsedJson  String    @default("{}")
+  // Combat log array { turn, kind, line }, trimmed to last 100.
+  logJson       String    @default("[]")
+  // Per-guild buffs active for the current turn (rally boost). Reset on resolve.
+  buffsJson     String    @default("{}")
+  createdAt     DateTime  @default(now())
+  siege         SiegeEvent @relation(fields: [siegeId], references: [id], onDelete: Cascade)
+  states        SiegeBattleGuildState[]
+  actions       SiegeBattleAction[]
+}
+
+model SiegeBattleGuildState {
+  id            String   @id @default(cuid())
+  siegeBattleId String
+  guildId       String
+  hp            Int
+  maxHp         Int
+  alive         Boolean  @default(true)
+  // Member snapshot at battle start: [{ characterId, name, level, wins, role }].
+  membersJson   String
+  battle        SiegeBattle @relation(fields: [siegeBattleId], references: [id], onDelete: Cascade)
+  @@unique([siegeBattleId, guildId])
+}
+
+model SiegeBattleAction {
+  id            String   @id @default(cuid())
+  siegeBattleId String
+  characterId   String
+  guildId       String
+  turn          Int
+  // attack / aoe / heavy / support / rally / cure
+  actionType    String
+  targetGuildId String?
+  createdAt     DateTime @default(now())
+  battle        SiegeBattle @relation(fields: [siegeBattleId], references: [id], onDelete: Cascade)
+  @@unique([siegeBattleId, turn, characterId])
+  @@index([siegeBattleId, turn])
 }
 
 model SiegeRegistration {

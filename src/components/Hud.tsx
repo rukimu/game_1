@@ -38,7 +38,16 @@ export default async function Hud() {
           <div className="text-amber-300 italic">「{character.activeTitle}」</div>
         )}
         <div>Lv{character.level}{isMaxLevel && " (MAX)"}</div>
-        <div>{job?.name ?? "—"}{character.isCursed && <span className="text-red-300">[呪]</span>}</div>
+        <div>
+          {job?.name ?? "—"}
+          {job?.curated && (
+            <span className="ml-1 text-purple-300 text-[10px]" title={job.quirk ? `癖: ${job.quirk}` : ""}>★固有</span>
+          )}
+          {character.isCursed && <span className="text-red-300">[呪]</span>}
+        </div>
+        {job?.curated && job.signatureOutfit && (
+          <div className="text-purple-200/80 italic text-[10px] w-full sm:w-auto">《{job.signatureOutfit}》</div>
+        )}
 
         <div className="flex items-center gap-1 w-full sm:w-auto" title={`HP ${character.hp}/${character.maxHp}`}>
           <span className="text-red-300 w-8 sm:w-auto">HP</span>

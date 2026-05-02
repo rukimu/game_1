@@ -151,12 +151,19 @@ export default function JobsClient({
           <h3 className="text-sm font-bold text-yellow-200">過去に経験した職業</h3>
           <ul className="space-y-1">
             {past.map((j: any) => (
-              <li key={j.id} className="border border-yellow-900/40 rounded p-2 bg-black/30 flex justify-between">
-                <div>
-                  <div className="text-sm">{j.name}{j.isCursed && <span className="text-red-300 text-xs ml-1">[呪]</span>}</div>
+              <li key={j.id} className="border border-yellow-900/40 rounded p-2 bg-black/30 flex justify-between gap-2">
+                <div className="flex-1">
+                  <div className="text-sm">
+                    {j.name}
+                    {j.curated && <span className="text-purple-300 text-xs ml-1">★固有</span>}
+                    {j.isCursed && <span className="text-red-300 text-xs ml-1">[呪]</span>}
+                  </div>
                   <div className="text-xs text-yellow-100/70">{j.description}</div>
+                  {j.curated && j.signatureOutfit && (
+                    <div className="text-[10px] text-purple-200/70 italic">《{j.signatureOutfit}》</div>
+                  )}
                 </div>
-                <button className="btn" onClick={() => change(j.id)} disabled={isCursed || j.isCursed}>戻る</button>
+                <button className="btn shrink-0" onClick={() => change(j.id)} disabled={isCursed || j.isCursed}>戻る</button>
               </li>
             ))}
           </ul>

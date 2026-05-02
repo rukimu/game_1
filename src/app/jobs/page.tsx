@@ -48,7 +48,14 @@ export default async function JobsPage() {
         <JobsClient
           level={c.level}
           isCursed={c.isCursed}
-          history={history.map((h) => ({ id: h.jobId, name: h.job.name, isCursed: h.job.isCursed }))}
+          history={history.map((h) => ({
+            id: h.jobId,
+            name: h.job.name,
+            isCursed: h.job.isCursed,
+            curated: h.job.curated,
+            quirk: h.job.quirk,
+            signatureOutfit: h.job.signatureOutfit,
+          }))}
           activeQuests={quests.filter((q) => !q.completedAt).map((q) => ({ id: q.id, jobName: q.targetJob.name, description: q.description, progress: q.progress, goalCount: q.goalCount }))}
           slotCount={getInheritSlotCount(c.level)}
           inheritedSkillIds={parseInheritedSkillIds(c.inheritedSkillIds)}

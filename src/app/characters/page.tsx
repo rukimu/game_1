@@ -26,13 +26,18 @@ export default async function CharactersPage() {
         </div>
       </header>
       <CharacterClient
-        characters={characters.map((c) => ({
-          id: c.id,
-          name: c.name,
-          level: c.level,
-          isCursed: c.isCursed,
-          jobName: c.jobHistory.find((h) => h.jobId === c.currentJobId)?.job.name ?? "—",
-        }))}
+        characters={characters.map((c) => {
+          const currentJob = c.jobHistory.find((h) => h.jobId === c.currentJobId)?.job;
+          return {
+            id: c.id,
+            name: c.name,
+            level: c.level,
+            isCursed: c.isCursed,
+            jobName: currentJob?.name ?? "—",
+            jobCurated: currentJob?.curated ?? false,
+            signatureOutfit: currentJob?.signatureOutfit ?? null,
+          };
+        })}
         slots={user.characterSlots}
       />
     </main>

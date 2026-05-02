@@ -2,7 +2,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Char = { id: string; name: string; level: number; jobName: string; isCursed: boolean };
+type Char = {
+  id: string;
+  name: string;
+  level: number;
+  jobName: string;
+  isCursed: boolean;
+  jobCurated?: boolean;
+  signatureOutfit?: string | null;
+};
 type Question = { id: string; prompt: string; options: { id: string; label: string }[] };
 type CuratedCandidate = {
   name: string;
@@ -289,12 +297,21 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {characters.map((c) => (
           <div key={c.id} className="panel flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="font-bold">{c.name} {c.isCursed && <span className="text-red-300 text-xs">[呪]</span>}</div>
-                <div className="text-xs text-yellow-200/70">Lv{c.level} / {c.jobName}</div>
+            <div className="flex justify-between items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="font-bold">
+                  {c.name}
+                  {c.isCursed && <span className="text-red-300 text-xs ml-1">[呪]</span>}
+                </div>
+                <div className="text-xs text-yellow-200/70">
+                  Lv{c.level} / {c.jobName}
+                  {c.jobCurated && <span className="text-purple-300 ml-1">★固有</span>}
+                </div>
+                {c.jobCurated && c.signatureOutfit && (
+                  <div className="text-[10px] text-purple-200/70 italic truncate">《{c.signatureOutfit}》</div>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 shrink-0">
                 <button className="btn-primary" onClick={() => select(c.id)}>遊ぶ</button>
                 <button className="btn-danger" onClick={() => remove(c.id)}>削除</button>
               </div>

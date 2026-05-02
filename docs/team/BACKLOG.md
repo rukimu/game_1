@@ -59,7 +59,8 @@
 
 ## P2 (構想中)
 
-- **Cycle 31**: 手作り固有職 100 体 (NEXT — curated job「眼鏡戦士」「猫好き魔導師」等)
+- **Cycle 32**: 攻城戦に本物の戦闘 UI (NEXT — 現在は narrative log + スコア決着のみ、プレイヤー操作介入を実装)
+- **C31 Phase 2**: curated job を 12 → 100 体まで AI 量産（`docs/team/CURATED_JOB_BULK.md` の手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
 - **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
@@ -74,6 +75,13 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 31 (2026-04-29) — 手作り固有職 (Phase 1)
+- [x] **C31-a**: `Job` に `curated` / `quirk` / `signatureOutfit` / `signatureBio` / `pixelArtId` 追加 + `prisma/curatedJobs.ts` (12 体: 眼鏡戦士・巨漢戦士・猫好き魔導師・不眠魔導師・甘党盗賊・影語り・老師・歌う司祭・鍛冶娘・旅芸人・禁書館の番人・星詠み) + `src/lib/curatedJob.ts` ヘルパ + seed 投入
+- [x] **C31-a fix**: 個体名は採用せず職業名のみに統一、bio を複数形 voice に書き直し、stale cleanup ロジックを seed に追加
+- [x] **C31-b**: `POST /api/characters/curated-suggestions` 新規 + `POST /api/characters` で `jobName` 明示時 curated 優先 + `signatureBio` 上書き + キャラ作成 UI に紫枠「あなたに似た固有職」セクション + 「○○ で始める」指名選択
+- [x] **C31-c**: HUD・`/jobs`・`/characters` に `★固有` バッジ + `《signatureOutfit》` 紫イタリック表示
+- [x] **C31-d**: `docs/team/CURATED_JOB_BULK.md` 新規（JSON スキーマ / プロンプトテンプレ / カテゴリ分布表 / 受け入れ検証 / 投入手順）+ ROADMAP_MAX 軸 B 更新
 
 ### Cycle 30 (2026-04-29) — スキル継承システム
 - [x] **C30-a**: `Character.inheritedSkillIds` (JSON) + `SkillProficiency(characterId, skillId, usageCount)` モデル + `src/lib/skillInherit.ts` 新規（slot 算定 Lv1+:1/30+:2/50+:3、`getInheritableSkills` / `setInheritedSkills` / `tickSkillProficiency` / `getProficiencyBonusPct`）

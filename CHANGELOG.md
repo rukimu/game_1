@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 31 — 手作り固有職 (Phase 1) (2026-04-29)
+
+curated job 量産の枠組みを a〜d で構築し、Phase 1 として 12 体を seed。軸 B（キャラビルド）★★★★ → ★★★★★。
+
+- **C31-a**: スキーマ拡張（`Job.curated` / `quirk` / `signatureOutfit` / `signatureBio` / `pixelArtId`）+ `prisma/curatedJobs.ts` 新規（8 カテゴリ × 12 体: 眼鏡戦士・巨漢戦士・猫好き魔導師・不眠魔導師・甘党盗賊・影語り・老師・歌う司祭・鍛冶娘・旅芸人・禁書館の番人・星詠み）+ `src/lib/curatedJob.ts` ヘルパ + seed 投入
+- **C31-a fix**: 個体名は採用せず職業名のみに（「眼鏡戦士・パセリ」→「眼鏡戦士」）、signature bio も複数形 voice に書き直し、stale cleanup ロジックを seed に追加
+- **C31-b**: `POST /api/characters/curated-suggestions` 新規（クイズ回答 → top archetype の curated 候補）+ `POST /api/characters` で `jobName` 明示時に curated 優先 + `signatureBio` 上書き + キャラ作成 UI に紫枠「あなたに似た固有職」セクション + 「○○ で始める」指名選択ボタン
+- **C31-c**: HUD・`/jobs` 過去職カード・`/characters` 選択カードに `★固有` バッジ + `《signatureOutfit》` 紫イタリック表示
+- **C31-d**: `docs/team/CURATED_JOB_BULK.md` 新規（JSON スキーマ / プロンプトテンプレ / カテゴリ分布表 / 受け入れ検証 / 投入手順）+ ROADMAP_MAX 軸 B 更新
+- 触ったファイル: `prisma/{schema.prisma,curatedJobs.ts,seed.ts}`, `src/lib/curatedJob.ts` (新規), `src/app/api/characters/{route.ts,curated-suggestions/route.ts (新規)}`, `src/app/characters/{page.tsx,Client.tsx}`, `src/app/jobs/{page.tsx,Client.tsx}`, `src/components/Hud.tsx`, `docs/team/CURATED_JOB_BULK.md` (新規)
+
 ## Cycle 30 — スキル継承システム (2026-04-29)
 
 過去職スキルを現職スロットに持ち込めるビルド独自性システムを a〜d の 4 サブサイクルで実装。軸 B（キャラビルド）★★★ → ★★★★。

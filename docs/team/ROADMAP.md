@@ -41,18 +41,22 @@
 - **Cycle 28**: 中盤密度 — テーマ別ダンジョン 5 種（忘却の図書館 / 霜帝の塔 / 鏡映の湖底 / 灰の唄の祭壇 / 鐘塔の地下、Lv25-50、固有ボス）/ Mastery クエスト 27 種（9 archetype × 3 tier、Lv15/30/45 順次開放、永続 stat 強化 + T3 専用称号）/ デイリーチャレンジ 7 テンプレ（毎日 3 抽選、全クリで EXP+600 / G+500）（`5d08e7f`）
 - **Cycle 29**: ワールドレイドバトル — `/town` 訪問時 10% 湧き / 60min 再湧き CD / 10 分集合 + 30 分戦闘 / 非同期 DPS race（攻撃 5s / 特技 15s / 回復 10s）/ ボス HP 共有 / KO + 90s 遅延復活 / 貢献度ランキングで個別ドロップ tier（Top1 legendary / Top2-5 epic / 残り rare）/ パーティ多様性シナジー（3 系統 +10% / 5 系統 +20%）/ レイド系アチーブ 4 種 / デイリー `raid_join`（C29-a〜d、`b2e26f2`〜`668e93c`）
 - **Cycle 30**: スキル継承システム — 過去職スキルを現職スロットに持ち込み（Lv1+:1 / Lv30+:2 / Lv50+:3）/ 継承スキルは MP コスト 1.5x / 熟練度 +5/+10/+15%（10/30/50 回、SAME-cast）/ チェーンコンボ +10%（同ターン内で異なる skill type 連続）/ ログに `【継承】` `[熟練+N%]` `[連携+10%]` タグ（C30-a〜d、`029aa89`〜`7c96f95`）
+- **Cycle 31**: 手作り固有職 (Phase 1) — `Job.curated` 拡張 + `prisma/curatedJobs.ts` で 12 体（眼鏡戦士 / 猫好き魔導師 / 影語り 等、各 80-150 字 signature bio + 1 unique skill）/ クイズ結果 → top archetype の curated 候補提示 + 「○○ で始める」指名選択 / HUD・`/jobs`・`/characters` に `★固有` バッジ + `《outfit》` 表示 / Phase 2 用 AI 量産パイプライン文書 `CURATED_JOB_BULK.md`（C31-a〜d、`fe5e6d9`〜`a21b73c`）
 
 ## 進行・次サイクル
 
-### Cycle 31 — 手作り固有職 100 体 (NEXT)
-- 「眼鏡戦士」「猫好き魔導師」のような愛着を生む curated job を 100-300 体
-- クイズ結果から「あなたに似た固有職」を提示
-- 固有スキル + 固有 bio + 固有 outfit cosmetic
-- 評価軸 B（キャラビルド）★★★★ → ★★★★★、D（物語）にも寄与
-- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 31 セクション
+### Cycle 32 — 攻城戦に本物の戦闘 UI (NEXT)
+- 現在の攻城戦は narrative 戦況ログ + スコア決着のみ。プレイヤーの操作介入が無い
+- リアルタイムターン制（30s/ターン、ギルド単位）+ 攻撃/全体攻撃/単体強攻撃/援護の 4 選択肢
+- ギルマス「号令」/ サブ「治療」の特殊行動、観戦モード + 応援チャット
+- 既存 narrative log は副生成物として残す
+- 評価軸 A（コアループ）/ E（協調プレイ）への寄与
+- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 32 セクション
+
+### 並行作業
+- **C31 Phase 2**: `docs/team/CURATED_JOB_BULK.md` の手順で curated job を AI 量産し、12 → 100 体まで増量
 
 ### 以降の候補（詳細は `docs/team/ROADMAP_MAX.md`）
-- **Cycle 32**: 攻城戦に本物の戦闘 UI（現在は narrative log + スコア決着のみ、プレイヤー操作介入を実装）
 - **Cycle 33**: 世界観の手作り厚み（手作りユニーク NPC 30 体 + lore docs）
 - **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播

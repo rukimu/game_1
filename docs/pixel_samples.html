@@ -121,6 +121,18 @@ HD-2D 系は顔出し（兜なし or オープンヘルム）+ 縦長 + 表情�
   <div class="item"><div id="case4-warrior"></div><div class="label">戦士 (48×48)</div></div>
 </div>
 
+<h2>案 5 — Octopath 風リファレンス再現挑戦（28×40、慎重版）<span class="recommend"> ★ 真面目にやり直し</span></h2>
+<p class="case-meta">
+ユーザー提示のオクトパス風リファレンスを観察して再構成:<br />
+スパイキーな黒髪 / 片目隠し（右目だけ青く見える）/ 黒革ベスト + 銀ショルダー /<br />
+茶色のベルト + ポーチ / ダークグレーの脚 / 茶色ブーツ。<br />
+プロのアーティストが描いた本物には届かないかもしれませんが、これでも違和感あれば<br />
+手書きドット絵は諦めて game-icons.net 等の流用に切り替えるのが現実的です。
+</p>
+<div class="row" style="margin-top:16px">
+  <div class="item"><div id="case5-warrior"></div><div class="label">戦士 (28×40)</div></div>
+</div>
+
 <script>
 function render(targetId, grid, palette, scale) {
   const size = grid.length;
@@ -484,6 +496,87 @@ const c4Warrior = [
 ];
 
 render("case4-warrior", c4Warrior, PAL3, 6);
+
+// ===== 案 5: Octopath 風リファレンス再現 (28x40) =====
+const PAL5 = {
+  ".": null, " ": null,
+  "K": "#1a1816",   // outline / dark ink
+  "a": "#2a2826",   // hair dark
+  "A": "#4a4846",   // hair mid
+  "B": "#6a6866",   // hair highlight
+  "h": "#5a3018",   // skin dark
+  "H": "#a86848",   // skin mid
+  "X": "#e0b888",   // skin highlight
+  "u": "#4878b0",   // eye iris
+  "U": "#80b0e0",   // eye highlight
+  "r": "#2a1810",   // leather dark
+  "R": "#4a2818",   // leather mid
+  "o": "#7a4828",   // leather highlight
+  "b": "#5a3818",   // belt brown mid
+  "C": "#8a5828",   // belt highlight
+  "G": "#28282c",   // pant dark
+  "g": "#48484e",   // pant mid
+  "S": "#686870",   // armor mid
+  "W": "#a8a8b0",   // armor highlight
+  "Y": "#b88830",   // gold
+  "F": "#f0c860",   // gold highlight
+  "z": "#2a1812",   // boot dark
+  "Z": "#5a3020",   // boot mid
+};
+
+function c28(s) {
+  const w = 28;
+  if (s.length >= w) return s.slice(0, w);
+  const left = Math.floor((w - s.length) / 2);
+  return ".".repeat(left) + s + ".".repeat(w - left - s.length);
+}
+
+// Spiky-haired warrior, single eye visible, dark leather + belt cross.
+// Reference: user-provided Octopath Traveler-style sprite.
+const c5Warrior = [
+  c28(""),
+  c28(""),
+  c28("KK....KK..KK"),                       // 2  hair spikes top
+  c28("KaaK.KaaK.KaaK"),                     // 3
+  c28("KaaaaKaaaaKaaaaK"),                   // 4
+  c28("KaaaaaaaaaaaaaaK"),                   // 5
+  c28("KaAAaaaaaaaaaaaK"),                   // 6  hair shading
+  c28("KaAAAaaaaaaaaaaaK"),                  // 7
+  c28("KaAAaaaaXHHXXaaaaK"),                 // 8  forehead break
+  c28("KaaaaaaXHXXXXXaaK"),                  // 9
+  c28("KaaaaaaXXXXXXHaaK"),                  // 10
+  c28("KaaaaaXXuuXXXXHaK"),                  // 11 single eye
+  c28("KaaaaaXKuKXXXXHaK"),                  // 12 eye outline
+  c28("KaaaaaXXXXXXXXHaK"),                  // 13
+  c28("KaaaaaXXKXXXXXHaK"),                  // 14 nose
+  c28("KaaaaaXXKKKXXXHaK"),                  // 15 mouth
+  c28("KaaaaaaXHHHHXHaaK"),                  // 16 chin shadow
+  c28("KaaaaaaaXHHXaaaaK"),                  // 17
+  c28(".KKKaaaaaaaaaKKK"),                   // 18 hair fade
+  c28("...KKHHHHHHHKK..."),                  // 19 neck
+  c28("..KSSSSrrrrSSSSK..."),                // 20 silver pauldrons
+  c28("KSWWSrrrrrrrrSWWSK"),                 // 21 highlight
+  c28("KSWrrrrrCrrrCrrrSWK"),                // 22 belt cross
+  c28("KSrrrroCCCCrrrrSK"),                  // 23
+  c28("KSrrroCCYFYCCorrSK"),                 // 24 buckle
+  c28("KSrrrroCCCCorrrSK"),                  // 25
+  c28("KooorrrrrrrrrrooSK"),                 // 26 arms + leather hands
+  c28("KKoorrrrrrrrrrooKK"),                 // 27
+  c28("..KKrrrrrrrrrrKK"),                   // 28 hip
+  c28("...KGggggGGggggK"),                   // 29 thighs
+  c28("...KGgggGKKGgggK"),                   // 30
+  c28("...KGggGK..KGggK"),                   // 31 leg split
+  c28("...KGggGK..KGggK"),                   // 32
+  c28("...KGggGK..KGggK"),                   // 33
+  c28("...KGggGK..KGggK"),                   // 34 shins
+  c28("...KZZZZK..KZZZZK"),                  // 35 boot top
+  c28("..KzZZZZK..KZZZZzK"),                 // 36
+  c28("..KzzZZzK..KzZZzzK"),                 // 37
+  c28("..KKKKKK....KKKKKK"),                 // 38 boot sole
+  c28(""),
+];
+
+render("case5-warrior", c5Warrior, PAL5, 10);
 </script>
 </body>
 </html>

@@ -1641,6 +1641,106 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "塔学生だった頃に生贄の儀式に使われそうになった子猫を救い、退学処分を受けた者たち。今は野良猫と暮らし、彼らの夢を読む独自の魔法を編み出した。誰も信じないが、効く。",
     baseStats: { hp: 38, mp: 30, atk: 4, def: 4, mat: 16, mdf: 10, spd: 7 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 猫魔の爪。
+      {
+        name: "猫魔の爪",
+        description: "杖から短い呪文で猫の魔の爪を撃ち出す。猫好き魔導師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 夢喰い猫。
+      {
+        name: "夢喰い猫",
+        description: "猫の幻が敵の夢に潜って魂を喰らう。闇属性の渾身一撃。",
+        type: "attack",
+        element: "dark",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 猫の集中。
+      {
+        name: "猫の集中",
+        description: "肩の野良猫が囁く言葉に耳を澄ます。次の魔法のクリ率 +40%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 猫の予言。
+      {
+        name: "猫の予言",
+        description: "野良猫が予言する敵の不運。敵 1 体の atk -20%・def -10% 2 ターン。",
+        type: "debuff",
+        element: "dark",
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 子猫の癒し。
+      {
+        name: "子猫の癒し",
+        description: "三毛子猫が味方の傷をなめて癒す。HP 中回復 + 一時的に状態異常を浄化。",
+        type: "heal",
+        element: null,
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 猫魔の召喚。
+      {
+        name: "猫魔の召喚",
+        description: "野良猫の幻を 5 匹召喚し、敵全体に同時に飛び掛かる。",
+        type: "attack",
+        element: "dark",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 七匹の猫。
+      {
+        name: "七匹の猫",
+        description: "周囲に 7 匹の猫の幻が浮かぶ。4 ターン回避率 +20% + クリ率 +15%。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 猫の連携。
+      {
+        name: "猫の連携",
+        description: "前段の動きに合わせて子猫が飛びかかる。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "dark",
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 夜の女王召喚。
+      {
+        name: "夜の女王召喚",
+        description: "猫の女王たる古き存在を召喚する究極の魔法。敵全体に絶対の闇を浴びせる。",
+        type: "attack",
+        element: "dark",
+        power: 46,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 既存「招き猫の歌」(C31 既存スキル維持)。
       {
         name: "招き猫の歌",
         description: "味方全員の運（luk）を 1 ターン上昇させ、ドロップ判定が改善する。",
@@ -1663,6 +1763,106 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "10 年眠っていないと言われる者たち。『眠ると夢に喰われる』と語る一方で、夢の側からも入れる魔法を発明した。眠る敵の意識に侵入し、悪夢で削る。",
     baseStats: { hp: 32, mp: 36, atk: 3, def: 3, mat: 18, mdf: 8, spd: 9 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 夢の刃。
+      {
+        name: "夢の刃",
+        description: "夢日記から漏れ出た闇の刃が敵を斬る。不眠魔導師の基本攻撃。",
+        type: "attack",
+        element: "dark",
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 悪夢の一撃。
+      {
+        name: "悪夢の一撃",
+        description: "10 年分の悪夢を凝縮した渾身の闇属性魔法。意識ごと敵を蝕む。",
+        type: "attack",
+        element: "dark",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 徹夜の集中。
+      {
+        name: "徹夜の集中",
+        description: "睡眠を払拭した極限の覚醒。次の魔法の威力 +50% + 命中 +25%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 夢の侵食。
+      {
+        name: "夢の侵食",
+        description: "敵 1 体の夢に侵入し意識を削る。mat -25%・mdf -15% 2 ターン。",
+        type: "debuff",
+        element: "dark",
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 夢の枕。
+      {
+        name: "夢の枕",
+        description: "夢日記の魔法で味方 1 体に夢の枕を授ける。HP 中回復 + 沈黙解除。",
+        type: "heal",
+        element: "dark",
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 悪夢撒き。
+      {
+        name: "悪夢撒き",
+        description: "夢日記から悪夢を切り出して敵全体に投げる。闇属性ダメージ + 沈黙 30%。",
+        type: "attack",
+        element: "dark",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 不眠の探究。
+      {
+        name: "不眠の探究",
+        description: "10 年眠らない探究心。4 ターン mat +20%・cost 軽減 -10%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 夢の連鎖。
+      {
+        name: "夢の連鎖",
+        description: "前段の動きを夢の連鎖で紡ぐ。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "dark",
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 悪夢の海。
+      {
+        name: "悪夢の海",
+        description: "10 年分の悪夢を全て解き放つ究極魔法。敵全体を悪夢の海に沈める。",
+        type: "attack",
+        element: "dark",
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 既存「夢渡り」(C31 既存スキル維持)。
       {
         name: "夢渡り",
         description: "敵に【沈黙】+【出血】を同時付与(必中)。",
@@ -1685,6 +1885,84 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "幼い頃から呼吸器が弱く、長い詠唱が続けられない者たち。短く切れた呪文を高速で重ねる独自の流派を編み出した。皮肉にも、その節回しは詠唱の常識を上書きした。",
     baseStats: { hp: 34, mp: 32, atk: 3, def: 4, mat: 17, mdf: 10, spd: 9 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 短い詠唱。
+      {
+        name: "短詠の火",
+        description: "息を切らさぬよう短く詠唱した小さな火球を撃つ。喘息魔導師の基本攻撃。",
+        type: "attack",
+        element: "fire",
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 速詠の渾身。
+      {
+        name: "速詠渾身",
+        description: "5 つの短い詠唱を音速で連結する独自流派の必殺。火属性の渾身一撃。",
+        type: "attack",
+        element: "fire",
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 短く深い呼吸。
+      {
+        name: "短く深い呼吸",
+        description: "青い布で喉を整え呼吸を深くする。次の 2 詠唱の cost を半減。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 3,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 煙詠唱。
+      {
+        name: "煙詠唱",
+        description: "短い詠唱で煙を噴出させ敵 1 体の視界を奪う。命中率 -25% 2 ターン。",
+        type: "debuff",
+        element: "fire",
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 呼吸合わせ。
+      {
+        name: "呼吸合わせ",
+        description: "味方の呼吸に合わせて治癒詠唱を撒く。HP 中回復 + 火傷解除。",
+        type: "heal",
+        element: "fire",
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 速詠連射。
+      {
+        name: "速詠連射",
+        description: "短詠の火球を複数連射し敵全体に降らせる。連続詠唱の最高峰。",
+        type: "attack",
+        element: "fire",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 節制詠唱。
+      {
+        name: "節制詠唱",
+        description: "呼吸を整えて 4 ターン全詠唱の cost -20%・命中 +15%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 既存「断章詠唱」(C31 既存スキル維持)。
       {
         name: "断章詠唱",
         description: "敵 1 体に火属性ダメージ + 次ターン同種攻撃の cost を半減。",
@@ -1694,6 +1972,28 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 8,
         cooldown: 2,
         targetType: "enemy",
+      },
+      // 9. 究極 — 最終詠唱。
+      {
+        name: "最終詠唱",
+        description: "呼吸の限界を超えて吐き切る究極の詠唱。一気に放つ大火炎で敵全体を焼く。",
+        type: "attack",
+        element: "fire",
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 呼吸の魔法。
+      {
+        name: "呼吸の魔法",
+        description: "3 ターン全詠唱が無詠唱化 (即時発動) + 火属性ダメージ +30%。喘息魔導師の代名詞。",
+        type: "buff",
+        element: "fire",
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },

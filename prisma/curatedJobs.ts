@@ -48,17 +48,120 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "眼鏡",
     signatureOutfit: "丸眼鏡 + 革鎧 + 革表紙の戦術手帳",
     signatureBio: "本屋育ち。剣士には向かないと家族に言われ続けたが、敵の癖を眼鏡越しに観察するだけで一歩先を読めると気づいた。戦術手帳には倒した敵の癖が 87 ページ分書き連ねてあるという。",
-    baseStats: { hp: 56, mp: 12, atk: 12, def: 8, mat: 4, mdf: 6, spd: 8 },
+    baseStats: { hp: 56, mp: 16, atk: 12, def: 8, mat: 4, mdf: 6, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 毎ターン使える主力。命中重視で堅実。
       {
-        name: "観察眼",
-        description: "敵を 1 ターン凝視し、弱点属性とおおよその HP を露わにする。",
+        name: "観察打ち",
+        description: "眼鏡越しに敵の動きを見据えてから一撃。命中率が高く、外しにくい基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 職業の代名詞、ボス級にも通る攻撃。
+      {
+        name: "眼鏡メテオ",
+        description: "レンズで太陽光を一点に集め、敵全体に小さな隕石を降らせる。眼鏡戦士の代名詞。",
+        type: "attack",
+        element: "light",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "all_enemies",
+      },
+      // 3. 自バフ — 単発火力を伸ばす設計、必殺技と組み合わせる。
+      {
+        name: "分析の構え",
+        description: "戦術手帳を開き敵の癖を読み解く。次の通常攻撃のクリティカル率 +50%。",
         type: "buff",
         element: null,
         power: 0,
         cost: 6,
         cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — Phase 1 サンプルで「観察眼」だったもの。役割は弱点公開で同じ。
+      {
+        name: "観察眼",
+        description: "敵を 1 ターン凝視し、弱点属性とおおよその HP を味方に共有する。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
         targetType: "enemy",
+      },
+      // 5. 仲間援護 — heal 枠だが「医者ではなく観察者の応急手当」として職業性を保つ。
+      {
+        name: "冷徹な見立て",
+        description: "仲間の傷を観察し、最も効率の良い応急手当を施す。HP を中量回復。",
+        type: "heal",
+        element: null,
+        power: 18,
+        cost: 8,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 全敵に効果、命中低下で次ターンの被ダメージも下げる。
+      {
+        name: "閃光乱反射",
+        description: "眼鏡を瞬時にひらめかせ、全敵を眩ませる。光属性ダメージ + 1 ターン命中 -30%。",
+        type: "attack",
+        element: "light",
+        power: 14,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — パッシブ風、戦闘の継戦能力を上げる。
+      {
+        name: "観察の習慣",
+        description: "戦闘中も周囲を観察し続ける構え。3 ターン回避率 +20%、被ダメージ -10%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 10,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — C30 chain combo と相性◎、味方が先に動く設計でパーティ向き。
+      {
+        name: "予測射撃",
+        description: "直前の味方スキルから敵の次手を読む。直前と異なる skill type なら威力 +30%。",
+        type: "attack",
+        element: null,
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — boss 戦の決め手、超大ダメージだが MP 大量消費・長 CD。
+      {
+        name: "終局視",
+        description: "敵の運命を眼鏡越しに見切り、絶対的な弱点を一撃で突く。超大ダメージ、MP 大量消費。",
+        type: "attack",
+        element: "dark",
+        power: 50,
+        cost: 28,
+        cooldown: 8,
+        targetType: "enemy",
+      },
+      // 10. signature 反射 — 職業の象徴、ボス AOE に対する切り札。
+      // NOTE: type="buff" で engine 上は self-buff 扱い。実際のダメージ反射ロジックは
+      // battle.ts:resolveTurn に reflect 処理を追加する必要があり、本サイクルでは未実装。
+      // BACKLOG に「眼鏡反射 reflect 実装」を登録予定。
+      {
+        name: "眼鏡反射",
+        description: "1 ターン、受けた物理ダメージの 50% を相手に反射する眼鏡戦士の象徴 (反射ロジックは将来実装)。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 12,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },

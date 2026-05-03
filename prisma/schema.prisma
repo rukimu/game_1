@@ -252,6 +252,10 @@ model Town {
   innFee       Int     @default(20)
   rumorTrend   String  @default("neutral")
   description  String
+  // Cycle 40 Phase 1: アクセス可能な最低キャラクターレベル。Day1 体験集中
+  // のため、procedural 110 街は 999 (実質封印)、5 主要都市は Lv 1/5/10/25/40
+  // で段階開放。Phase 3 で procedural 街を Lv 別に段階復活時に再設定。
+  unlockLevel  Int     @default(999)
   createdAt    DateTime @default(now())
   rumors       TavernRumor[]
   npcs         Npc[]

@@ -28,7 +28,18 @@ export default async function TownPage() {
         },
       })
     : null;
-  const towns = await prisma.town.findMany({ orderBy: { danger: "asc" } });
+  // Cycle 40 Phase 1: アクセス可能な町のみ表示。Day1 体験集中のため
+  // procedural 110 街は default 999 で封印、5 主要都市が Lv 1/5/10/25/40
+  // で段階開放される。schema の Town.unlockLevel を参照。
+  const towns = await prisma.town.findMany({
+    where: { unlockLevel: { lte: c.level } },
+    orderBy: [{ unlockLevel: "asc" }, { danger: "asc" }],
+  });
+  // 「次の解放」予告。HUD 風に「Lv X で開放: 街名」を 1 件先取り表示。
+  const nextLockedTown = await prisma.town.findFirst({
+    where: { unlockLevel: { gt: c.level } },
+    orderBy: { unlockLevel: "asc" },
+  });
   const myQuests = await prisma.characterQuest.findMany({
     where: { characterId: c.id, completedAt: null },
     include: { quest: true },
@@ -253,6 +264,11 @@ export default async function TownPage() {
                     </form>
                   ))}
                 </div>
+                {nextLockedTown && (
+                  <div className="mt-2 text-[11px] text-yellow-200/60">
+                    🔒 Lv{nextLockedTown.unlockLevel} で開放: {nextLockedTown.name}（{nextLockedTown.region}）
+                  </div>
+                )}
               </section>
             </>
           ) : (

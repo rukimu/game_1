@@ -32,17 +32,31 @@ async function main() {
   // is dense (14 regions × 8 towns = 112 towns by default). The first 3
   // legacy names are preserved as aliases by upserting before generation.
   const legacyTowns = [
-    { name: "始まりの街アルダ", region: "中央高原", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。", rumorTrend: "neutral" },
-    { name: "湖畔の街ミルレ", region: "湖畔地方", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。", rumorTrend: "neutral" },
-    { name: "霧の街ヴェルナ", region: "霧の北縁", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。", rumorTrend: "ominous" },
+    // Cycle 40 Phase 1: 5 主要都市の段階開放。アルダ Lv1 / ミルレ Lv5 /
+    // ヴェルナ Lv10 / ベルクラート Lv25 / ヴェスペル Lv40。procedural
+    // 110 街は default 999 で実質封印。
+    { name: "始まりの街アルダ", region: "中央高原", danger: 1, economy: 60, security: 70, innFee: 15, description: "旅人が最初に立ち寄る、平穏な街。", rumorTrend: "neutral", unlockLevel: 1 },
+    { name: "湖畔の街ミルレ", region: "湖畔地方", danger: 2, economy: 55, security: 60, innFee: 25, description: "湖の畔に栄えた商人の街。", rumorTrend: "neutral", unlockLevel: 5 },
+    { name: "霧の街ヴェルナ", region: "霧の北縁", danger: 3, economy: 40, security: 45, innFee: 30, description: "深い霧に覆われた、噂の絶えぬ街。", rumorTrend: "ominous", unlockLevel: 10 },
   ];
   for (const t of legacyTowns) {
-    await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
+    // Cycle 40 Phase 1: update に unlockLevel を含めて既存 row も上書き。
+    // 旧 seed (update: {}) では新規 default 999 のまま legacy 街が封印
+    // されてしまう問題を解消。
+    await prisma.town.upsert({
+      where: { name: t.name },
+      update: { unlockLevel: t.unlockLevel },
+      create: t,
+    });
   }
   // Cycle 33: curated towns added on top of legacy. Provides the home
   // address for the new C33 hand-curated NPCs (鐘塔の都, 古王国の都).
   for (const t of CURATED_TOWNS) {
-    await prisma.town.upsert({ where: { name: t.name }, update: {}, create: t });
+    await prisma.town.upsert({
+      where: { name: t.name },
+      update: { unlockLevel: t.unlockLevel },
+      create: t,
+    });
   }
   const generatedTowns = generateAllTowns(8); // 14 regions * 8 = 112
   for (const t of generatedTowns) {

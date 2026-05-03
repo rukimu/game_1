@@ -29,6 +29,7 @@ export type CuratedTown = {
   innFee: number;
   rumorTrend: string;
   description: string;
+  unlockLevel: number;
 };
 
 export const CURATED_TOWNS: CuratedTown[] = [
@@ -41,6 +42,7 @@ export const CURATED_TOWNS: CuratedTown[] = [
     innFee: 35,
     rumorTrend: "scholar",
     description: "巨大な鐘塔を中心に栄えた、知識と古文書の都。",
+    unlockLevel: 25,
   },
   {
     name: "古王国の都ヴェスペル",
@@ -51,6 +53,7 @@ export const CURATED_TOWNS: CuratedTown[] = [
     innFee: 40,
     rumorTrend: "ruin",
     description: "滅びた王朝の遺構の上に再建された、王侯の名残漂う都。",
+    unlockLevel: 40,
   },
 ];
 

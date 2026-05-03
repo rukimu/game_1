@@ -8,6 +8,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (c instanceof Response) return c;
   const town = await prisma.town.findUnique({ where: { id: params.id } });
   if (!town) return NextResponse.json({ error: "no town" }, { status: 404 });
+  // Cycle 40 Phase 1: 段階開放のサーバ側 guard。HudMenu / town list は
+  // unlockLevel > c.level を非表示にしているが、直 URL POST 対策として
+  // ここでも防ぐ。HTTP 403 + 日本語メッセージ。
+  if (town.unlockLevel > c.level) {
+    return NextResponse.json(
+      { error: `この街は Lv${town.unlockLevel} で開放されます` },
+      { status: 403 },
+    );
+  }
   await prisma.character.update({ where: { id: c.id }, data: { currentTownId: town.id } });
   // Tick visit_town quest progress for any active quests targeting this town.
   // Using town name match keeps the goalParam contract simple (no lookup

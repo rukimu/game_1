@@ -2373,6 +2373,84 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "詠唱の途中で言い間違える癖が抜けない者たち。普通なら不発のところ、なぜか別の魔法に化けて発動する。本人も結果を予測できない。",
     baseStats: { hp: 38, mp: 32, atk: 3, def: 4, mat: 17, mdf: 9, spd: 7 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 不確定な魔弾。
+      {
+        name: "不確定の魔弾",
+        description: "詠唱を半分間違えた状態で撃つ小弾。不器用魔導師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 大爆発。
+      {
+        name: "大爆発",
+        description: "詠唱を最大限に間違えて意図せず大爆発を起こす。火属性の渾身一撃。",
+        type: "attack",
+        element: "fire",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 開き直り。
+      {
+        name: "開き直り",
+        description: "詠唱を間違えると決めて呪文を撃つ。次の魔法の威力 +60% (属性ランダム)。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 誤詠唱。
+      {
+        name: "誤詠唱",
+        description: "詠唱を意図的に間違えて敵 1 体に混乱を撒く。命中率 -25%・spd -15% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 偶然の治癒。
+      {
+        name: "偶然の治癒",
+        description: "間違えた詠唱が偶然治癒魔法になる。HP 中回復 + 50% でランダムバフ付与。",
+        type: "heal",
+        element: null,
+        power: 17,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 暴走詠唱。
+      {
+        name: "暴走詠唱",
+        description: "詠唱が制御を外れ敵全体に飛び散る。ランダム属性のダメージ。",
+        type: "attack",
+        element: null,
+        power: 14,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 不器用の冴え。
+      {
+        name: "不器用の冴え",
+        description: "詠唱を間違えるたびに別の魔法が発動する。4 ターン全魔法に 30% 二発目発動。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 12,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 既存「不発詠唱」(C31 既存スキル維持、cost 10 で連携枠 8-10 内)。
       {
         name: "不発詠唱",
         description: "ランダム属性(火/水/風/闇/光) で敵 1 体に魔法ダメージ。",
@@ -2382,6 +2460,28 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 10,
         cooldown: 2,
         targetType: "enemy",
+      },
+      // 9. 究極 — 究極の言い間違え。
+      {
+        name: "究極の言い間違え",
+        description: "詠唱を完全に間違える究極魔法。ランダムな災厄が敵全体を襲う。",
+        type: "attack",
+        element: null,
+        power: 50,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 偶然の傑作。
+      {
+        name: "偶然の傑作",
+        description: "次の魔法の効果を 5 倍化 (制御不能、味方も巻き込む可能性)。不器用魔導師の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 13,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2395,6 +2495,40 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "幼少に声を失った者たち、もしくは自ら誓いとして話さない者たち。言葉に頼らない詠唱は察知が難しく、敵に気付かれずに発動できる。",
     baseStats: { hp: 36, mp: 34, atk: 3, def: 4, mat: 18, mdf: 11, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 無音弾。
+      {
+        name: "無音弾",
+        description: "詠唱なく仮面の影から打ち出した小さな闇弾。沈黙派の基本攻撃。",
+        type: "attack",
+        element: "dark",
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 静寂の刃。
+      {
+        name: "静寂の刃",
+        description: "言葉のない真の沈黙から放たれる必殺の闇刃。気付かれずに敵を貫く。",
+        type: "attack",
+        element: "dark",
+        power: 24,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 沈黙の構え。
+      {
+        name: "沈黙の構え",
+        description: "仮面の奥で意識を研ぎ澄ます。1 ターン全魔法が必中 + クリ率 +30%。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 既存「無音呪文」(C31 既存スキル維持)。
       {
         name: "無音呪文",
         description: "敵 1 体に必中の闇属性ダメージ +【沈黙】付与。",
@@ -2404,6 +2538,72 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 14,
         cooldown: 4,
         targetType: "enemy",
+      },
+      // 5. 仲間援護 — 沈黙の癒し。
+      {
+        name: "沈黙の癒し",
+        description: "言葉なしに手を当てる治療術。HP 中回復 + 沈黙状態解除。",
+        type: "heal",
+        element: null,
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 沈黙の広域。
+      {
+        name: "沈黙の広域",
+        description: "仮面の影が広がり敵全体を覆う。闇属性 + 沈黙 25% 付与。",
+        type: "attack",
+        element: "dark",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 真の沈黙。
+      {
+        name: "真の沈黙",
+        description: "完全な沈黙の中で詠唱する。4 ターン全魔法の cost -30% + 命中 +20%。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 静寂の連刃。
+      {
+        name: "静寂の連刃",
+        description: "言葉なしに前段の魔法を継ぐ。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "dark",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 永遠の沈黙。
+      {
+        name: "永遠の沈黙",
+        description: "戦場全体を一瞬の真空に変える究極魔法。敵全体を絶対の沈黙で包む。",
+        type: "attack",
+        element: "dark",
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 仮面の影。
+      {
+        name: "仮面の影",
+        description: "木彫りの仮面が影を落とす。3 ターン狙われ率 0% + 全魔法のクリ率 +25%。沈黙派の代名詞。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2417,6 +2617,62 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "失われた古代魔法の研究に生涯を費やす者たち。死語と呼ばれる詠唱を蘇らせ、現代魔法には無い効果を再現する。",
     baseStats: { hp: 34, mp: 36, atk: 3, def: 3, mat: 19, mdf: 10, spd: 7 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 死語の詠。
+      {
+        name: "死語の詠",
+        description: "古代文字を一節読み上げ闇の小弾を撃つ。古文書狂の基本攻撃。",
+        type: "attack",
+        element: "dark",
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 古代の真名。
+      {
+        name: "古代の真名",
+        description: "失われた古代の真名を読み上げる必殺の闇魔法。敵を真名ごと縛る。",
+        type: "attack",
+        element: "dark",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 古文書の構え。
+      {
+        name: "古文書の構え",
+        description: "羊皮紙のロールを開いて古代文字を読む。次の魔法のクリ率 +50%。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 死語の呪縛。
+      {
+        name: "死語の呪縛",
+        description: "敵 1 体に古代文字の呪縛を巻きつける。spd -30%・mdf -20% 2 ターン。",
+        type: "debuff",
+        element: "dark",
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 古代の治癒文字。
+      {
+        name: "古代の治癒文字",
+        description: "失われた古代の治癒詠唱を蘇らせる。HP 大回復 + 全 debuff 解除。",
+        type: "heal",
+        element: "light",
+        power: 22,
+        cost: 13,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 既存「古文の一節」(C31 既存スキル維持)。
       {
         name: "古文の一節",
         description: "敵全体に闇属性ダメージ + 30% で【呪い化】付与。",
@@ -2426,6 +2682,50 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 13,
         cooldown: 4,
         targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 古代詠唱の流派。
+      {
+        name: "古代詠唱の流派",
+        description: "失われた流派の構えで詠唱する。4 ターン全魔法の威力 +25%。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 古代魔法の継承。
+      {
+        name: "古代魔法の継承",
+        description: "前段の魔法を古代式に変換して継ぐ。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "dark",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 死者の祈祷書。
+      {
+        name: "死者の祈祷書",
+        description: "古代の禁忌の祈祷書を開く究極魔法。死者の声が敵全体を喰らう。",
+        type: "attack",
+        element: "dark",
+        power: 50,
+        cost: 30,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 失われし魔法。
+      {
+        name: "失われし魔法",
+        description: "古代魔導書から失われた魔法を 1 つランダム発動 (各属性の最強魔法から)。古文書狂の代名詞。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 15,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },

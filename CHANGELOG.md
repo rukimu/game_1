@@ -7,6 +7,19 @@
 
 ---
 
+## Cycle 44 — Phase 2 mage 13 職 × 10 スキル = 130 (2026-05-03)
+
+Phase 2 (curated 100 職 × 10 スキル = 1,000) 第 2 サイクル。mage カテゴリ完了。
+
+- **44-a**: 猫好き / 不眠 / 喘息 (3 職 30 skills)
+- **44-b**: 妖精と契約 / 元教師 / 数学狂 (3 職 30 skills)
+- **44-c**: 不器用 / 沈黙派 / 古文書狂 (3 職 30 skills)
+- **44-d**: 双頭 / 元錬金術師 / 元天文学者 / 元戦場医 (4 職 40 skills)
+- 各職 SKILL_DESIGN.md の 10 役割枠を網羅、cost/CD/power は §5 制約内に配置
+- 新規スキル 117 create + 既存 13 (mage 各 1 ずつ × 13) 保持 = 130 達成
+- Cycle 43 (warrior 130) + Cycle 44 (mage 130) = 累計 **260 unique skills 手作り完成**
+- 触ったファイル: `prisma/curatedJobs.ts` (mage 13 entries × ~100 行 = ~1300 行追加)
+
 ## Cycle 43 — Phase 2 warrior 13 職 × 10 スキル = 130 (2026-05-03)
 
 curated 100 職 × 10 スキル = 1,000 スキル手作り計画 (Phase 2) の最初のサイクル。warrior カテゴリ完了。

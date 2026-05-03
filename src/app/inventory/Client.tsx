@@ -2,6 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import GameIcon from "@/components/GameIcon";
+
+// Map an Item's slot/weaponClass to a GameIcon slug. weapon slot uses
+// the weaponClass key (sword/bow/...); armor slots map to fixed slugs.
+function iconSlugForItem(slot: string | null, weaponClass: string | null): string | null {
+  if (slot === "weapon" && weaponClass) return `weapon:${weaponClass}`;
+  switch (slot) {
+    case "head": return "armor:helmet";
+    case "body": return "armor:chest";
+    case "arm": return "armor:arms";
+    case "leg": return "armor:legs";
+    case "foot": return "armor:boots";
+    case "accessory": return "accessory:ring";
+    case "charm": return "accessory:amulet";
+  }
+  return null;
+}
 
 type Stats = { atk: number; def: number; mat: number; mdf: number; hp: number; mp: number };
 type Row = {
@@ -186,7 +203,10 @@ export default function InventoryClient({ rows }: { rows: Row[] }) {
                 <li key={r.id} className={`border rounded p-2 text-sm ${r.equipped ? "border-green-500/60 bg-green-900/15" : "border-yellow-900/40 bg-black/30"}`}>
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
-                      <div className="font-bold">
+                      <div className="font-bold flex items-center gap-1">
+                        {iconSlugForItem(r.slot, r.weaponClass) && (
+                          <GameIcon slug={iconSlugForItem(r.slot, r.weaponClass)!} size={16} alt={r.slot ?? ""} />
+                        )}
                         <span className={r.tierClass}>{r.displayName}</span>
                         {r.tierLabel && <span className="ml-2 text-xs">[{r.tierLabel}]</span>}
                         {r.equipped && <span className="ml-2 text-green-300 text-xs">[装備中]</span>}

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { LEVEL_CAP, expForLevel } from "@/lib/leveling";
 import { countUnreadDms } from "@/lib/dm";
 import HudMenu from "@/components/HudMenu";
+import GameIcon from "@/components/GameIcon";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -38,8 +39,9 @@ export default async function Hud() {
           <div className="text-amber-300 italic">「{character.activeTitle}」</div>
         )}
         <div>Lv{character.level}{isMaxLevel && " (MAX)"}</div>
-        <div>
-          {job?.name ?? "—"}
+        <div className="flex items-center gap-1">
+          {job?.category && <GameIcon slug={`job:${job.category}`} size={14} alt={job.category} />}
+          <span>{job?.name ?? "—"}</span>
           {job?.curated && (
             <span className="ml-1 text-purple-300 text-[10px]" title={job.quirk ? `癖: ${job.quirk}` : ""}>★固有</span>
           )}

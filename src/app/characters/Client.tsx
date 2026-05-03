@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import GameIcon from "@/components/GameIcon";
 
 type Char = {
   id: string;
@@ -8,6 +9,7 @@ type Char = {
   level: number;
   jobName: string;
   isCursed: boolean;
+  jobCategory?: string | null;
   jobCurated?: boolean;
   signatureOutfit?: string | null;
 };
@@ -303,9 +305,11 @@ export default function CharacterClient({ characters, slots }: { characters: Cha
                   {c.name}
                   {c.isCursed && <span className="text-red-300 text-xs ml-1">[呪]</span>}
                 </div>
-                <div className="text-xs text-yellow-200/70">
-                  Lv{c.level} / {c.jobName}
-                  {c.jobCurated && <span className="text-purple-300 ml-1">★固有</span>}
+                <div className="text-xs text-yellow-200/70 flex items-center gap-1">
+                  <span>Lv{c.level} /</span>
+                  {c.jobCategory && <GameIcon slug={`job:${c.jobCategory}`} size={12} alt={c.jobCategory} />}
+                  <span>{c.jobName}</span>
+                  {c.jobCurated && <span className="text-purple-300">★固有</span>}
                 </div>
                 {c.jobCurated && c.signatureOutfit && (
                   <div className="text-[10px] text-purple-200/70 italic truncate">《{c.signatureOutfit}》</div>

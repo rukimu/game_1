@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import GameIcon from "@/components/GameIcon";
 
 type Cand = { jobId: string; name: string; description: string; isCursed: boolean; rank: string; category: string };
 type InheritableSkill = {
@@ -153,10 +154,11 @@ export default function JobsClient({
             {past.map((j: any) => (
               <li key={j.id} className="border border-yellow-900/40 rounded p-2 bg-black/30 flex justify-between gap-2">
                 <div className="flex-1">
-                  <div className="text-sm">
-                    {j.name}
-                    {j.curated && <span className="text-purple-300 text-xs ml-1">★固有</span>}
-                    {j.isCursed && <span className="text-red-300 text-xs ml-1">[呪]</span>}
+                  <div className="text-sm flex items-center gap-1">
+                    {j.category && <GameIcon slug={`job:${j.category}`} size={14} alt={j.category} />}
+                    <span>{j.name}</span>
+                    {j.curated && <span className="text-purple-300 text-xs">★固有</span>}
+                    {j.isCursed && <span className="text-red-300 text-xs">[呪]</span>}
                   </div>
                   <div className="text-xs text-yellow-100/70">{j.description}</div>
                   {j.curated && j.signatureOutfit && (

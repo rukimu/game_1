@@ -34,6 +34,7 @@ export default async function CharactersPage() {
             level: c.level,
             isCursed: c.isCursed,
             jobName: currentJob?.name ?? "—",
+            jobCategory: currentJob?.category ?? null,
             jobCurated: currentJob?.curated ?? false,
             signatureOutfit: currentJob?.signatureOutfit ?? null,
           };

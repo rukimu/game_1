@@ -95,6 +95,24 @@ export default function BattleClient({
     send("attack", firstAlive);
   }, [auto, state?.battle?.turn, state?.battle?.status]);
 
+  // Cycle 38: keyboard shortcuts. 1=attack first alive enemy, 2=skill
+  // (uses currently-selected skillId, first alive enemy as target),
+  // 3=defend. Disabled when typing in an input/textarea/select so chat
+  // hotkeys don't fire accidentally.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && /^(INPUT|TEXTAREA|SELECT)$/.test(tgt.tagName)) return;
+      if (!isParticipant || !state || state.battle.status !== "active") return;
+      const firstAlive = (state.enemies as any[]).findIndex((e: any) => e.alive);
+      if (e.key === "1" && firstAlive >= 0) { e.preventDefault(); send("attack", firstAlive); }
+      if (e.key === "2" && firstAlive >= 0 && skillId) { e.preventDefault(); send("skill", firstAlive); }
+      if (e.key === "3") { e.preventDefault(); send("defend"); }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isParticipant, state?.battle?.status, state?.enemies, skillId]);
+
   async function send(actionType: "attack" | "skill" | "defend", targetIndex?: number) {
     setSubmitting(true);
     setErr(null);
@@ -233,7 +251,7 @@ export default function BattleClient({
                     ))}
                   </select>
                 )}
-                <span className="text-[10px] text-yellow-200/50 ml-2">攻撃ボタンは長押しで連続発動</span>
+                <span className="text-[10px] text-yellow-200/50 ml-2">[1]攻撃 [2]スキル [3]防御 / 攻撃は長押しで連続発動</span>
               </>
             )}
             {!isParticipant && canJoin && (

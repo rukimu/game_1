@@ -51,3 +51,44 @@ html, body {
    on <html>; every GameIcon carries .game-icon so they all disappear
    together for players who prefer the original text UI. */
 .no-icons .game-icon { display: none !important; }
+
+/* Cycle 38: a11y — visible focus ring across all interactive elements.
+   Default browser outline gets buried by tailwind reset; this restores
+   a high-contrast yellow ring only when keyboard-focused (mouse focus
+   stays clean). */
+:focus-visible {
+  outline: 2px solid #f0c860;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #f0c860;
+  outline-offset: 2px;
+}
+
+/* Cycle 38: contrast bump — body text was #f1e7c8 on #1a1108 which sits
+   right on the WCAG AA threshold (4.5:1). Bump to #f8eed0 for clean
+   AA compliance on small text. */
+html, body {
+  color: #f8eed0;
+}
+
+/* Cycle 38: respect prefers-reduced-motion for transition-heavy
+   buttons + the 4Hz countdown clocks (raid / siege battle UIs). */
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-primary, .btn-danger {
+    transition: none;
+  }
+}
+
+/* Cycle 38: 375px mobile guard — the panel padding was tight on iPhone
+   SE class screens. Drop to p-2 below 380px to recover horizontal
+   space. Existing sm: tailwind breakpoint kicks in at 640px. */
+@media (max-width: 380px) {
+  .panel { padding: 0.5rem; }
+}

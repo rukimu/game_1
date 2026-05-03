@@ -46,3 +46,8 @@ html, body {
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+/* Cycle 35-d: text-only toggle. IconsToggle component flips .no-icons
+   on <html>; every GameIcon carries .game-icon so they all disappear
+   together for players who prefer the original text UI. */
+.no-icons .game-icon { display: none !important; }

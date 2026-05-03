@@ -6,6 +6,7 @@ import { LEVEL_CAP, expForLevel } from "@/lib/leveling";
 import { countUnreadDms } from "@/lib/dm";
 import HudMenu from "@/components/HudMenu";
 import GameIcon from "@/components/GameIcon";
+import IconsToggle from "@/components/IconsToggle";
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
@@ -87,11 +88,14 @@ export default async function Hud() {
           inGuild={!!character.guildMember}
         />
       </div>
-      {!isMaxLevel && (
-        <div className="text-[10px] sm:text-xs text-yellow-200/60 mt-1">
-          次のLv{character.level + 1}まで残り{expRemaining}経験値
-        </div>
-      )}
+      <div className="flex justify-between items-center mt-1">
+        {!isMaxLevel ? (
+          <div className="text-[10px] sm:text-xs text-yellow-200/60">
+            次のLv{character.level + 1}まで残り{expRemaining}経験値
+          </div>
+        ) : <span />}
+        <IconsToggle />
+      </div>
     </div>
   );
 }

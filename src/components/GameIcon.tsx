@@ -16,6 +16,9 @@ type Props = {
 export default function GameIcon({ slug, size = 16, className, alt = "", title }: Props) {
   const src = iconFor(slug);
   if (!src) return null;
+  // The "game-icon" class lets the text-only toggle (IconsToggle.tsx)
+  // hide every icon at once via globals.css `.no-icons .game-icon`.
+  const cls = `game-icon ${className ?? ""}`.trim();
   if (src.kind === "svg") {
     return (
       <img
@@ -24,7 +27,7 @@ export default function GameIcon({ slug, size = 16, className, alt = "", title }
         height={size}
         alt={alt}
         title={title}
-        className={className}
+        className={cls}
         style={{ display: "inline-block", verticalAlign: "middle" }}
       />
     );
@@ -33,7 +36,7 @@ export default function GameIcon({ slug, size = 16, className, alt = "", title }
   // square so missing assets are visible during dev rather than silent.
   return (
     <span
-      className={className}
+      className={cls}
       style={{
         display: "inline-block",
         width: size,

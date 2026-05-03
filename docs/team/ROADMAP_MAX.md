@@ -16,7 +16,7 @@
 | E. 協調プレイ | ★★★★★ | ★★★★★ | C29 ✅ (raid), C32 ✅ (siege ops) |
 | F. やりこみ・エンドゲーム | ★★★★★ | ★★★★★ | C28 ✅, C30 ✅, C34 ✅ (abyss + ascension + canon) |
 | G. 公平・経済 | ★★★★☆ | ★★★★★ | C37 (rate-limit, monitoring) |
-| H. UX・プレゼン | ★★★☆☆ | ★★★★★ | C27 ✅, C35 (pixel art), C38 (a11y) |
+| H. UX・プレゼン | ★★★★☆ | ★★★★★ | C27 ✅, C35 ✅ (icon abstraction + 32 SVGs), C38 (a11y) |
 
 ---
 
@@ -278,26 +278,37 @@
 
 ---
 
-### Cycle 35 — ドット絵アセット（職業/敵/装備）
+### Cycle 35 — アイコンアセット (将来ピクセル差替可能基盤) ✅ DONE
 
-**狙い**: 「テキストだけ」の視覚的単調さを破る。Claude 生成のドット絵で**最低限の visual**。
+**狙い**: 「テキストだけ」の視覚的単調さを破る。Cycle 35 で挑戦したピクセルアートはユーザー判断 (2026-05-02) で「Claude 手書きでは Octopath Traveler 系の品質に届かない」と認め、SVG アイコン (lucide スタイル) に切替。**将来ピクセル化に差し替え可能な抽象基盤**だけは残し、当面は SVG で H 軸を押し上げる方針へ。
 
-1. **ドット絵ジェネレーション基盤**
-   - SVG/JSON ピクセルマップ → React コンポーネント
-   - 16×16 (アイコン), 32×32 (装備), 48×48 (敵), 64×64 (ボス) サイズ
-2. **アイコン整備**
-   - 職業: 9 カテゴリ × アーキタイプアイコン 9 種（warrior/mage/.../cursed）
-   - 敵: 各 creatureType (humanoid/beast/undead/magic/construct) × 5 バリエ = 25
-   - 装備: 11 武器クラス + 7 防具スロット = 18 ベース
-   - 職業ティア背景（common/rare/epic/legendary）
-3. **ボスは固有ドット絵**
-   - daily/weekly ボスは個別、計 30+
-4. **HUD と inventory にアイコン埋め込み**
-5. **任意トグル**: 「テキスト派」のためにドット絵オフ可能
+**実装結果（C35-a/b/c/d 4 サブサイクル）**:
 
-**指標**: 配信映え / SNS 拡散性 ↑
+1. ✅ **アイコン抽象基盤** — `src/lib/icons.ts` + `src/components/GameIcon.tsx`
+   - `IconSource` union: `{ kind: "svg"; src }` / `{ kind: "pixel"; gridId }`
+   - `ICON_REGISTRY` で slug → IconSource を map
+   - 将来 1 slug をピクセル化したい場合、Registry の 1 行を `kind: "pixel"` に書き換えるだけで全画面差し替え可能（消費側無変更）
+2. ✅ **SVG カタログ 32 ファイル / 37 slug** — `public/icons/`
+   - 武器 12 (sword/greatsword/spear/dagger/bow/staff/rod/wand/drum/flute/hammer/flail)
+   - 防具 6 + 装飾 2 (helmet/chest/arms/legs/boots/shield + ring/amulet)
+   - 職業 9 (warrior/mage/rogue/cleric/craft/support/heretic/rare/cursed)
+   - 敵 5 (humanoid/beast/undead/magic/construct)
+   - 状態 3 (boss/curse/legendary)
+   - lucide スタイル 24×24 線画、palette は既存 UI 色味と整合
+3. ✅ **UI 統合** — HUD / `/characters` / `/jobs` / `/inventory`
+   - 現職 archetype アイコン、過去職アイコン、装備の slot/weaponClass アイコン
+   - `iconSlugForItem(slot, weaponClass)` で slot → slug マッピング
+4. ✅ **テキスト派トグル** — `src/components/IconsToggle.tsx`
+   - localStorage で persist、`<html>` に `.no-icons` クラス
+   - `globals.css` で `.no-icons .game-icon { display: none }` で全アイコン非表示
+   - HUD 右下に常時設置
 
-**実装メモ**: SVG `<rect>` を 1 ピクセル = 1 セルとして並べる手法。Claude は色のグリッド（`[["#000","#f00",...],...]`）で出力 → ジェネレータが SVG 化 → Storybook 的に確認。
+**スコープ調整**:
+- 「ボス固有ドット絵 30+ 体」は手書き品質の壁により撤回。将来 (P3) で itch.io 等の素材購入 or プロ発注で実現
+- 「サイズ階層 16/32/48/64」は SVG なら scale free のため不要、size prop だけで対応
+- 検証用 `docs/pixel_samples.html` は判断材料として作成、最終的に `docs/archive/` に退避
+
+**指標**: 配信映え / SNS 拡散性 ↑（将来ピクセル化で再評価）
 
 ---
 
@@ -407,5 +418,5 @@ Claude プロンプト形式（Phase 1, 100 体生成）:
 
 **作成**: 2026-04-29
 **著者**: Claude Code（前回監査の結論を踏まえて）
-**現状の最新コミット**: Cycle 34 完了 (C34-a/b/c/d、abyss + ascension + title_collector + canon)
-**次の着手**: Cycle 35 (ドット絵アセット — 職業/敵/装備の pixel art) を実装。
+**現状の最新コミット**: Cycle 35 完了 (C35-a/b/c/d、icon abstraction + 32 SVGs + UI 統合 + text toggle)
+**次の着手**: Cycle 36 (経済バランス) を実装。Cycle 37 (運用基盤) は公開直前。Cycle 38 (a11y) で軸 H ★★★★★。

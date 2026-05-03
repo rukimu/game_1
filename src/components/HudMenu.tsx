@@ -11,6 +11,10 @@ type Item = {
   // until the condition is satisfied. Hard-blocked links don't navigate.
   unlock?: { kind: "level"; min: number; hint: string }
          | { kind: "guild"; hint: string };
+  // Phase 1 封印フラグ (Cycle 40)。FEATURE_FREEZE_LIST.md に基づき Day1
+  // 体験に集中させるため、該当機能は HudMenu から完全に非表示にする。
+  // Phase 3 / Endgame で復活時にこのフラグを削除すれば元に戻る。
+  hiddenInPhase1?: boolean;
 };
 
 // Two-tier nav. The "primary" group always shows inline (4 most-used pages).
@@ -22,25 +26,34 @@ const ITEMS: Item[] = [
   { href: "/battle", label: "戦闘", group: "primary" },
   { href: "/party", label: "PT", group: "primary" },
 
-  { href: "/messages", label: "DM", group: "more" },
-  { href: "/shop", label: "店", group: "more" },
-  { href: "/auction", label: "市場", group: "more" },
+  { href: "/messages", label: "DM", group: "more", unlock: { kind: "level", min: 4, hint: "Lv4で開放" } },
+  { href: "/shop", label: "店", group: "more", unlock: { kind: "level", min: 3, hint: "Lv3で開放" } },
+  { href: "/auction", label: "市場", group: "more", hiddenInPhase1: true },
   { href: "/dungeon", label: "ダンジョン", group: "more", unlock: { kind: "level", min: 3, hint: "Lv3で開放" } },
   { href: "/jobs", label: "転職", group: "more", unlock: { kind: "level", min: 10, hint: "Lv10で開放" } },
-  { href: "/mastery", label: "修練", group: "more", unlock: { kind: "level", min: 15, hint: "Lv15で開放" } },
+  { href: "/mastery", label: "修練", group: "more", unlock: { kind: "level", min: 15, hint: "Lv15で開放" }, hiddenInPhase1: true },
   { href: "/forge", label: "鍛冶", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
-  { href: "/boss", label: "ボス", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放（パーティ必須）" } },
+  { href: "/boss", label: "ボス", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放（パーティ必須）" }, hiddenInPhase1: true },
   { href: "/mystery", label: "謎", group: "more", unlock: { kind: "level", min: 4, hint: "Lv4で開放" } },
-  { href: "/pvp", label: "闘技", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
+  { href: "/pvp", label: "闘技", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" }, hiddenInPhase1: true },
   { href: "/guild", label: "ギルド", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
-  { href: "/siege", label: "攻城戦", group: "more", unlock: { kind: "guild", hint: "ギルド加入で開放" } },
-  { href: "/abyss", label: "奈落", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" } },
-  { href: "/ascension", label: "転生", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" } },
-  { href: "/canon", label: "年表", group: "more" },
-  { href: "/curse", label: "呪い", group: "more" },
-  { href: "/achievements", label: "称号", group: "more" },
+  { href: "/siege", label: "攻城戦", group: "more", unlock: { kind: "guild", hint: "ギルド加入で開放" }, hiddenInPhase1: true },
+  { href: "/abyss", label: "奈落", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" }, hiddenInPhase1: true },
+  { href: "/ascension", label: "転生", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" }, hiddenInPhase1: true },
+  { href: "/canon", label: "年表", group: "more", hiddenInPhase1: true },
+  { href: "/curse", label: "呪い", group: "more", unlock: { kind: "level", min: 10, hint: "Lv10で開放" } },
+  { href: "/achievements", label: "称号", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
   { href: "/characters", label: "選択", group: "more" },
 ];
+
+// Phase 1 封印を全外しする時の helper。Phase 3 / Endgame で機能復活時に
+// HUD レイヤーで一括解除する。default false で Phase 1 中は隠す。
+const PHASE_1_REVEAL_ALL = false;
+
+function isVisibleInPhase1(item: Item): boolean {
+  if (PHASE_1_REVEAL_ALL) return true;
+  return !item.hiddenInPhase1;
+}
 
 export default function HudMenu({
   isAdmin,
@@ -121,11 +134,13 @@ export default function HudMenu({
   }, [open]);
 
   const adminItem: Item | null = isAdmin ? { href: "/admin", label: "管理", group: "more" } : null;
-  const moreItems = adminItem ? [...ITEMS.filter((i) => i.group === "more"), adminItem] : ITEMS.filter((i) => i.group === "more");
+  const moreItems = (
+    adminItem ? [...ITEMS.filter((i) => i.group === "more"), adminItem] : ITEMS.filter((i) => i.group === "more")
+  ).filter(isVisibleInPhase1);
 
   return (
     <div ref={containerRef} className="ml-auto flex items-center gap-2 flex-wrap relative">
-      {ITEMS.filter((i) => i.group === "primary").map((i) => renderItem(i))}
+      {ITEMS.filter((i) => i.group === "primary" && isVisibleInPhase1(i)).map((i) => renderItem(i))}
 
       {/* Desktop: render the "more" group inline. Mobile: collapse behind a toggle. */}
       <div className="hidden sm:flex gap-2 flex-wrap">

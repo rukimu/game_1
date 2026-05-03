@@ -11,6 +11,7 @@ import { rollItemInstance, tierLabel, type AggregatedEffects, type ItemInstance 
 import { computeCombatEffects, computeCombatStats } from "@/lib/equipment";
 import { awardAchievement } from "@/lib/achievements";
 import { getProficiencyBonusPct, parseInheritedSkillIds, tickSkillProficiency } from "@/lib/skillInherit";
+import { advanceOnboardingChain } from "@/lib/onboarding";
 
 export type StatusKind = "poison" | "burn" | "stun" | "silence" | "bleed" | "curse";
 
@@ -859,6 +860,11 @@ async function resolveTurn(battleId: string) {
                 await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg, completedAt: new Date() } });
                 await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
                 log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！` });
+                // Cycle 41-4: onboarding chain advance.
+                try {
+                  const nx = await advanceOnboardingChain(p.id, cq.questId);
+                  if (nx) log.push({ turn: battle.turn, ts: Date.now(), text: `次のクエスト: 「${nx.title}」` });
+                } catch { /* non-fatal */ }
               } else {
                 await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
               }
@@ -944,6 +950,11 @@ async function resolveTurn(battleId: string) {
           const updatedQ = await awardExpAndGold(p.id, cq.quest.expReward, cq.quest.goldReward);
           const leveledQ = updatedQ && beforeQ && updatedQ.level > beforeQ.level;
           log.push({ turn: battle.turn, ts: Date.now(), text: `${p.name}はクエスト「${cq.quest.title}」を達成した！${leveledQ ? `(Lv${beforeQ!.level}→Lv${updatedQ!.level})` : ""}` });
+          // Cycle 41-4: onboarding chain advance.
+          try {
+            const nx = await advanceOnboardingChain(p.id, cq.questId);
+            if (nx) log.push({ turn: battle.turn, ts: Date.now(), text: `次のクエスト: 「${nx.title}」` });
+          } catch { /* non-fatal */ }
         } else {
           await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
         }

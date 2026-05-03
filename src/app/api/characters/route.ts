@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { applyJobBaseStats } from "@/lib/leveling";
 import { sanitizeName } from "@/lib/sanitize";
 import { pickBio, scoreQuiz } from "@/lib/quiz";
+import { acceptFirstOnboardingQuest } from "@/lib/onboarding";
 
 const schema = z.object({
   name: z.string().min(2).max(24),
@@ -75,6 +76,13 @@ export async function POST(req: Request) {
   const starter = await prisma.item.findFirst({ where: { name: "薬草" } });
   if (starter) {
     await prisma.inventoryItem.create({ data: { characterId: character.id, itemId: starter.id, quantity: 5 } });
+  }
+  // Cycle 41-4: 新規キャラに onboarding 1/5 を自動受注。失敗しても致命では
+  // ないので character 作成自体は成功させる (seed 未実行 DB の互換性)。
+  try {
+    await acceptFirstOnboardingQuest(character.id);
+  } catch (err) {
+    console.error("[onboarding] acceptFirst failed:", err);
   }
   return NextResponse.json({
     character,

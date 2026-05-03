@@ -5,6 +5,7 @@ import { generateMassJobs } from "../src/lib/jobGen";
 import { generateMassItems } from "../src/lib/itemGen";
 import { CURATED_JOBS } from "./curatedJobs";
 import { CURATED_NPCS, CURATED_TOWNS } from "./curatedNpcs";
+import { ONBOARDING_CHAIN, ONBOARDING_GENERATED_BY } from "../src/lib/onboarding";
 
 const prisma = new PrismaClient();
 
@@ -462,6 +463,48 @@ async function main() {
     }
   }
   console.log(`  castles: +${castlesCreated} (${castles.length} total)`);
+
+  // Cycle 41-4: オンボーディング 5 連鎖クエスト。新規キャラに自動受注され、
+  // 完了すると次の 1 件が自動で受注される。Day1 プレイヤに「次にやること」
+  // を 1 件だけ提示し続ける線形誘導。seed.ts はキャラ作成より前に走るので
+  // ここでは Quest 行のみ用意 (受注は src/app/api/characters/route.ts)。
+  let onboardingCreated = 0;
+  let onboardingUpdated = 0;
+  for (const step of ONBOARDING_CHAIN) {
+    const existing = await prisma.quest.findFirst({
+      where: { generatedBy: ONBOARDING_GENERATED_BY, title: step.title },
+    });
+    if (existing) {
+      await prisma.quest.update({
+        where: { id: existing.id },
+        data: {
+          description: step.description,
+          goalType: step.goalType,
+          goalParam: step.goalParam,
+          goalCount: step.goalCount,
+          expReward: step.expReward,
+          goldReward: step.goldReward,
+        },
+      });
+      onboardingUpdated++;
+    } else {
+      await prisma.quest.create({
+        data: {
+          townId: null,
+          title: step.title,
+          description: step.description,
+          goalType: step.goalType,
+          goalParam: step.goalParam,
+          goalCount: step.goalCount,
+          expReward: step.expReward,
+          goldReward: step.goldReward,
+          generatedBy: ONBOARDING_GENERATED_BY,
+        },
+      });
+      onboardingCreated++;
+    }
+  }
+  console.log(`  onboarding chain: +${onboardingCreated} created, ${onboardingUpdated} updated`);
 
   console.log("Seed complete.");
 }

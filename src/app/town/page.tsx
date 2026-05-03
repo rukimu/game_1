@@ -10,6 +10,7 @@ import { getTodayWorldState, jpElementName } from "@/lib/worldstate";
 import { pickTutorialHint } from "@/lib/tutorial";
 import { listTodayChallenges, describeDailyChallenge, tickDailyChallenge } from "@/lib/dailyChallenge";
 import { spawnRaidIfDue, listActiveRaids } from "@/lib/raid";
+import { getActiveOnboardingQuest } from "@/lib/onboarding";
 import TownActions from "./TownActions";
 import TutorialBox from "./TutorialBox";
 
@@ -128,6 +129,9 @@ export default async function TownPage() {
   // Per-character onboarding hint. Adapts to whether they've fought,
   // looted, joined a party, etc. Hidden after dismissal.
   const tutorialHint = await pickTutorialHint(c.id);
+  // Cycle 41-4: 5 連鎖オンボーディング クエスト。Day1 プレイヤに「次に
+  // やること」を 1 件だけ提示する。完了で次が自動受注される線形誘導。
+  const activeOnboarding = await getActiveOnboardingQuest(c.id);
 
   // Daily challenges: lazy-create today's 3 if missing. Town visit also
   // counts as one tick of the talk_npc / explore goals — increment progress
@@ -144,6 +148,26 @@ export default async function TownPage() {
   return (
     <main>
       <Hud />
+      {activeOnboarding && (
+        <div className="panel mb-3 border-amber-500/60 bg-gradient-to-br from-amber-950/40 to-yellow-950/20">
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-amber-300 font-bold text-sm">★ 次の目標</span>
+            <span className="text-yellow-100 font-bold">{activeOnboarding.title}</span>
+            <span className="ml-auto text-xs text-yellow-200/70 tabular-nums">
+              {activeOnboarding.progress}/{activeOnboarding.goalCount}
+            </span>
+          </div>
+          <p className="text-xs text-yellow-100/85 leading-relaxed">{activeOnboarding.description}</p>
+          <div className="mt-2 h-1.5 bg-black/50 border border-yellow-900/50 rounded overflow-hidden">
+            <div
+              className="h-full bg-amber-400"
+              style={{
+                width: `${Math.min(100, Math.max(0, (activeOnboarding.progress / Math.max(1, activeOnboarding.goalCount)) * 100))}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2 panel space-y-3">
           {town ? (
@@ -219,8 +243,18 @@ export default async function TownPage() {
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">受注中</h3>
                 <ul className="text-xs text-yellow-100/80 space-y-1">
-                  {myQuests.length === 0 && <li className="text-yellow-200/50">なし</li>}
-                  {myQuests.map((q) => <li key={q.id}>・{q.quest.title}（{q.progress}/{q.quest.goalCount}）</li>)}
+                  {(() => {
+                    // Cycle 41-4: onboarding は上部の専用バナーで表示するので
+                    // 重複を避けるためここから除外する。chain 完走後は通常
+                    // クエストのみが残る。
+                    const nonOnboarding = myQuests.filter((q) => q.quest.generatedBy !== "onboarding");
+                    if (nonOnboarding.length === 0) {
+                      return <li className="text-yellow-200/50">なし</li>;
+                    }
+                    return nonOnboarding.map((q) => (
+                      <li key={q.id}>・{q.quest.title}（{q.progress}/{q.quest.goalCount}）</li>
+                    ));
+                  })()}
                 </ul>
               </section>
               {recentEvents.length > 0 && (

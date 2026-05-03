@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCharacter } from "@/lib/activeCharacter";
 import { awardExpAndGold } from "@/lib/leveling";
+import { advanceOnboardingChain } from "@/lib/onboarding";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const c = await requireActiveCharacter().catch((r) => r);
@@ -35,6 +36,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         data: { progress: newProg, completedAt: new Date() },
       });
       await awardExpAndGold(c.id, cq.quest.expReward, cq.quest.goldReward);
+      // Cycle 41-4: onboarding chain advance (visit_town 経路は現状の
+      // chain には含まれないが、将来差し替え時のため hook を仕込んでおく)。
+      try { await advanceOnboardingChain(c.id, cq.questId); } catch { /* non-fatal */ }
     } else {
       await prisma.characterQuest.update({ where: { id: cq.id }, data: { progress: newProg } });
     }

@@ -45,19 +45,19 @@
 - **Cycle 32**: 攻城戦に本物の戦闘 UI — `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `src/lib/siegeBattle.ts` / 6 アクション(attack 1× / aoe 0.5× 全敵 / heavy 1.5× / support 自陣 +5% / rally master +20% / cure sub +30%) / `/siege/[id]/battle` UI（1.5s ポーリング、ギルド HP バー、アクションパネル、観戦モード）/ `siege:[id]` 応援チャット（既存 Chat 流用、誰でも投稿可）/ 30s/ターン lazy advance（`c22138b`〜`aa84b7f`、C32-a〜d）
 - **Cycle 33**: 世界観の手作り厚み — `Npc.curated/bio/relationsJson` 拡張 + 5 主要都市 × 6 NPC = 30 体 (`prisma/curatedNpcs.ts`、60-120 字 bio + 関係グラフ JSON) + curated towns 2 つ追加（鐘塔の都ベルクラート / 古王国の都ヴェスペル）/ `/town` で curated NPC を紫枠 `<details>` 展開 / `docs/lore/{world,seasons,towns,curated_npcs}.md` 4 ファイルで世界設定資料 / `SEASON_NPC_TEMPLATES` 12 種に拡充 + `generateNpcDialogue` の `baseLine` 引数で curated dialogue 保持（`020bc4b`〜C33-d、C33-a〜d）
 - **Cycle 34**: 真のエンドゲーム + 無限階ダンジョン — `AbyssRun` / `AbyssWeeklyRecord` + `src/lib/abyss.ts`(1.15^floor 指数報酬 / 各 10 階固有ボス / 撤退で全額・全滅で半減 / 週次ランキング) + `/abyss` UI Lv50+ / アセンション(`Character.generation` + `/ascension` Lv→1 リセット + 永久ボーナス) + 称号コンプ「歩く伝承」(mythic auto-grant) + `/canon` 季節カノン年表（`0f5febf`〜C34-d、C34-a〜d）
+- **Cycle 35**: アイコンアセット (将来ピクセル差替可能基盤) — ピクセルアートは Claude 手書きで Octopath 品質に届かないと判明、SVG (lucide スタイル) に切替 / `src/lib/icons.ts` で `IconSource` union（svg/pixel）+ `GameIcon` 抽象コンポーネント / 32 SVG ファイル + 37 slug（武器 12 / 防具 6 / 装飾 2 / 職業 9 / 敵 5 / 状態 3）/ HUD・`/characters`・`/jobs`・`/inventory` に組み込み / `IconsToggle` でテキスト派モード切替（`a76ec2e`〜C35-d、C35-a〜d）
 
 ## 進行・次サイクル
 
-### Cycle 35 — ドット絵アセット (NEXT)
-- 「テキストだけ」の視覚的単調さを破る、軽量 pixel art 基盤
-- ドット絵ジェネレーション基盤(SVG/JSON ピクセルマップ → React コンポーネント)
-- アイコン整備: 職業 9 / 敵 25 / 装備 18 ベース、ボス 30+
-- HUD と inventory にアイコン埋め込み + テキスト派向けトグル
-- 評価軸 H(UX・プレゼン) ★★★ → ★★★★ を狙う
-- 詳細プランは `docs/team/ROADMAP_MAX.md` の Cycle 35 セクション
+### Cycle 36 — 経済バランス (NEXT)
+- forge / arena / mystery / boss の報酬曲線を平坦化
+- forge 強化失敗時の補填 / arena ELO シーズンリセット + 上位報酬装備
+- boss tier ごとの装備 affix プール分離 / mystery 解明者専用ボーナス
+- 評価軸 G(公平・経済) ★★★★ → ★★★★★ を狙う
 
 ### 以降の候補（詳細は `docs/team/ROADMAP_MAX.md`）
-- **Cycle 36〜38**: 経済バランス / 運用基盤 / a11y
+- **Cycle 37**: 運用基盤（公開直前必須）
+- **Cycle 38**: アクセシビリティ + UX 細部（軸 H ★★★★ → ★★★★★）
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 

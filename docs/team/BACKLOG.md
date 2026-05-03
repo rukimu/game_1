@@ -59,8 +59,10 @@
 
 ## P2 (構想中)
 
-- **Cycle 35**: ドット絵アセット (NEXT — 職業/敵/装備の SVG/JSON pixel art)
-- **Cycle 36-38**: 経済バランス / 運用基盤 / a11y
+- **Cycle 36**: 経済バランス (NEXT — forge/arena/mystery/boss の報酬曲線平坦化、軸 G ★★★★ → ★★★★★)
+- **Cycle 37**: 運用基盤 (公開直前必須 — Postgres/Redis/Stripe/rate limit/audit log)
+- **Cycle 38**: アクセシビリティ + UX 細部 (軸 H ★★★★ → ★★★★★)
+- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注して `IconSource.kind = "pixel"` に差し替え（現状の SVG 基盤がそのまま使える）
 - **シーズン Hall of Fame** (C34 で見送り、将来 C36+ で殿堂入りシステム導入予定)
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
@@ -77,6 +79,12 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 35 (2026-05-02) — アイコンアセット (将来ピクセル差替可能基盤)
+- [x] **C35-a**: アイコン抽象基盤 — `src/lib/icons.ts`（`IconSource` union svg/pixel + `ICON_REGISTRY`）+ `src/components/GameIcon.tsx`（backend-agnostic）+ サンプル 5 SVG（sword/shield/crown/wand/skull）
+- [x] **C35-b**: SVG カタログ 27 個追加 = 計 32 ファイル / 37 slug（武器 12 / 防具 6 / 装飾 2 / 職業 9 / 敵 5 / 状態 3）
+- [x] **C35-c**: HUD（現職 archetype）/ `/characters`（選択カード）/ `/jobs`（過去職）/ `/inventory`（slot/weaponClass）に GameIcon 組み込み + `iconSlugForItem` ヘルパ
+- [x] **C35-d**: `IconsToggle.tsx`（localStorage persist + `<html>.no-icons` クラス + `globals.css` で全アイコン非表示）+ HUD 右下に常時設置 + `pixel_samples.html` を `docs/archive/` に退避 + ROADMAP_MAX 軸 H 更新
 
 ### Cycle 34 (2026-05-02) — 真のエンドゲーム + 無限階ダンジョン
 - [x] **C34-a**: `AbyssRun` / `AbyssWeeklyRecord` モデル + `Battle.abyssRunId` リレーション + `src/lib/abyss.ts`（1.15^floor 指数報酬、+1 level/floor 難度、各 10 階固有ボス、`onAbyssBattleEnded` で勝利→累積 / 敗北→半減+死亡、`retreatAbyss` 全額持ち帰り、ISO 週ランキング）+ `battle.ts` フック

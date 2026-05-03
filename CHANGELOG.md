@@ -7,6 +7,16 @@
 
 ---
 
+## Cycle 35 — アイコンアセット (将来ピクセル差替可能基盤) (2026-05-02)
+
+ピクセルアートは Claude 手書きで Octopath Traveler 系の品質に届かないと判明 (案 1〜5 を試した結果)、SVG アイコン (lucide スタイル) に切替。**将来ピクセル化に差し替え可能な抽象基盤**は残し、当面 SVG で軸 H 押し上げ。軸 H ★★★ → ★★★★。
+
+- **C35-a**: アイコン抽象基盤 — `src/lib/icons.ts`（IconSource union: svg / pixel）+ `ICON_REGISTRY` + `src/components/GameIcon.tsx`（backend-agnostic、svg は `<img>`、pixel は将来用 placeholder）+ サンプル 5 SVG
+- **C35-b**: SVG カタログ 27 個追加（武器 12 / 防具 6 / 装飾 2 / 職業 9 / 敵 5 / 状態 3 = 計 32 ファイル / 37 slug）
+- **C35-c**: UI 統合 — HUD（現職 archetype アイコン）/ `/characters`（選択カード）/ `/jobs`（過去職）/ `/inventory`（slot/weaponClass）に GameIcon 組み込み + `iconSlugForItem` ヘルパ
+- **C35-d**: テキスト派トグル `src/components/IconsToggle.tsx`（localStorage persist、`<html>` に `.no-icons` クラス、`globals.css` で全アイコン非表示）+ HUD 右下に常時設置 + `docs/pixel_samples.html` を `docs/archive/` に退避 + ROADMAP_MAX 軸 H 更新
+- 触ったファイル: `src/lib/icons.ts` (新規), `src/components/{GameIcon,IconsToggle}.tsx` (新規), `public/icons/*.svg` (32 ファイル新規), `src/components/Hud.tsx`, `src/app/characters/{page,Client}.tsx`, `src/app/jobs/Client.tsx`, `src/app/inventory/Client.tsx`, `src/app/globals.css`, `docs/archive/pixel_samples.html` (移動)
+
 ## Cycle 34 — 真のエンドゲーム + 無限階ダンジョン (2026-05-02)
 
 Lv50 以降の continued-play 軸を 4 サブサイクルで実装。軸 F（やりこみ・エンドゲーム）★★★★ → ★★★★★。

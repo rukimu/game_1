@@ -32,6 +32,23 @@ export default async function Hud() {
   const expRemaining = Math.max(0, expNeeded - character.exp);
   const unreadDms = await countUnreadDms(character.id);
 
+  // Cycle 41-3: 「次の解放」予告。街の段階開放と機能ゲートをまとめて
+  // 1 行で見せ、Day1 ユーザーに「あと少しで○○が来る」期待感を与える。
+  const nextLockedTown = await prisma.town.findFirst({
+    where: { unlockLevel: { gt: character.level } },
+    orderBy: { unlockLevel: "asc" },
+    select: { name: true, unlockLevel: true },
+  });
+  // HudMenu の unlock 条件と同期させた機能解放表。少ない方を取って
+  // 「次のレベルで街と機能どちらが先に開くか」を表示する。
+  const NEXT_FEATURE_GATES: Array<{ level: number; label: string }> = [
+    { level: 3, label: "店 / ダンジョン" },
+    { level: 4, label: "DM / 謎の手がかり" },
+    { level: 5, label: "鍛冶 / 称号" },
+    { level: 10, label: "転職 / 呪い" },
+  ];
+  const nextFeatureGate = NEXT_FEATURE_GATES.find((g) => g.level > character.level);
+
   return (
     <div className="panel mb-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm">
@@ -88,7 +105,7 @@ export default async function Hud() {
           inGuild={!!character.guildMember}
         />
       </div>
-      <div className="flex justify-between items-center mt-1">
+      <div className="flex justify-between items-center mt-1 flex-wrap gap-y-1">
         {!isMaxLevel ? (
           <div className="text-[10px] sm:text-xs text-yellow-200/60">
             次のLv{character.level + 1}まで残り{expRemaining}経験値
@@ -96,6 +113,16 @@ export default async function Hud() {
         ) : <span />}
         <IconsToggle />
       </div>
+      {(nextLockedTown || nextFeatureGate) && (
+        <div className="mt-1 text-[10px] sm:text-xs text-yellow-200/60 flex flex-wrap gap-x-3 gap-y-0.5">
+          {nextLockedTown && (
+            <span>🔒 Lv{nextLockedTown.unlockLevel}: {nextLockedTown.name}</span>
+          )}
+          {nextFeatureGate && (
+            <span>🔓 Lv{nextFeatureGate.level}: {nextFeatureGate.label}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

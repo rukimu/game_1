@@ -173,8 +173,64 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "巨漢",
     signatureOutfit: "鋲付き胸当て + 巨大両手槌 + 山羊皮のマント",
     signatureBio: "北方の鉱山育ち。子供の頃に落盤事故で岩を素手で押し退けたという伝説があるが、本人たちは『たまたまだ』と笑う。怒鳴り声で動物が逃げる程度には怖い。",
-    baseStats: { hp: 80, mp: 8, atk: 16, def: 12, mat: 2, mdf: 4, spd: 4 },
+    baseStats: { hp: 80, mp: 18, atk: 16, def: 12, mat: 2, mdf: 4, spd: 4 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 両手槌の素直な振り下ろし。
+      {
+        name: "岩砕き",
+        description: "両手槌で大きく振り下ろす。素直だが重い、巨漢の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 13,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 単体への大ダメージ。
+      {
+        name: "山割り",
+        description: "両手槌を頭上から叩きつける必殺の一撃。岩盤すら砕く威力で敵を地に縫いつける。",
+        type: "attack",
+        element: "earth",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 怒鳴り声で士気を引き上げ次撃強化。
+      {
+        name: "怒声",
+        description: "腹の底から咆える。次の通常攻撃の威力 +50%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 威圧で攻撃意欲を削ぐ。
+      {
+        name: "威圧",
+        description: "睨みつけて敵 1 体の戦意を削ぐ。atk -25% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 巨体を盾に庇う。
+      {
+        name: "庇い壁",
+        description: "巨体を盾代わりにして味方 1 体を庇う。1 ターン受けるダメージを肩代わり。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 10,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 既存「地響き」(C31 既存スキル維持)。
       {
         name: "地響き",
         description: "地面を踏み砕き、敵全体に物理ダメージとスタン付与（30%）。",
@@ -184,6 +240,50 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 12,
         cooldown: 3,
         targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 構え長期。
+      {
+        name: "不動の構え",
+        description: "両足を地に据えて 4 ターン def +30%、回避不可。仁王立ちの巨漢を誰も動かせない。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 直前 type と異なる連撃で +bonus。
+      {
+        name: "山崩し",
+        description: "前段の構えを崩しに転じる連撃。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "earth",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 全敵への超威力。
+      {
+        name: "山岳震",
+        description: "両手槌を地に叩きつけ山ごと震わす。敵全体に超大物理ダメージ。",
+        type: "attack",
+        element: "earth",
+        power: 45,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 巨漢の代名詞、本気の咆哮。
+      {
+        name: "怪力披露",
+        description: "本気の咆哮で全身の力を引き出す。次の通常攻撃が確定で 2 段ヒット。巨漢戦士の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 12,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -195,8 +295,31 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "隻腕",
     signatureOutfit: "鋼の義手 + 重ね革鎧 + 革紐の片肩当て",
     signatureBio: "戦場で右腕を失った後、左腕一本で剣を振るう道を選んだ者たち。義手の重みで体幹を鍛え、片腕でしか出せない斜め斬り上げを編み出した。挫折は剣士を磨く。",
-    baseStats: { hp: 70, mp: 10, atk: 15, def: 11, mat: 3, mdf: 5, spd: 6 },
+    baseStats: { hp: 70, mp: 18, atk: 15, def: 11, mat: 3, mdf: 5, spd: 6 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 片刃で軽く斬る、命中重視。
+      {
+        name: "片刃斬り",
+        description: "義手の重みを支えに、左腕一本で素早く斬る。隻腕戦士の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 義手の重みを乗せた渾身の斬り上げ。
+      {
+        name: "義手震斬",
+        description: "義手の重みを利用した斜め斬り上げ。片腕でしか出せない軌道で敵を割る。",
+        type: "attack",
+        element: null,
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 既存「片刃の覚悟」(C31 既存スキル維持)。
       {
         name: "片刃の覚悟",
         description: "次の通常攻撃が必中 + クリティカル率 +30%。",
@@ -205,6 +328,83 @@ export const CURATED_JOBS: CuratedJob[] = [
         power: 0,
         cost: 8,
         cooldown: 3,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 鋼の義手で威圧、敵 atk 低下。
+      {
+        name: "義手の威圧",
+        description: "鋼の義手を見せつけて敵 1 体を萎縮させる。atk -20% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 片腕でも仲間を守る。
+      {
+        name: "片腕の盾",
+        description: "義手で味方 1 体を庇いつつ、def +25% 2 ターン。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 10,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 義手で広く薙ぎ払う。
+      {
+        name: "義手薙ぎ",
+        description: "鋼の義手を大きく振り、敵全体に物理ダメージ。重い一撃が広く届く。",
+        type: "attack",
+        element: null,
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 執念で攻撃継続。
+      {
+        name: "執念",
+        description: "失った片腕の代わりに研いだ意志。5 ターン atk +15%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 残心の構えから次の連撃。
+      {
+        name: "残心",
+        description: "前段の動きを見極めての連撃。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 究極の片腕一撃。
+      {
+        name: "片刃奥義: 終斬",
+        description: "片腕で振るえる最後の一撃。命を削って放つ斬撃で敵を真っ二つにする。",
+        type: "attack",
+        element: null,
+        power: 50,
+        cost: 28,
+        cooldown: 8,
+        targetType: "enemy",
+      },
+      // 10. signature — 義手を犠牲に次撃を 3 倍化。
+      {
+        name: "義手の代償",
+        description: "義手の機構をひとつ犠牲にして力を引き出す。次の通常攻撃の威力 +200%。隻腕戦士の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 14,
+        cooldown: 5,
         targetType: "self",
       },
     ],
@@ -217,8 +417,108 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "双子",
     signatureOutfit: "色違いの鏡像鎧 + 細身の双剣 + 双子結び目の腕章",
     signatureBio: "幼少から二人で一人として育った者たち。互いの呼吸を読み、片方が攻める間にもう片方が守る。一人になっても、もう一人の影を背負って戦う。",
-    baseStats: { hp: 60, mp: 12, atk: 13, def: 9, mat: 4, mdf: 6, spd: 9 },
+    baseStats: { hp: 60, mp: 18, atk: 13, def: 9, mat: 4, mdf: 6, spd: 9 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 双剣を交互に。
+      {
+        name: "双剣の呼吸",
+        description: "双剣を交互に振るう、二人で一人の呼吸の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 連続 3 段。
+      {
+        name: "双剣斬撃乱舞",
+        description: "もう一人の影と並んで斬る。3 段連続の細かい斬撃。",
+        type: "attack",
+        element: null,
+        power: 22,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 影の片割れと並ぶ短期バフ。
+      {
+        name: "影の片割れ",
+        description: "もう一人の影と並ぶ。1 ターン回避率 +30%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 挟撃の構え。
+      {
+        name: "挟撃宣言",
+        description: "敵 1 体を挟む構え。そちらの def -20% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — もう一人の影で守る。
+      {
+        name: "護りの片影",
+        description: "影が味方 1 体に寄り添い、HP を中回復しつつ次の被弾を半減。",
+        type: "heal",
+        element: null,
+        power: 16,
+        cost: 10,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 双剣で全敵を薙ぐ。
+      {
+        name: "双剣の渦",
+        description: "二人で囲むように敵全体を薙ぐ。風属性の連続斬撃。",
+        type: "attack",
+        element: "wind",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 二人で一人として動き続ける。
+      {
+        name: "二人で一人",
+        description: "もう一人の影が常に並ぶ。4 ターン spd +20% atk +10%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 連舞でチェーン強化。
+      {
+        name: "連舞",
+        description: "片方が崩した敵にもう一人が斬り込む。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 鏡映双剣の連続 5 段。
+      {
+        name: "鏡映双剣奥義",
+        description: "二人がかりの究極連撃。鏡像の軌跡で敵を 5 段連斬する。",
+        type: "attack",
+        element: null,
+        power: 48,
+        cost: 28,
+        cooldown: 8,
+        targetType: "enemy",
+      },
+      // 10. signature — 既存「鏡像連携」(C31 既存スキル維持)。
       {
         name: "鏡像連携",
         description: "次の 2 ターン、通常攻撃が確定で 2 段ヒットする。",

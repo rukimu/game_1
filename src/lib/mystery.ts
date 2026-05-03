@@ -113,10 +113,20 @@ export async function rollClueDiscovery(
       data: { mysterySolvedAt: new Date(), mysterySolverName: character?.name ?? null },
     });
     if (updated.count > 0 && character) {
-      // grant a meaningful reward
+      // grant a meaningful reward.
+      // Cycle 36: solver also gets a permanent stat boost — +20 maxHp
+      // and +10 maxMp — so the title isn't only cosmetic. Caps the run-
+      // away advantage by being a flat one-shot, not a multiplier.
       await prisma.character.update({
         where: { id: character.id },
-        data: { gold: { increment: 1000 }, exp: { increment: 500 } },
+        data: {
+          gold: { increment: 1000 },
+          exp: { increment: 500 },
+          maxHp: { increment: 20 },
+          hp: { increment: 20 },
+          maxMp: { increment: 10 },
+          mp: { increment: 10 },
+        },
       });
       const a = await prisma.announcement.create({
         data: {

@@ -105,7 +105,14 @@ class TemplateContentGenerationService implements ContentGenerationService {
     const description = `辺境にて目撃された${name}。${element === "none" ? "属性は感じられない" : `${jpElement(element)}の気配を纏う`}。`;
     // Difficulty curve: starter level 1 should be winnable solo, but later
     // levels and dungeon-deep encounters scale harder than the player.
-    const hp = 22 + level * 8 + intBetween(rng, 0, 10);
+    //
+    // Cycle 41-1 (Phase 1): Lv1-10 で「攻撃 1 発で戦闘終了」問題の解消。
+    // Lv1-5 帯で HP を ×1.5、Lv6-10 帯で ×1.3 に底上げし、3-5 ターン
+    // 続く想定値に揃える (CORE_LOOP.md §1.3 のバランス指針)。
+    // Lv11+ は ascension / abyss バランス維持で現状の係数のまま。
+    const baseHp = 22 + level * 8 + intBetween(rng, 0, 10);
+    const hpMultiplier = level <= 5 ? 1.5 : level <= 10 ? 1.3 : 1.0;
+    const hp = Math.floor(baseHp * hpMultiplier);
     const atk = 5 + level * 2 + intBetween(rng, 0, 3);
     const def = 1 + level + intBetween(rng, 0, 3);
     const spd = 4 + intBetween(rng, 0, level);

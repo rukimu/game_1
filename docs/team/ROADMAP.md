@@ -52,24 +52,94 @@
 
 ## 進行・次サイクル
 
-### 全 8 軸 ★★★★★ 到達 — 神ゲー判定 MAX 達成 (2026-05-02)
+### 内部ベンチ完了、外形品質には未到達 (2026-05-02 再評価)
 
-ROADMAP_MAX の C27〜C38 全 12 サイクルが完了。8 評価軸すべてが ★★★★★。
+ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **内部の自己評価フレームワーク** の達成度であって、**外形のゲーム品質ではない**ことが判明:
 
-### 公開前残作業
-- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
-- **公開前チェックリスト** (`docs/team/PRODUCTION_OPS.md` §8 参照):
-  - Postgres / Redis 実機検証
-  - Stripe 本決済差し替え
-  - 法務 (利用規約 / 特商法 / 年齢レーティング 15+)
-  - HTTPS / CSP / セキュリティヘッダ
-  - ログ集約 / 監視 / アラート構築
-  - 日次バックアップ + 月次リストア検証
+- **監督 (ユーザー) が一度も実機で動作確認していない**
+- **バグチェックが体系的にされていない** (`tsc green` のみで動作未保証)
+- **専門 8 視点の外部評価で平均 6.7/10**、特に運用・法務が 4.5 / 5.0 で公開不可
 
-### 任意拡張
+詳細は新規 `docs/team/MANUAL_TEST_PLAN.md` と `docs/team/ROADMAP_MAX.md` 末尾の外部評価結果セクションを参照。
+
+---
+
+### Phase A: 動作検証可能化 (最優先 / 監督主導)
+
+**目的**: 監督が実際に手で触り「動いた / 動かなかった」を判定できる状態にする。
+
+#### Cycle 39 — 実機検証 + デバッグツール + 致命バグ第一波
+- `MANUAL_TEST_PLAN.md` のセクション §1-3 を監督が実機で踏破
+- 不具合は `docs/team/BUGS_FOUND.md` に記録 (新規作成)
+- 開発用 admin shortcut (Lv50 即昇 / gold 配布 / 全 curated job 解放 / curated NPC 全街配備)
+- 動かなかった機能を即修正
+- セットアップ手順 README の不足補完
+
+#### Cycle 40 — エンドゲーム + 並行プレイ検証
+- `MANUAL_TEST_PLAN.md` §4-6 (レイド / シージ / 奈落 / 転生 / 並行 / admin)
+- 2 アカウント同時テスト (socket 同期 / トレード / オークション競合)
+- バグ修正第二波
+- 既知 N+1 と並行 write 競合を実プレイで観察
+
+---
+
+### Phase B: 自動テスト被覆 (回帰防止)
+
+#### Cycle 41 — vitest 導入 + 純関数 unit test 30 本
+- `applyDamage` / `applyEffects` / 装備計算 / forge / abyss reward / ascension / 継承スキル
+- battle.ts の境界値 (KO 判定 / status tick / multi-enemy AOE)
+- skillInherit.ts (slot cap / inheritable filter / proficiency tier)
+- arenaSeason.ts (regression idempotent)
+
+#### Cycle 42 — Playwright E2E + smoke 拡充
+- 主要フロー 5 本: 登録→キャラ→街→戦闘→Lv up
+- レイド合流・シージ参戦・奈落クリアの自動シナリオ
+- smoke を「import 通過」から「正常系/異常系」に拡張
+
+---
+
+### Phase C: 専門評価で出た致命項目の修正
+
+#### Cycle 43 — セキュリティ middleware 配備
+- `withGuards(handler, { rateLimit, audit, mute })` 共通ミドルウェア
+- 全 mutation endpoint (chat / dm / battle action / forge / trade / auction / character_create) に一括配備
+- **Mute enforcement の実装** (現状 no-op の致命バグ修正)
+- CSP / HSTS / X-Frame-Options / Socket.io CORS allow-list / CSRF token
+
+#### Cycle 44 — ゲームバランス修正
+- 奈落 F25+ で報酬曲線を log scale に cap
+- ascension 利得を増額 (PER_GEN +10 HP / +3 atk / +2 def 程度)
+- forge 経済バランス (G ↔ 戦闘収入の比率)
+- PvP placement 10 戦 + 「Gen0 限定リーグ」併設
+- 奈落に「祝福/呪い/取引」3 択ランダムイベント (攻略不能化、北極星準拠)
+
+---
+
+### Phase D: 公開準備 (法務 + 本番インフラ)
+
+#### Cycle 45 — 法務 4 点セット + コンプライアンス
+- 利用規約 / プライバシーポリシー / 特商法表記 / 年齢レーティング (15+)
+- `/legal/{terms,privacy,tokushoho}` ルート + 登録時同意 checkbox + AuditLog 記録
+- 個情法対応 (データ削除請求 API + 退会フロー + Cookie バナー)
+- 未成年課金規制 (生年月日 + 月額上限)
+- ドロップ確率開示 `/transparency` (景表法)
+- README から「教育目的の MVP」記述削除
+
+#### Cycle 46 — 本番インフラ実機検証
+- Postgres 移行 + index 10 本以上追加 + 並行 write smoke
+- Socket.io Redis adapter + 2 ノード並行起動検証
+- Stripe 本決済差し替え + Webhook 検証
+- 日次バックアップ cron + 月次リストア試験
+- ログ集約 / 監視 / アラート (Datadog or Better Stack)
+
+---
+
+### 任意拡張 (Phase D 完了後)
+
 - **C31 Phase 3**: curated job を 100 → 300 体まで拡張
 - **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
-- **シーズン Hall of Fame**: 殿堂入りシステム（C34 で見送り、需要があれば実装）
+- **シーズン Hall of Fame**: 殿堂入りシステム
+- **NPC 季節台詞の curated 個別 hook**: 同 NPC が違う日に違う話をする実感の強化
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 

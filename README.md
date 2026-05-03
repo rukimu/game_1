@@ -228,23 +228,39 @@ npm start
 
 詳細は `docs/team/ROADMAP.md` を参照。直近の戦略は:
 
-## 全 8 軸 ★★★★★ 達成 — 神ゲー判定 MAX 到達 (2026-05-02)
+## 内部ベンチ完走 / 外形品質はこれから (2026-05-02 再評価)
 
-ROADMAP_MAX の C27〜C38 全 12 サイクルが完了。8 評価軸すべて MAX。
+ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **内部の自己評価フレームワーク** の達成度。
+専門 8 視点の外部評価で **平均 6.7/10**、特に運用 (4.5) と法務 (5.0) は商用公開不可。
+**監督 (ユーザー) が一度も実機で動作確認していない / バグチェックが体系化されていない** という根本ギャップも存在する。
 
-### 公開前残作業
-- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
-- **公開前チェックリスト** (`docs/team/PRODUCTION_OPS.md` §8 参照):
-  - Postgres / Redis 実機検証 / Stripe 本決済差し替え
-  - 法務 (利用規約 / 特商法 / 年齢レーティング 15+)
-  - HTTPS / CSP / セキュリティヘッダ / ログ集約 / 監視 / 日次バックアップ
+詳細は `docs/team/ROADMAP_MAX.md` 末尾の「外部評価結果」セクションと `docs/team/ROADMAP.md` の Phase A〜D を参照。
 
-### 任意拡張
-- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
-- **C31 Phase 3**: curated job を 100 → 300 体まで拡張（同パイプライン）
-- **シーズン Hall of Fame**: 殿堂入りシステム（C34 で見送り、需要があれば実装）
+### 次の 6 サイクル (Phase A〜D)
 
-**評価軸 8 軸の現状**: A コアループ ★★★★★ / B キャラビルド ★★★★★ / C ハクスラ ★★★★★ / D 物語 ★★★★★ / E 協調 ★★★★★ / F やりこみ ★★★★★ / G 経済 ★★★★★ / H UX ★★★★★
+#### Phase A — 動作検証可能化 (最優先)
+- **Cycle 39**: 実機検証 §1-3 + デバッグツール + 致命バグ第一波
+- **Cycle 40**: エンドゲーム + 並行プレイ検証 + バグ第二波
+
+#### Phase B — 自動テスト被覆
+- **Cycle 41**: vitest 導入 + 純関数 unit test 30 本
+- **Cycle 42**: Playwright E2E + smoke 拡充
+
+#### Phase C — 致命項目の修正
+- **Cycle 43**: セキュリティ middleware 配備 (`withGuards`) + Mute enforcement 実装 + CSP/HSTS/CSRF
+- **Cycle 44**: ゲームバランス修正 (奈落 cap / ascension 増額 / PvP placement / 奈落 3 択ランダムイベント)
+
+#### Phase D — 公開準備
+- **Cycle 45**: 法務 4 点セット + 個情法 + 未成年課金規制 + 確率開示
+- **Cycle 46**: Postgres / Redis / Stripe 実機検証 + 本番インフラ
+
+### 監督向けチェックリスト
+`docs/team/MANUAL_TEST_PLAN.md` に「監督が実際に手で触って動作確認するための段階的 E2E シナリオ」を新設。Day 1〜5 で全機能を一巡する想定。
+
+### 評価軸の現状 (内部 vs 外部)
+- 内部 8 軸: 全 ★★★★★ (ROADMAP_MAX 完走)
+- 外部 8 視点: 平均 6.7/10 (運用 4.5 / 法務 5.0 が大きく沈める)
+- **「神ゲー」を名乗るには Phase A〜D を経て外形 8.5+/10 に到達する必要あり**
 
 ---
 

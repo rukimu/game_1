@@ -57,13 +57,32 @@
 - 装備合成の経済バランス検証 (C12 を実プレイで詰める)
 - forge の preview→commit 確定一致 (deterministic-roll)
 
-## P2 (構想中)
+## P0 (Phase A〜D — 公開可能化までの必須)
 
-- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
-- **公開前残作業**: Postgres / Redis / Stripe 実機検証 / 法務 / HTTPS / 監視 (`docs/team/PRODUCTION_OPS.md` §8)
-- **ピクセルアート差し替え (C35 Phase 2、任意)**: itch.io 等で素材購入 or プロ発注、`IconSource.kind = "pixel"` に書き換え（既存 SVG 基盤が流用可能）
-- **シーズン Hall of Fame** (任意): 殿堂入りシステム
-- **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
+詳細プランは `docs/team/ROADMAP.md` の Phase A〜D セクション、監督向け実機チェックリストは `docs/team/MANUAL_TEST_PLAN.md`。
+
+### Phase A: 動作検証可能化
+- **Cycle 39 (NEXT)**: 実機検証 §1-3 + デバッグツール (Lv50 即昇 / gold 配布 / 全 curated 解放) + 致命バグ第一波修正
+- **Cycle 40**: エンドゲーム + 並行プレイ検証 §4-6 + バグ第二波
+
+### Phase B: 自動テスト被覆
+- **Cycle 41**: vitest 導入 + 純関数 unit test 30 本（applyDamage / 装備計算 / forge / abyss / ascension / 継承）
+- **Cycle 42**: Playwright E2E 5 本 + smoke 拡充
+
+### Phase C: 致命項目の修正
+- **Cycle 43**: `withGuards(handler, { rateLimit, audit, mute })` 共通 middleware + 全 mutation endpoint に配備 + **Mute enforcement 実装** (現状 no-op の致命バグ) + CSP/HSTS/CSRF/CORS
+- **Cycle 44**: 奈落 F25+ 報酬 cap + ascension 利得増額 + PvP placement 10 戦 + Gen0 限定リーグ + 奈落「祝福/呪い/取引」3 択ランダムイベント (北極星準拠)
+
+### Phase D: 公開準備
+- **Cycle 45**: 法務 4 点セット (規約/プライバシー/特商法/15+) + `/legal/*` ルート + 同意ログ + 個情法 + 未成年課金規制 + ドロップ確率開示 `/transparency`
+- **Cycle 46**: Postgres 移行 + index 追加 + Redis adapter + Stripe 差替 + バックアップ + 監視
+
+## P2 (任意拡張、Phase D 完了後)
+
+- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource.kind = "pixel"` に書き換え（既存 SVG 基盤が流用可能）
+- **シーズン Hall of Fame**: 殿堂入りシステム
+- **C31 Phase 3**: curated job を 100 → 300 体まで増量（`CURATED_JOB_BULK.md` 同手順）
+- **NPC 季節台詞の curated 個別 hook**: 同 NPC が違う日に違う話をする実感の強化
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
 - **Cycle 34〜38**: 真のエンドゲーム / pixel art / endless dungeon / a11y / 本番化

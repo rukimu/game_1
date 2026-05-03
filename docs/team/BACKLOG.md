@@ -77,7 +77,17 @@
 - **Cycle 45**: 法務 4 点セット (規約/プライバシー/特商法/15+) + `/legal/*` ルート + 同意ログ + 個情法 + 未成年課金規制 + ドロップ確率開示 `/transparency`
 - **Cycle 46**: Postgres 移行 + index 追加 + Redis adapter + Stripe 差替 + バックアップ + 監視
 
-## P2 (任意拡張、Phase D 完了後)
+## P1 (体験設計再構築の中で扱う)
+
+- **眼鏡反射 reflect 実装**: 眼鏡戦士の signature スキル「眼鏡反射」は現状 `type="buff"` で engine 上は no-op。受けた物理ダメージの 50% を反射するロジックを `battle.ts:resolveTurn` に追加 (skill use パスに reflect 分岐 + status effect として保持)
+- **既存「観察眼」の type 変更**: 現状 `type="buff"` だが C39 サンプルで debuff 役割に変更。seed の `findFirst by name` だと skip されるので upsert 化が必要
+- **戦闘濃度の根本調整**: Lv1-10 で攻撃 1 発で敵が倒れる問題 (Phase 1 Cycle 41 で対応)
+- **クエスト UI**: 受注済み quest が掲示板に出続ける (Phase 1 Cycle 41)
+- **街段階開放**: 全 115 街即解放、`Town.unlockLevel` 追加 (Phase 1 Cycle 41)
+- **目標 HUD**: 「次にやること」が画面に出ない (Phase 1 Cycle 41)
+- **オンボーディング quest 連鎖**: 「初日に何をする」が誘導されない (Phase 1 Cycle 41)
+
+## P2 (任意拡張、Phase 4 完了後)
 
 - **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource.kind = "pixel"` に書き換え（既存 SVG 基盤が流用可能）
 - **シーズン Hall of Fame**: 殿堂入りシステム

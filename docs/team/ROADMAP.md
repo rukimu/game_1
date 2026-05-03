@@ -52,6 +52,17 @@
 
 ## 進行・次サイクル
 
+### 監督判断による方針再構築 (2026-05-02 後半)
+
+監督から 3 つの決定:
+- **Q1.C**: 既存コード snapshot 凍結 + main から不要機能を封印して、体験設計図に従って必要なものだけ復活
+- **Q2 全手作り**: 1 職 10 スキル × 1000 職 = 10,000 スキル全て手作り (時間かけて OK)
+- **Q3 全部満たす**: ハクスラ + 物語 + ビルド + マルチを **時系列レイヤーで** 実現
+  - Day1 = ハクスラ / Week1 = ビルド / Month1 = 物語 / Endgame = マルチ
+
+加えて、自律型開発ガイドライン採用 (CLAUDE.md §10)。
+監督介入なしに進めるが、品質基準は厳格化。
+
 ### 内部ベンチ完了、外形品質には未到達 (2026-05-02 再評価)
 
 ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **内部の自己評価フレームワーク** の達成度であって、**外形のゲーム品質ではない**ことが判明:
@@ -64,82 +75,75 @@ ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **�
 
 ---
 
-### Phase A: 動作検証可能化 (最優先 / 監督主導)
+### Phase 0 — 体験設計図 (Cycle 39、ドキュメントのみ)
 
-**目的**: 監督が実際に手で触り「動いた / 動かなかった」を判定できる状態にする。
+実装ゼロ。これを書かずに進むと再び「機能リスト÷サイクル数」に堕ちる。
 
-#### Cycle 39 — 実機検証 + デバッグツール + 致命バグ第一波
-- `MANUAL_TEST_PLAN.md` のセクション §1-3 を監督が実機で踏破
-- 不具合は `docs/team/BUGS_FOUND.md` に記録 (新規作成)
-- 開発用 admin shortcut (Lv50 即昇 / gold 配布 / 全 curated job 解放 / curated NPC 全街配備)
-- 動かなかった機能を即修正
-- セットアップ手順 README の不足補完
+| 成果物 | 中身 |
+|---|---|
+| `docs/team/PLAYER_JOURNEY.md` | Day1 (0-15min, 15-60min) / Day1 後半 / Week1 / Month1 / Endgame の画面遷移と感情曲線 |
+| `docs/team/CORE_LOOP.md` | 戦闘 1 ターンで何を考えるか / 戦闘後 30 秒で何を見るか / 街で何をするか |
+| `docs/team/SKILL_DESIGN.md` | 1 職 10 スキルの 10 枠分類 + 命名規則 + 職業性の出し方 (眼鏡戦士 10 スキルが先行サンプル) |
+| `docs/team/FEATURE_FREEZE_LIST.md` | 既存機能の処遇判定 (Day1 必須 / Week1 必須 / Month1 必須 / Endgame / 封印) |
 
-#### Cycle 40 — エンドゲーム + 並行プレイ検証
-- `MANUAL_TEST_PLAN.md` §4-6 (レイド / シージ / 奈落 / 転生 / 並行 / admin)
-- 2 アカウント同時テスト (socket 同期 / トレード / オークション競合)
-- バグ修正第二波
-- 既知 N+1 と並行 write 競合を実プレイで観察
+**完了条件**: 4 ファイルすべて作成、監督がレビューして OK 出る。
 
----
+### Phase 1 — リセット & コアループ MVP (Cycle 40-42)
 
-### Phase B: 自動テスト被覆 (回帰防止)
+| Cycle | 内容 |
+|---|---|
+| 40 | `legacy/c38-snapshot` ブランチで現状凍結 + main から `FEATURE_FREEZE_LIST` の「封印」分を route から外す (mastery / abyss / ascension / canon / siege / 闘技場 / レイド / オークション 等を一旦非表示)。Day1 体験に集中する状態にする |
+| 41 | コアループ最小 MVP: 戦闘濃度修正 (Lv1-10 敵 HP +100%、3-5 ターン継続) + 街段階開放 (`Town.unlockLevel`) + クエスト UI (受注済み除外) + 目標 HUD (次 Lv / 次解放) + オンボーディング quest 連鎖 |
+| 42 | 監督が実機テスト → `BUGS_FOUND.md` 記録 → 修正第二波 |
 
-#### Cycle 41 — vitest 導入 + 純関数 unit test 30 本
-- `applyDamage` / `applyEffects` / 装備計算 / forge / abyss reward / ascension / 継承スキル
-- battle.ts の境界値 (KO 判定 / status tick / multi-enemy AOE)
-- skillInherit.ts (slot cap / inheritable filter / proficiency tier)
-- arenaSeason.ts (regression idempotent)
+### Phase 2 — スキル 10,000 体制 (Cycle 43-N、長期)
 
-#### Cycle 42 — Playwright E2E + smoke 拡充
-- 主要フロー 5 本: 登録→キャラ→街→戦闘→Lv up
-- レイド合流・シージ参戦・奈落クリアの自動シナリオ
-- smoke を「import 通過」から「正常系/異常系」に拡張
+curated 100 職 × 10 スキル = 1,000 を **手作り**。1 セッション = 5 職分 (50 スキル) ペース。
 
----
+| Cycle | 進捗目標 |
+|---|---|
+| 43 | warrior 13 職 × 10 = 130 スキル (眼鏡戦士先行済 + 残り 12 職) |
+| 44 | mage 13 職 × 10 = 130 スキル |
+| 45 | rogue 13 職 × 10 = 130 スキル |
+| 46 | cleric 12 職 × 10 = 120 スキル |
+| 47 | craft 13 職 × 10 = 130 スキル |
+| 48 | support 12 職 × 10 = 120 スキル |
+| 49 | heretic 12 職 × 10 = 120 スキル |
+| 50 | rare 12 職 × 10 = 120 スキル |
 
-### Phase C: 専門評価で出た致命項目の修正
+Cycle 50 完了で **curated 100 職 = 1,000 unique skill** 到達。
 
-#### Cycle 43 — セキュリティ middleware 配備
-- `withGuards(handler, { rateLimit, audit, mute })` 共通ミドルウェア
-- 全 mutation endpoint (chat / dm / battle action / forge / trade / auction / character_create) に一括配備
-- **Mute enforcement の実装** (現状 no-op の致命バグ修正)
-- CSP / HSTS / X-Frame-Options / Socket.io CORS allow-list / CSRF token
+その後、procedural 1720 職を curated 化 + 各 10 スキル付与:
+- 概算 +200 サイクル (1 セッション 5-10 職)
+- 数ヶ月計画
 
-#### Cycle 44 — ゲームバランス修正
-- 奈落 F25+ で報酬曲線を log scale に cap
-- ascension 利得を増額 (PER_GEN +10 HP / +3 atk / +2 def 程度)
-- forge 経済バランス (G ↔ 戦闘収入の比率)
-- PvP placement 10 戦 + 「Gen0 限定リーグ」併設
-- 奈落に「祝福/呪い/取引」3 択ランダムイベント (攻略不能化、北極星準拠)
+### Phase 3 — 体験レイヤー復活 (Phase 1 完了後の並行)
 
----
+Phase 1 で封印した機能を、体験設計に従って段階復活:
 
-### Phase D: 公開準備 (法務 + 本番インフラ)
+| 復活軸 | 中身 | 順序 |
+|---|---|---|
+| **物語** (Month1 用) | curated NPC との会話で進む story quest、シーズン謎の段階開示、lore docs 連動 | Phase 1 後 |
+| **ビルド** (Week1 用) | 転職 + スキル継承 + 熟練度 + コンボ (既存 C30 を体験設計に組み込み) | 物語と並行 |
+| **マルチ** (Endgame 用) | パーティ → ギルド → レイド → シージ を段階解放 | ビルド完了後 |
 
-#### Cycle 45 — 法務 4 点セット + コンプライアンス
-- 利用規約 / プライバシーポリシー / 特商法表記 / 年齢レーティング (15+)
-- `/legal/{terms,privacy,tokushoho}` ルート + 登録時同意 checkbox + AuditLog 記録
-- 個情法対応 (データ削除請求 API + 退会フロー + Cookie バナー)
-- 未成年課金規制 (生年月日 + 月額上限)
-- ドロップ確率開示 `/transparency` (景表法)
-- README から「教育目的の MVP」記述削除
+### Phase 4 — 公開準備 (最終、Phase 2 + 3 完了後)
 
-#### Cycle 46 — 本番インフラ実機検証
-- Postgres 移行 + index 10 本以上追加 + 並行 write smoke
-- Socket.io Redis adapter + 2 ノード並行起動検証
-- Stripe 本決済差し替え + Webhook 検証
-- 日次バックアップ cron + 月次リストア試験
-- ログ集約 / 監視 / アラート (Datadog or Better Stack)
+| 項目 | 内容 |
+|---|---|
+| 自動テスト | vitest unit + Playwright E2E |
+| セキュリティ | `withGuards` middleware (rateLimit / audit / mute) を全 mutation 配備、Mute enforcement 実装、CSP/HSTS/CSRF |
+| 法務 | 利用規約 / プライバシー / 特商法 / 年齢 15+ / 個情法 / 未成年課金保護 / ドロップ確率開示 |
+| 本番インフラ | Postgres 移行 + index + 並行検証 / Redis adapter / Stripe / バックアップ / 監視 |
 
 ---
 
-### 任意拡張 (Phase D 完了後)
+### 任意拡張 (Phase 4 完了後)
 
-- **C31 Phase 3**: curated job を 100 → 300 体まで拡張
+- **C31 Phase 3**: curated job を 100 → 300 体まで拡張 (Phase 2 で 100 全完成後の方針)
 - **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
 - **シーズン Hall of Fame**: 殿堂入りシステム
-- **NPC 季節台詞の curated 個別 hook**: 同 NPC が違う日に違う話をする実感の強化
+- **眼鏡反射 reflect 実装**: battle.ts に damage reflection ロジック追加
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 

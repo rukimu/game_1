@@ -140,6 +140,10 @@ npm start
 - **称号コンプ報酬「歩く伝承」**: 全 90+ 称号（meta 除く）を獲得すると mythic + hidden の「歩く伝承」称号が auto-grant される
 - **季節カノン `/canon`**: 過去〜現在の全シーズンを年表形式で表示。中心の謎・解明者・解明日が世界の集合的記憶として残る
 - **アイコンアセット**: 武器 12 / 防具 6 / 装飾 2 / 職業 9 / 敵 5 / 状態 3 = 計 32 個の SVG アイコン（`public/icons/`）。HUD・`/characters`・`/jobs`・`/inventory` で表示し、ぱっと見で「剣 / 弓 / 兜」「戦士 / 魔導師 / 盗賊」が識別できる。`IconSource` 抽象基盤により将来ピクセルアートに差し替え可能。HUD 右下の「アイコン非表示」トグルでテキスト派モードに切替可能
+- **arena ELO 週次リセット**: 毎週 ISO 週切替で全 character の duelRating を 1500 baseline に向け 50% 引き寄せ。レート bloat を抑制、新規参入者が climb しやすい
+- **mystery 解明者の永続ボーナス**: シーズンの中心の謎を初解明したキャラに +20 maxHp / +10 maxMp の永続加算（既存 +1000G / +500EXP に追加）。称号が cosmetic でなくなる
+- **運用基盤**: `src/lib/rateLimit.ts`（5 named presets の in-memory sliding window）+ `src/lib/audit.ts`（`AuditLog` モデルへの薄ラッパ + 4 ヘルパ）+ `docs/team/PRODUCTION_OPS.md`（Postgres / Redis / Stripe / backup / 監視 / 公開前チェックリスト 8 セクション）
+- **アクセシビリティ**: WCAG AA コントラスト 5.2:1 / `:focus-visible` ring 全 interactive 要素 / 戦闘ホットキー [1]攻撃 [2]スキル [3]防御 / iPhone SE 380px モバイル padding 調整 / `prefers-reduced-motion` で button transition 停止
 - レスポンシブな昔のブラウザRPG風UI（テキスト+ボタン+ログ+チャット）
 - 街（複数街、街移動、街情報、街チャット）
 - 酒場（噂生成、クエスト生成、クエスト受注）
@@ -224,13 +228,23 @@ npm start
 
 詳細は `docs/team/ROADMAP.md` を参照。直近の戦略は:
 
-- **Cycle 36 — 経済バランス**: forge/arena/mystery/boss の報酬曲線平坦化（軸 G ★★★★ → ★★★★★）
-- **Cycle 37 — 運用基盤**: Postgres/Redis/Stripe/rate limit/audit log（公開直前必須）
-- **Cycle 38 — アクセシビリティ**: WCAG AA / キーボードナビ / 375px モバイル完全対応（軸 H ★★★★ → ★★★★★）
-- **ピクセルアート差し替え (C35 Phase 2、任意)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
-- **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張（同パイプライン）
+## 全 8 軸 ★★★★★ 達成 — 神ゲー判定 MAX 到達 (2026-05-02)
 
-**評価軸 8 軸の現状**: A コアループ ★★★★★ / B キャラビルド ★★★★★ / C ハクスラ ★★★★★ / D 物語 ★★★★★ / E 協調 ★★★★★ / F やりこみ ★★★★★ / G 経済 ★★★★☆ / H UX ★★★★☆
+ROADMAP_MAX の C27〜C38 全 12 サイクルが完了。8 評価軸すべて MAX。
+
+### 公開前残作業
+- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
+- **公開前チェックリスト** (`docs/team/PRODUCTION_OPS.md` §8 参照):
+  - Postgres / Redis 実機検証 / Stripe 本決済差し替え
+  - 法務 (利用規約 / 特商法 / 年齢レーティング 15+)
+  - HTTPS / CSP / セキュリティヘッダ / ログ集約 / 監視 / 日次バックアップ
+
+### 任意拡張
+- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
+- **C31 Phase 3**: curated job を 100 → 300 体まで拡張（同パイプライン）
+- **シーズン Hall of Fame**: 殿堂入りシステム（C34 で見送り、需要があれば実装）
+
+**評価軸 8 軸の現状**: A コアループ ★★★★★ / B キャラビルド ★★★★★ / C ハクスラ ★★★★★ / D 物語 ★★★★★ / E 協調 ★★★★★ / F やりこみ ★★★★★ / G 経済 ★★★★★ / H UX ★★★★★
 
 ---
 

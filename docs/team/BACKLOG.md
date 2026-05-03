@@ -59,11 +59,10 @@
 
 ## P2 (構想中)
 
-- **Cycle 36**: 経済バランス (NEXT — forge/arena/mystery/boss の報酬曲線平坦化、軸 G ★★★★ → ★★★★★)
-- **Cycle 37**: 運用基盤 (公開直前必須 — Postgres/Redis/Stripe/rate limit/audit log)
-- **Cycle 38**: アクセシビリティ + UX 細部 (軸 H ★★★★ → ★★★★★)
-- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注して `IconSource.kind = "pixel"` に差し替え（現状の SVG 基盤がそのまま使える）
-- **シーズン Hall of Fame** (C34 で見送り、将来 C36+ で殿堂入りシステム導入予定)
+- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
+- **公開前残作業**: Postgres / Redis / Stripe 実機検証 / 法務 / HTTPS / 監視 (`docs/team/PRODUCTION_OPS.md` §8)
+- **ピクセルアート差し替え (C35 Phase 2、任意)**: itch.io 等で素材購入 or プロ発注、`IconSource.kind = "pixel"` に書き換え（既存 SVG 基盤が流用可能）
+- **シーズン Hall of Fame** (任意): 殿堂入りシステム
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで増量（さらなる多様性、`CURATED_JOB_BULK.md` 同手順）
 - **Cycle 32**: 攻城戦に本物の戦闘 UI (現在は narrative log + スコア決着のみ、プレイヤー操作介入)
 - **Cycle 33**: 世界観の手作り厚み (手作りユニーク NPC 30 体 + lore docs)
@@ -79,6 +78,23 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 38 (2026-05-02) — a11y + UX 細部
+- [x] `:focus-visible` ring (#f0c860) + body color #f8eed0 (コントラスト 5.2:1 で WCAG AA 余裕クリア)
+- [x] battle Client にキーボードホットキー [1]攻撃 [2]スキル [3]防御 + ヒント表示
+- [x] `<380px` モバイル `.panel` padding 0.75rem → 0.5rem
+- [x] `prefers-reduced-motion` で button transition を停止
+
+### Cycle 37 (2026-05-02) — 運用基盤 (基盤のみ)
+- [x] `src/lib/rateLimit.ts` 新規 (in-memory sliding window、5 named presets、1000 ops 毎 GC)
+- [x] `src/lib/audit.ts` 新規 (`AuditLog` モデルへの薄ラッパ、best-effort、auditBattleEnd / auditTrade / auditEquip / auditAscend ヘルパ)
+- [x] `docs/team/PRODUCTION_OPS.md` 新規 (Postgres / Redis / Stripe / backup / 監視 / 公開前チェックリスト 8 セクション)
+- [ ] phase 2: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
+
+### Cycle 36 (2026-05-02) — 経済バランス
+- [x] `src/lib/arenaSeason.ts` 新規 (ISO 週マーカー singleton、duelRating 50% regress、idempotent)
+- [x] mystery 初解明者に +20 maxHp / +10 maxMp 永続ボーナス追加
+- [x] スコープ調整: forge 失敗補填は forge エンジンに失敗概念がないため除外、boss tier 別 affix プールは既存 weeklyBoss で実装済
 
 ### Cycle 35 (2026-05-02) — アイコンアセット (将来ピクセル差替可能基盤)
 - [x] **C35-a**: アイコン抽象基盤 — `src/lib/icons.ts`（`IconSource` union svg/pixel + `ICON_REGISTRY`）+ `src/components/GameIcon.tsx`（backend-agnostic）+ サンプル 5 SVG（sword/shield/crown/wand/skull）

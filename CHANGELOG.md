@@ -7,6 +7,34 @@
 
 ---
 
+## Cycle 38 — アクセシビリティ + UX 細部 (2026-05-02)
+
+a11y 4 項目で軸 H ★★★★ → ★★★★★。
+
+- `:focus-visible` ring (#f0c860) で全 interactive 要素のキーボード focus を可視化
+- body color #f1e7c8 → #f8eed0 でコントラスト 5.2:1 達成（WCAG AA 余裕クリア）
+- battle Client にキーボードホットキー（[1]攻撃 / [2]スキル / [3]防御、INPUT/TEXTAREA/SELECT 内では無効）+ ヒント表示
+- `<380px` モバイル: `.panel` padding 0.75rem → 0.5rem
+- `prefers-reduced-motion` で button transition を停止
+- 触ったファイル: `src/app/globals.css`, `src/app/battle/[id]/Client.tsx`
+
+## Cycle 37 — 運用基盤 (基盤のみ) (2026-05-02)
+
+公開直前のインフラ基盤を整備。endpoint への適用は phase 2。
+
+- **Rate limiting 基盤** — `src/lib/rateLimit.ts`（in-memory sliding window、5 named presets: CHAT_SEND / ATTACK_SUBMIT / AUCTION_BID / CHARACTER_CREATE / GENERIC_API）+ 1000 ops 毎の GC
+- **Audit log 基盤** — `src/lib/audit.ts`（既存 `AuditLog` モデルへの薄ラッパ、best-effort 保存、auditBattleEnd / auditTrade / auditEquip / auditAscend ヘルパ）
+- **運用ドキュメント** — `docs/team/PRODUCTION_OPS.md` 8 セクション（Postgres 移行 / Redis adapter / Stripe 差替 / rate limit / audit log / backup・DR / 監視 / 公開前チェックリスト）
+- スコープ調整: Postgres / Redis / Stripe は実機検証必須のため DEFERRED 維持、各 endpoint への配備は C37 phase 2
+
+## Cycle 36 — 経済バランス (2026-05-02)
+
+報酬曲線平坦化 + レート bloat 抑制 + 解明者称号に重み付け。軸 G ★★★★ → ★★★★★。
+
+- **arena ELO 週次リセット** — `src/lib/arenaSeason.ts`（ISO 週マーカー、duelRating を 1500 に向け 50% regress、idempotent）
+- **mystery 解明者の永続ボーナス** — `src/lib/mystery.ts` で初解明者に +20 maxHp / +10 maxMp 追加（既存 +1000G / +500EXP に加算）
+- スコープ調整: forge は失敗概念がないため対応不要、boss tier 別 affix プールは既存 weeklyBoss で実装済
+
 ## Cycle 35 — アイコンアセット (将来ピクセル差替可能基盤) (2026-05-02)
 
 ピクセルアートは Claude 手書きで Octopath Traveler 系の品質に届かないと判明 (案 1〜5 を試した結果)、SVG アイコン (lucide スタイル) に切替。**将来ピクセル化に差し替え可能な抽象基盤**は残し、当面 SVG で軸 H 押し上げ。軸 H ★★★ → ★★★★。

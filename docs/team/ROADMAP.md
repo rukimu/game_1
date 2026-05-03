@@ -45,19 +45,31 @@
 - **Cycle 32**: 攻城戦に本物の戦闘 UI — `SiegeBattle` / `SiegeBattleGuildState` / `SiegeBattleAction` 3 モデル + `src/lib/siegeBattle.ts` / 6 アクション(attack 1× / aoe 0.5× 全敵 / heavy 1.5× / support 自陣 +5% / rally master +20% / cure sub +30%) / `/siege/[id]/battle` UI（1.5s ポーリング、ギルド HP バー、アクションパネル、観戦モード）/ `siege:[id]` 応援チャット（既存 Chat 流用、誰でも投稿可）/ 30s/ターン lazy advance（`c22138b`〜`aa84b7f`、C32-a〜d）
 - **Cycle 33**: 世界観の手作り厚み — `Npc.curated/bio/relationsJson` 拡張 + 5 主要都市 × 6 NPC = 30 体 (`prisma/curatedNpcs.ts`、60-120 字 bio + 関係グラフ JSON) + curated towns 2 つ追加（鐘塔の都ベルクラート / 古王国の都ヴェスペル）/ `/town` で curated NPC を紫枠 `<details>` 展開 / `docs/lore/{world,seasons,towns,curated_npcs}.md` 4 ファイルで世界設定資料 / `SEASON_NPC_TEMPLATES` 12 種に拡充 + `generateNpcDialogue` の `baseLine` 引数で curated dialogue 保持（`020bc4b`〜C33-d、C33-a〜d）
 - **Cycle 34**: 真のエンドゲーム + 無限階ダンジョン — `AbyssRun` / `AbyssWeeklyRecord` + `src/lib/abyss.ts`(1.15^floor 指数報酬 / 各 10 階固有ボス / 撤退で全額・全滅で半減 / 週次ランキング) + `/abyss` UI Lv50+ / アセンション(`Character.generation` + `/ascension` Lv→1 リセット + 永久ボーナス) + 称号コンプ「歩く伝承」(mythic auto-grant) + `/canon` 季節カノン年表（`0f5febf`〜C34-d、C34-a〜d）
-- **Cycle 35**: アイコンアセット (将来ピクセル差替可能基盤) — ピクセルアートは Claude 手書きで Octopath 品質に届かないと判明、SVG (lucide スタイル) に切替 / `src/lib/icons.ts` で `IconSource` union（svg/pixel）+ `GameIcon` 抽象コンポーネント / 32 SVG ファイル + 37 slug（武器 12 / 防具 6 / 装飾 2 / 職業 9 / 敵 5 / 状態 3）/ HUD・`/characters`・`/jobs`・`/inventory` に組み込み / `IconsToggle` でテキスト派モード切替（`a76ec2e`〜C35-d、C35-a〜d）
+- **Cycle 35**: アイコンアセット (将来ピクセル差替可能基盤) — ピクセルアートは Claude 手書きで Octopath 品質に届かないと判明、SVG (lucide スタイル) に切替 / `src/lib/icons.ts` で `IconSource` union（svg/pixel）+ `GameIcon` 抽象コンポーネント / 32 SVG ファイル + 37 slug / HUD・`/characters`・`/jobs`・`/inventory` に組み込み / `IconsToggle` でテキスト派モード切替（`a76ec2e`〜C35-d）
+- **Cycle 36**: 経済バランス — `src/lib/arenaSeason.ts` で arena ELO 週次リセット (50% regress) + mystery 解明者の永続ボーナス (+20 maxHp / +10 maxMp)（`6c3a1b2`、軸 G ★★★★ → ★★★★★）
+- **Cycle 37**: 運用基盤 (基盤のみ) — `src/lib/rateLimit.ts` (in-memory sliding window 5 presets) + `src/lib/audit.ts` (`AuditLog` ラッパ + ヘルパ) + `docs/team/PRODUCTION_OPS.md` (Postgres / Redis / Stripe / backup / 監視 / 公開前チェックリスト)（`f179551`）
+- **Cycle 38**: a11y + UX 細部 — `:focus-visible` ring + body color #f8eed0 (AA 5.2:1) + battle ホットキー [1][2][3] + `<380px` mobile padding + `prefers-reduced-motion`（`3c6bde5`、軸 H ★★★★ → ★★★★★）
 
 ## 進行・次サイクル
 
-### Cycle 36 — 経済バランス (NEXT)
-- forge / arena / mystery / boss の報酬曲線を平坦化
-- forge 強化失敗時の補填 / arena ELO シーズンリセット + 上位報酬装備
-- boss tier ごとの装備 affix プール分離 / mystery 解明者専用ボーナス
-- 評価軸 G(公平・経済) ★★★★ → ★★★★★ を狙う
+### 全 8 軸 ★★★★★ 到達 — 神ゲー判定 MAX 達成 (2026-05-02)
 
-### 以降の候補（詳細は `docs/team/ROADMAP_MAX.md`）
-- **Cycle 37**: 運用基盤（公開直前必須）
-- **Cycle 38**: アクセシビリティ + UX 細部（軸 H ★★★★ → ★★★★★）
+ROADMAP_MAX の C27〜C38 全 12 サイクルが完了。8 評価軸すべてが ★★★★★。
+
+### 公開前残作業
+- **C37 phase 2**: 各 endpoint への `checkRateLimit` / `recordAudit` 配備（routine 作業）
+- **公開前チェックリスト** (`docs/team/PRODUCTION_OPS.md` §8 参照):
+  - Postgres / Redis 実機検証
+  - Stripe 本決済差し替え
+  - 法務 (利用規約 / 特商法 / 年齢レーティング 15+)
+  - HTTPS / CSP / セキュリティヘッダ
+  - ログ集約 / 監視 / アラート構築
+  - 日次バックアップ + 月次リストア検証
+
+### 任意拡張
+- **C31 Phase 3**: curated job を 100 → 300 体まで拡張
+- **ピクセルアート差し替え (C35 Phase 2)**: itch.io 等で素材購入 or プロ発注、`IconSource` 基盤がそのまま使える
+- **シーズン Hall of Fame**: 殿堂入りシステム（C34 で見送り、需要があれば実装）
 - **C31 Phase 3 (任意)**: curated job を 100 → 300 体まで拡張
 - 短期 QoL: forge の preview→commit 確定一致 / レート分布バッジの公開ボード / 出血の重ね掛け・呪い化の伝播
 

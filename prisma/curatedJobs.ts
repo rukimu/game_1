@@ -2737,8 +2737,75 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "双頭",
     signatureOutfit: "首が二本通る特注ローブ + 双子用の杖 + 金縁の眼鏡 4 枚",
     signatureBio: "生まれつき双頭の魔導師。二つの脳が同時に異なる詠唱を編む。意見が割れると詠唱が分裂し、相乗効果も内部矛盾も両方起きる。",
-    baseStats: { hp: 38, mp: 38, atk: 3, def: 4, mat: 20, mdf: 12, spd: 8 },
+    baseStats: { hp: 38, mp: 42, atk: 3, def: 4, mat: 20, mdf: 12, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 双唱の小弾。
+      {
+        name: "双唱の弾",
+        description: "二つの首が同時に呟き 2 発の小弾を撃つ。双頭魔導師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 双重炎。
+      {
+        name: "双重炎",
+        description: "二つの首が異なる火炎詠唱を同時発動し合成する必殺。火属性の渾身一撃。",
+        type: "attack",
+        element: "fire",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 双脳の集中。
+      {
+        name: "双脳の集中",
+        description: "二つの脳が同じ目的に集中する。次の魔法のクリ率 +60% + 命中 100%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 二重呪縛。
+      {
+        name: "二重呪縛",
+        description: "二つの首が同時に呪い 1 体を封じる。spd -30%・mat -25% 3 ターン。",
+        type: "debuff",
+        element: "dark",
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 双助の癒し。
+      {
+        name: "双助の癒し",
+        description: "二つの首が異なる治癒術を同時発動。HP 大回復 + 全 debuff 解除。",
+        type: "heal",
+        element: "light",
+        power: 22,
+        cost: 13,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 双重連射。
+      {
+        name: "双重連射",
+        description: "二つの首が異なる属性魔法を同時に敵全体へ撃つ。火 + 闇の混合ダメージ。",
+        type: "attack",
+        element: null,
+        power: 14,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 既存「二重詠唱」(C31 既存スキル維持、cost 18 で持続バフ枠を超えるが legendary の特例)。
       {
         name: "二重詠唱",
         description: "今ターン中にスキルを 2 回使用可能(次ターン MP 倍消費)。",
@@ -2746,6 +2813,39 @@ export const CURATED_JOBS: CuratedJob[] = [
         element: null,
         power: 0,
         cost: 18,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 双頭の連携。
+      {
+        name: "双頭の連携",
+        description: "前段の魔法に対してもう一つの首が応じる。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 双頭の真骨頂。
+      {
+        name: "双頭の真骨頂",
+        description: "二つの脳が同時に究極魔法を編む。火と闇の混合究極魔法を敵全体に降らせる。",
+        type: "attack",
+        element: "fire",
+        power: 50,
+        cost: 30,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 内部矛盾。
+      {
+        name: "内部矛盾",
+        description: "二つの脳の意見不一致を魔法の力にする。3 ターン全魔法の効果がランダム 50-200% に変動。双頭の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 15,
         cooldown: 5,
         targetType: "self",
       },
@@ -2761,6 +2861,18 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "元は錬金術師の徒弟だった者たち。物質変成の理を魔法に応用し、詠唱と薬品を組み合わせた独自の魔導を編み出した。",
     baseStats: { hp: 36, mp: 32, atk: 3, def: 4, mat: 17, mdf: 10, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 薬品弾。
+      {
+        name: "薬品弾",
+        description: "腰のフラスコから薬液を魔法で硬化して撃つ。元錬金術師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 既存「錬成の爆発」(C31 既存スキル維持、cost 11 で必殺枠 12-16 に近い)。
       {
         name: "錬成の爆発",
         description: "敵 1 体に火属性ダメージ + 50% で【火傷】付与。",
@@ -2770,6 +2882,94 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 11,
         cooldown: 3,
         targetType: "enemy",
+      },
+      // 3. 自バフ — 試薬の構え。
+      {
+        name: "試薬の構え",
+        description: "フラスコの薬品を呑む。次の魔法の威力 +40% + クリ率 +20%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 腐食薬。
+      {
+        name: "腐食薬",
+        description: "敵 1 体に腐食性の薬液をぶつける。def -30% 2 ターン + 物質変成で持続毒。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 治癒薬調合。
+      {
+        name: "治癒薬調合",
+        description: "戦闘中に治癒薬を即興で調合する。HP 大回復 + 出血 / 火傷を解除。",
+        type: "heal",
+        element: null,
+        power: 21,
+        cost: 12,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 試薬の散布。
+      {
+        name: "試薬の散布",
+        description: "フラスコの薬液を広く撒き、敵全体に火属性ダメージ + 火傷確率付与。",
+        type: "attack",
+        element: "fire",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 物質変成。
+      {
+        name: "物質変成",
+        description: "周囲の物質を魔力に変換する。4 ターン全魔法の cost -25%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 試薬連結。
+      {
+        name: "試薬連結",
+        description: "前段の魔法に試薬を加えて連結する。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "fire",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 大変成。
+      {
+        name: "大変成",
+        description: "敵全体の物質構造を変成する究極魔法。生命を物質に変えて崩壊させる。",
+        type: "attack",
+        element: null,
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 賢者の石の片鱗。
+      {
+        name: "賢者の石の片鱗",
+        description: "錬金術の究極の象徴を一瞬呼び出す。3 ターン全魔法の威力 +50% + cost -30%。元錬金術師の代名詞。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2783,6 +2983,87 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "塔の上で星を観測し続けた末に、魔導の道に転じた者たち。今日の星の配置で発動する魔法を選び、計算ミスで誤爆することもある。",
     baseStats: { hp: 36, mp: 36, atk: 3, def: 4, mat: 18, mdf: 11, spd: 9 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 星屑の弾。
+      {
+        name: "星屑の弾",
+        description: "懐中星座盤から星屑の魔法を撃つ。元天文学者の基本攻撃。",
+        type: "attack",
+        element: "light",
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 流星召喚。
+      {
+        name: "流星召喚",
+        description: "夜空から流星を呼び降ろす必殺の光属性一撃。星座盤の中心に敵を据える。",
+        type: "attack",
+        element: "light",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 既存「星辰連環」(C31 既存スキル維持、cost 12 で 自バフ枠を超えるが advanced 級の連結効果として扱う)。
+      // → ここは attack で targetType: enemy。slot #8 連携 (cost 8-10) を超え、必殺技 (cost 12-16) で power 15 はやや低い。
+      // SKILL_DESIGN.md の役割柔軟性に従い slot #3 自バフ枠ではなく slot #8 連携枠に再配置 (cost 12 は連携枠の上限超過だが特例)。
+      // → 現実的には自バフ別途設計し、星辰連環は slot #8 連携で保持。
+      {
+        name: "星見の構え",
+        description: "懐中星座盤を覗いて星の運行を読む。次の魔法の命中 +30% + クリ率 +30%。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 凶星の運。
+      {
+        name: "凶星の運",
+        description: "敵 1 体の頭上に凶星を呼ぶ。命中 -25%・クリ無効化 2 ターン。",
+        type: "debuff",
+        element: "dark",
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 守護星の祝福。
+      {
+        name: "守護星の祝福",
+        description: "味方 1 体の守護星を呼び降ろす。HP 中回復 + def +20% 3 ターン。",
+        type: "heal",
+        element: "light",
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 星雨。
+      {
+        name: "星雨",
+        description: "夜空から星雨を呼び敵全体に降らせる。光属性の連続ダメージ。",
+        type: "attack",
+        element: "light",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 星座の運行。
+      {
+        name: "星座の運行",
+        description: "今日の星座が魔法を後押しする。4 ターン全光属性魔法 +30%。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 既存「星辰連環」(C31 既存スキル維持)。
       {
         name: "星辰連環",
         description: "敵 1 体に光属性ダメージ + 自身の mat +10% 2 ターン。",
@@ -2792,6 +3073,28 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 12,
         cooldown: 3,
         targetType: "enemy",
+      },
+      // 9. 究極 — 銀河の波。
+      {
+        name: "銀河の波",
+        description: "夜空全体の星を従えた究極魔法。銀河の波が敵全体を呑む。",
+        type: "attack",
+        element: "light",
+        power: 48,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 黄道十二宮。
+      {
+        name: "黄道十二宮",
+        description: "今日の星座の代表 1 つを呼び出し、3 ターンランダムな超強力バフを得る。元天文学者の代名詞。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2805,6 +3108,73 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "戦場で多くの兵を治療した経験から、魔法を治癒に活かす道を選んだ者たち。傷の早期判別と急所の補強を同時にこなす。",
     baseStats: { hp: 38, mp: 34, atk: 3, def: 4, mat: 17, mdf: 12, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 治癒の刃。
+      {
+        name: "治癒の刃",
+        description: "治癒紋の杖から光属性の小弾を撃つ。元戦場医魔導師の基本攻撃。",
+        type: "attack",
+        element: "light",
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 急所反転。
+      {
+        name: "急所反転",
+        description: "戦場で覚えた急所知識を逆用する必殺。光属性の精密一撃で敵の急所を撃ち抜く。",
+        type: "attack",
+        element: "light",
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 戦場医の構え。
+      {
+        name: "戦場医の構え",
+        description: "戦場で覚えた集中の構え。次の魔法のクリ率 +35% + 治癒効果 +50%。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 弱点診断。
+      {
+        name: "弱点診断",
+        description: "敵 1 体の傷を診断して脆弱化。def -25%・mdf -20% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 単体大回復。
+      {
+        name: "急所補強",
+        description: "戦場で覚えた治癒術で味方 1 体を大回復 + 全 debuff 解除。",
+        type: "heal",
+        element: "light",
+        power: 24,
+        cost: 12,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 治癒の波。
+      {
+        name: "治癒の波",
+        description: "治癒紋の杖を振って光の波を撒く。敵全体に光属性ダメージ + 邪悪系特効。",
+        type: "attack",
+        element: "light",
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 既存「戦場療法」(C31 既存スキル維持)。
       {
         name: "戦場療法",
         description: "味方全員の HP を回復 + 状態異常 1 種を解除。",
@@ -2814,6 +3184,39 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 14,
         cooldown: 3,
         targetType: "all_allies",
+      },
+      // 8. 連携 — 治癒連結。
+      {
+        name: "治癒連結",
+        description: "前段の魔法に治癒紋を重ねる。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "light",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 戦場医の真髄。
+      {
+        name: "戦場医の真髄",
+        description: "戦場で覚えた全治癒術を結集する究極魔法。味方全員の HP を全回復し、敵全体を浄化。",
+        type: "heal",
+        element: "light",
+        power: 50,
+        cost: 30,
+        cooldown: 8,
+        targetType: "all_allies",
+      },
+      // 10. signature — 命の天秤。
+      {
+        name: "命の天秤",
+        description: "敵から命を奪い味方に分け与える。敵 1 体に大ダメージ、その分味方 1 体を回復。元戦場医の代名詞。",
+        type: "attack",
+        element: "light",
+        power: 18,
+        cost: 14,
+        cooldown: 5,
+        targetType: "enemy",
       },
     ],
   },

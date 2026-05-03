@@ -2007,6 +2007,62 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "幼少に妖精と『片目で世界の真実を見る』代償の契約を交わした者たち。妖精は契約者のそばを離れず、戦闘中にも光で攻撃を補助する。",
     baseStats: { hp: 38, mp: 36, atk: 3, def: 4, mat: 18, mdf: 11, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 妖精の光弾。
+      {
+        name: "妖精の光弾",
+        description: "肩の妖精が小さな光弾を放つ。妖精と契約した魔導師の基本攻撃。",
+        type: "attack",
+        element: "light",
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 妖精の囁き。
+      {
+        name: "妖精の囁き",
+        description: "妖精が敵の真名を囁き、光属性の渾身一撃で魂ごと撃ち抜く。",
+        type: "attack",
+        element: "light",
+        power: 24,
+        cost: 14,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 真実の片目。
+      {
+        name: "真実の片目",
+        description: "契約の代償の片目を開いて世界の真を見る。次の魔法のクリ率 +50% + 命中 100%。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 妖精の悪戯。
+      {
+        name: "妖精の悪戯",
+        description: "妖精が敵 1 体に小さな悪戯を仕掛ける。spd -25%・命中 -20% 2 ターン。",
+        type: "debuff",
+        element: "light",
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 妖精の祝福。
+      {
+        name: "妖精の祝福",
+        description: "肩の妖精が味方 1 体を祝福する。HP 中回復 + def +20% 2 ターン。",
+        type: "heal",
+        element: "light",
+        power: 19,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 既存「妖精の閃光」(C31 既存スキル維持)。
       {
         name: "妖精の閃光",
         description: "敵全体に光属性ダメージ。暗黒系の敵には 1.5 倍。",
@@ -2016,6 +2072,50 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 13,
         cooldown: 3,
         targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 妖精の歌声。
+      {
+        name: "妖精の歌声",
+        description: "肩の妖精が歌い続ける。4 ターン全味方の mat +10% + 状態異常耐性 +30%。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 12,
+        cooldown: 5,
+        targetType: "all_allies",
+      },
+      // 8. 連携 — 妖精の連舞。
+      {
+        name: "妖精の連舞",
+        description: "妖精が前段に重ねて光を撃つ。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: "light",
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 妖精郷の門。
+      {
+        name: "妖精郷の門",
+        description: "肩の妖精が妖精郷から仲間を呼ぶ究極魔法。光の奔流で敵全体を浄化。",
+        type: "attack",
+        element: "light",
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 等価交換。
+      {
+        name: "等価交換",
+        description: "MP 全消費の代償で次の魔法の威力 +500%。妖精と契約した魔導師の代名詞。",
+        type: "buff",
+        element: "light",
+        power: 0,
+        cost: 15,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2029,6 +2129,73 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "村の子供たちに字と算術を教えていた者たち。教えるうちに自分でも書を読み込み、独学で魔導の道に入った。詠唱には黒板に書いた式を読み上げる癖がある。",
     baseStats: { hp: 36, mp: 30, atk: 3, def: 4, mat: 16, mdf: 10, spd: 8 },
     uniqueSkills: [
+      // 1. 基本攻撃 — チョークの一撃。
+      {
+        name: "チョーク弾",
+        description: "指示棒の先からチョークの粉を魔法で撃ち出す。元教師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 黒板の式。
+      {
+        name: "黒板の式",
+        description: "黒板に書き上げた最も美しい式を詠唱する必殺の魔法。火属性の渾身一撃。",
+        type: "attack",
+        element: "fire",
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 説明の構え。
+      {
+        name: "説明の構え",
+        description: "指示棒で空中に魔方陣を描く。次の魔法のクリ率 +35% + 命中 +20%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 6,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 注意散漫の注意。
+      {
+        name: "注意散漫の注意",
+        description: "敵 1 体に説教の様な詠唱で集中力を削る。命中率 -25%・mat -15% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 教師の保健室。
+      {
+        name: "教師の保健室",
+        description: "塾で覚えた応急処置の知識で味方 1 体の HP 中回復 + 状態異常 1 種解除。",
+        type: "heal",
+        element: null,
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 一斉授業。
+      {
+        name: "一斉授業",
+        description: "敵全体を生徒に見立てた強制授業。詠唱の波動が敵全体を撃つ。",
+        type: "attack",
+        element: null,
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 既存「解説詠唱」(C31 既存スキル維持)。
       {
         name: "解説詠唱",
         description: "味方全員の mat +15% 2 ターン。",
@@ -2038,6 +2205,39 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 12,
         cooldown: 4,
         targetType: "all_allies",
+      },
+      // 8. 連携 — 板書の連結。
+      {
+        name: "板書の連結",
+        description: "黒板の連続する式を魔法に変える。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 期末試験。
+      {
+        name: "期末試験",
+        description: "塾長として課す究極の試験詠唱。敵全体を試験問題として解き、撃破する。",
+        type: "attack",
+        element: null,
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 教師の自信。
+      {
+        name: "教師の自信",
+        description: "3 ターン全詠唱の威力 +25%・cost -15%。元教師魔導師の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -2051,6 +2251,18 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "魔法を直感ではなく数式で扱う流派の者たち。式が美しいほど効果が高いと信じ、戦闘中も最適化を続ける。常人には呟きが聞き取れない。",
     baseStats: { hp: 36, mp: 38, atk: 3, def: 4, mat: 19, mdf: 9, spd: 9 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 数式弾。
+      {
+        name: "数式弾",
+        description: "数式を魔法粒子に変換した小弾を撃つ。数学狂魔導師の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 既存「微分の刃」(C31 既存スキル維持)。
       {
         name: "微分の刃",
         description: "敵 1 体に魔法ダメージ + def を 1 ターン -25%。",
@@ -2060,6 +2272,94 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 12,
         cooldown: 3,
         targetType: "enemy",
+      },
+      // 3. 自バフ — 最適化の構え。
+      {
+        name: "最適化の構え",
+        description: "計算尺を回して最適解を導く。次の魔法の cost 半減 + 威力 +30%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 因数分解。
+      {
+        name: "因数分解",
+        description: "敵 1 体の存在を因数分解して脆くする。def -25%・mdf -25% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 統計的治療。
+      {
+        name: "統計的治療",
+        description: "傷の状態を統計的に分析し最適な治療式を当てる。HP 中回復 + 全 debuff 解除。",
+        type: "heal",
+        element: null,
+        power: 19,
+        cost: 12,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 級数展開。
+      {
+        name: "級数展開",
+        description: "魔法を無限級数に展開し敵全体に降らせる。連続する数式の集中砲火。",
+        type: "attack",
+        element: null,
+        power: 14,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 黄金比の構え。
+      {
+        name: "黄金比の構え",
+        description: "計算尺で黄金比を導出。4 ターン全魔法の威力 +20% + クリ率 +15%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 連立方程式。
+      {
+        name: "連立方程式",
+        description: "前段の魔法に変数を代入して連立を解く。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 16,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 解析の真理。
+      {
+        name: "解析の真理",
+        description: "純粋数学の真理を魔法に変換する究極の式。敵全体を解析的に消滅させる。",
+        type: "attack",
+        element: null,
+        power: 48,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 美しき式。
+      {
+        name: "美しき式",
+        description: "戦場の状況を 1 つの完璧な式に圧縮し、3 ターン全魔法の効果 +50%。数学狂の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },

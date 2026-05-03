@@ -110,6 +110,17 @@ Sea of Stars / Octopath Traveler 系の現代インディー寄り。1px 黒輪�
   <div class="item"><div id="case3-sword"></div><div class="label">剣 (32×32)</div></div>
 </div>
 
+<h2>案 4 — HD-2D 48×48 リファイン（顔出し・縦長プロポーション）<span class="recommend"> ★ オクトパス寄り再挑戦</span></h2>
+<p class="case-meta">
+案 3' は 32×32 全身を試したが、頭でっかちで「棒立ちのバイザー兜」にしか見えなかった。<br />
+HD-2D 系は顔出し（兜なし or オープンヘルム）+ 縦長 + 表情ありが特徴。<br />
+48×48 にスケールし、髪・顔・赤の肩当て・銀の鎧・金の胸章・腰ベルト・革ブーツで<br />
+「これは戦士」とすぐ読み取れる構成にしてみた。
+</p>
+<div class="row" style="margin-top:16px">
+  <div class="item"><div id="case4-warrior"></div><div class="label">戦士 (48×48)</div></div>
+</div>
+
 <script>
 function render(targetId, grid, palette, scale) {
   const size = grid.length;
@@ -411,6 +422,68 @@ const c3Sword = [
 render("case3-warrior", c3Warrior, PAL3, 8);
 render("case3-slime", c3Slime, PAL3, 8);
 render("case3-sword", c3Sword, PAL3, 8);
+
+// ===== 案 4: HD-2D 48x48 リファイン =====
+// Faces visible (no full helm), tall proportions, hair + cape detail.
+function c48(s) {
+  const w = 48;
+  if (s.length >= w) return s.slice(0, w);
+  const left = Math.floor((w - s.length) / 2);
+  return ".".repeat(left) + s + ".".repeat(w - left - s.length);
+}
+
+const c4Warrior = [
+  c48(""),
+  c48(""),
+  c48(""),
+  c48("KKKKKKKKKKKKKK"),                     // 3  hair top outline
+  c48("KbbbbbbbbbbbbbbbbK"),                  // 4  hair top
+  c48("KbBBBBBBBBBBBBBBBBbK"),                // 5  hair body
+  c48("KbBBBBHHHHHHHHBBBBBbK"),               // 6  forehead break
+  c48("KbBBHHHHHHHHHHHHHHBBbK"),              // 7  face top
+  c48("KbBhhHHHHHHHHHHHHhhBbK"),              // 8  brows (h=skin dark)
+  c48("KbBHHKKHHHHHHHHKKHHBbK"),              // 9  eyes
+  c48("KbBHHKeKHHHHHHKeKHHBbK"),              // 10 pupils (e=black)
+  c48("KbBHHHHHHHHHHHHHHHHBbK"),              // 11
+  c48("KbBHHHHHHKKHHKKHHHHBbK"),              // 12 nose
+  c48("KbBHHHHHHHHHHHHHHHHBbK"),              // 13
+  c48("KbBHHHHHKKKKKKKKHHHBbK"),              // 14 mouth
+  c48("KbBBHHHHHHHHHHHHHHBBbK"),              // 15
+  c48("KKbbBBHHHHHHHHHHBBbbKK"),              // 16 chin
+  c48("..KKbbBBBBBBBBBBbbKK.."),              // 17 hair sides fade
+  c48("....KKKhhhhhhhhKKK...."),              // 18 neck
+  c48("...KhHHHHHHHHHHHhK..."),               // 19 collar (skin)
+  c48("..KrrrrSSSSSSSSrrrrK.."),              // 20 red shoulder pad start
+  c48(".KrrrrrSSSSSSSSSSrrrrrK."),            // 21
+  c48("KrrrrrSSSSSSSSSSSSSSrrrrrK"),          // 22 cuirass top
+  c48("KrrrSSSWWSSSSSSSSWWSSSSrrrK"),         // 23 highlight on shoulder
+  c48("KrrSSSSSSSSSSSSSSSSSSSSSSrrK"),        // 24
+  c48("KSSSSSSSSFFFFFFFFFFSSSSSSSSK"),        // 25 chest gold band
+  c48("KSSSSSSSFFffffPPffffFFSSSSSSSK"),      // 26 gold + central jewel
+  c48("KSSSSSSSFFffffPPffffFFSSSSSSSK"),      // 27
+  c48("KSSSSSSSSFFFFFFFFFFSSSSSSSSK"),        // 28
+  c48("KSSSSSSSSSSSSSSSSSSSSSSSSSSK"),        // 29
+  c48("KSbbbbbbbbbbbbbbbbbbbbbbbSK"),         // 30 belt
+  c48("KSbYYYFFFFFFFFFFFFFFFYYYbSK"),         // 31 buckle
+  c48("KSSSSSSSSSSSSSSSSSSSSSSSSSK"),         // 32 hip plate
+  c48("KSSSSSS........SSSSSSK"),              // 33 thigh split
+  c48("KSSSSSS........SSSSSSK"),              // 34
+  c48("KSSSSSS........SSSSSSK"),              // 35
+  c48("KsSSSSS........SSSSSsK"),              // 36 greaves highlight
+  c48("KsSSSS........SSSSSsK"),               // 37
+  c48("KsSSSS........SSSSSsK"),               // 38
+  c48("KKsSSS........SSSSsKK"),               // 39
+  c48("..KKsSS........SSsKK.."),              // 40 ankle taper
+  c48(".KbbBBBKKKKKKKKBBBbbK."),              // 41 boot tops
+  c48("KbBBBBBBBKKKKBBBBBBBBK"),              // 42
+  c48("KBBBBBBBBBBBBBBBBBBBBK"),              // 43 boot body
+  c48("KKKKKKKKKKKKKKKKKKKKKK"),              // 44 sole outline
+  c48(""),
+  c48(""),
+  c48(""),
+];
+
+render("case4-warrior", c4Warrior, PAL3, 6);
 </script>
 </body>
 </html>

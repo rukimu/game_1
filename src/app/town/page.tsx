@@ -44,6 +44,14 @@ export default async function TownPage() {
     where: { characterId: c.id, completedAt: null },
     include: { quest: true },
   });
+  // Cycle 41-2: 受注済み (進行中 + 完了済み) の questId 集合。掲示板から
+  // 除外するため別 query で全件取得。@@unique([characterId, questId])
+  // により受注済み quest は重複受注できないため、表示しても押せない。
+  const acceptedQuestIdsRows = await prisma.characterQuest.findMany({
+    where: { characterId: c.id },
+    select: { questId: true },
+  });
+  const acceptedQuestIds = new Set(acceptedQuestIdsRows.map((r) => r.questId));
   // Per-visit NPC dialogue: archetype-aware + season-keyword-aware. The seed
   // includes the date so the same character sees the same line all day, but
   // tomorrow brings a new exchange.
@@ -187,16 +195,25 @@ export default async function TownPage() {
               <section className="mt-3">
                 <h3 className="text-sm font-bold text-yellow-200 mb-1">クエスト掲示板</h3>
                 <ul className="space-y-1">
-                  {town.quests.length === 0 && <li className="text-yellow-200/50 text-xs">クエストがありません。</li>}
-                  {town.quests.map((q) => (
-                    <li key={q.id} className="border border-yellow-900/40 rounded p-2 bg-black/30">
-                      <div className="text-sm font-bold text-yellow-100">{q.title} <span className="text-xs text-yellow-200/60">EXP {q.expReward} / G {q.goldReward}</span></div>
-                      <div className="text-xs text-yellow-100/80">{q.description}</div>
-                      <form action={`/api/quests/${q.id}/accept`} method="post" className="mt-1">
-                        <button className="btn">受注</button>
-                      </form>
-                    </li>
-                  ))}
+                  {(() => {
+                    // Cycle 41-2: 受注済み + 完了済みクエストは掲示板から除外。
+                    // 「進行中」セクションが下にあるので、ここは「未受注」
+                    // のみに絞ってプレイヤーの選択肢を整理する。acceptedQuestIds
+                    // は完了済みも含む (重複受注 unique 制約あり)。
+                    const openQuests = town.quests.filter((q) => !acceptedQuestIds.has(q.id));
+                    if (openQuests.length === 0) {
+                      return <li className="text-yellow-200/50 text-xs">未受注のクエストはありません。</li>;
+                    }
+                    return openQuests.map((q) => (
+                      <li key={q.id} className="border border-yellow-900/40 rounded p-2 bg-black/30">
+                        <div className="text-sm font-bold text-yellow-100">{q.title} <span className="text-xs text-yellow-200/60">EXP {q.expReward} / G {q.goldReward}</span></div>
+                        <div className="text-xs text-yellow-100/80">{q.description}</div>
+                        <form action={`/api/quests/${q.id}/accept`} method="post" className="mt-1">
+                          <button className="btn">受注</button>
+                        </form>
+                      </li>
+                    ));
+                  })()}
                 </ul>
               </section>
               <section className="mt-3">

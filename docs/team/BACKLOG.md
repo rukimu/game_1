@@ -81,11 +81,7 @@
 
 - **眼鏡反射 reflect 実装**: 眼鏡戦士の signature スキル「眼鏡反射」は現状 `type="buff"` で engine 上は no-op。受けた物理ダメージの 50% を反射するロジックを `battle.ts:resolveTurn` に追加 (skill use パスに reflect 分岐 + status effect として保持)
 - **既存「観察眼」の type 変更**: 現状 `type="buff"` だが C39 サンプルで debuff 役割に変更。seed の `findFirst by name` だと skip されるので upsert 化が必要
-- **戦闘濃度の根本調整**: Lv1-10 で攻撃 1 発で敵が倒れる問題 (Phase 1 Cycle 41 で対応)
-- **クエスト UI**: 受注済み quest が掲示板に出続ける (Phase 1 Cycle 41)
-- **街段階開放**: 全 115 街即解放、`Town.unlockLevel` 追加 (Phase 1 Cycle 41)
-- **目標 HUD**: 「次にやること」が画面に出ない (Phase 1 Cycle 41)
-- **オンボーディング quest 連鎖**: 「初日に何をする」が誘導されない (Phase 1 Cycle 41)
+- **既存キャラへの onboarding 遡及受注**: C41-4 onboarding chain は新規キャラのみ自動受注。既存 DB のキャラに [1/5] を遡及付与する one-shot script は未実装 (Phase 1 主対象は新規 Day1 ユーザのため後回し)
 
 ## P2 (任意拡張、Phase 4 完了後)
 
@@ -107,6 +103,25 @@
 - AI プロバイダ実装 (元 Cycle 21 計画、2026-04-29 ユーザ判断) — API 課金 + レイテンシのコストがテンプレート方式の体験価値を超えると判断、テンプレ大量生成路線 (C21A〜D) で代替
 
 ## DONE
+
+### Cycle 41 (2026-05-03) — 体験ホットスポット即時改善 (Day1)
+- [x] **41-1**: Lv1-10 敵 HP 底上げ (`generation/service.ts` の HP multiplier: Lv1-5 ×1.5 / Lv6-10 ×1.3 / Lv11+ ×1.0) — 1 ターン即終了問題の解消
+- [x] **41-2**: クエスト掲示板から受注済み + 完了済み quest を除外 (`town/page.tsx` で acceptedQuestIds 別 query)
+- [x] **41-3**: HUD に「次の解放」予告 (`Hud.tsx` で nextLockedTown と NEXT_FEATURE_GATES の最小値を 🔒/🔓 で 1 行同時表示)
+- [x] **41-4**: オンボーディング 5 連鎖クエスト (`src/lib/onboarding.ts` 新設、ONBOARDING_CHAIN 定義 + acceptFirstOnboardingQuest / advanceOnboardingChain / getActiveOnboardingQuest / seed.ts に upsert ロジック / `town/page.tsx` 最上部に専用バナー表示 + 受注中セクションから除外)
+
+### Cycle 40 (2026-05-03) — Phase 1 リセット (段階開放 + 機能封印)
+- [x] **40-2,3**: `HudMenu` に hiddenInPhase1 フラグ追加 (auction/mastery/boss/pvp/siege/abyss/ascension/canon を Phase 1 中は非表示) + 転職候補を curated only に
+- [x] **40-4**: `Town.unlockLevel` schema 追加 + 5 主要都市 Lv 1/5/10/25/40 で段階開放 + `town/page.tsx` で filter + `move/route.ts` でサーバ側 guard + procedural 110 街は default 999 で封印
+- [x] **40-5**: `src/middleware.ts` 新設で封印 route の直 URL POST を /town に redirect
+
+### Cycle 39 (2026-05-03) — Phase 0 体験設計図
+- [x] `docs/team/PLAYER_JOURNEY.md` (Day1/Week1/Month1/Endgame の感情曲線)
+- [x] `docs/team/CORE_LOOP.md` (1 ターン決断 / 30s 決算 / 街選択肢)
+- [x] `docs/team/SKILL_DESIGN.md` (10 ロール × 1000 職 = 10,000 スキル設計)
+- [x] `docs/team/FEATURE_FREEZE_LIST.md` (4 階層 🟢🟡🔵🔴 機能判定)
+- [x] CLAUDE.md §10 「自律型開発規律」採用 (10 サブ節、完了条件 / 報告フォーマット / 禁止事項)
+- [x] 眼鏡戦士 10 スキル先行サンプル (`prisma/curatedJobs.ts`)
 
 ### Cycle 38 (2026-05-02) — a11y + UX 細部
 - [x] `:focus-visible` ring (#f0c860) + body color #f8eed0 (コントラスト 5.2:1 で WCAG AA 余裕クリア)

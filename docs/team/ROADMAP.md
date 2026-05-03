@@ -49,6 +49,9 @@
 - **Cycle 36**: 経済バランス — `src/lib/arenaSeason.ts` で arena ELO 週次リセット (50% regress) + mystery 解明者の永続ボーナス (+20 maxHp / +10 maxMp)（`6c3a1b2`、軸 G ★★★★ → ★★★★★）
 - **Cycle 37**: 運用基盤 (基盤のみ) — `src/lib/rateLimit.ts` (in-memory sliding window 5 presets) + `src/lib/audit.ts` (`AuditLog` ラッパ + ヘルパ) + `docs/team/PRODUCTION_OPS.md` (Postgres / Redis / Stripe / backup / 監視 / 公開前チェックリスト)（`f179551`）
 - **Cycle 38**: a11y + UX 細部 — `:focus-visible` ring + body color #f8eed0 (AA 5.2:1) + battle ホットキー [1][2][3] + `<380px` mobile padding + `prefers-reduced-motion`（`3c6bde5`、軸 H ★★★★ → ★★★★★）
+- **Cycle 39**: Phase 0 体験設計図 4 ファイル新設 (`PLAYER_JOURNEY` / `CORE_LOOP` / `SKILL_DESIGN` / `FEATURE_FREEZE_LIST`) + CLAUDE.md §10 自律型開発規律採用（`f0531c5`〜`ee40f39`）
+- **Cycle 40**: Phase 1 リセット — HudMenu 封印フラグ + 転職 curated only (40-2,3) / Town.unlockLevel 5 主要都市の段階開放 (40-4) / middleware で封印 route の /town redirect (40-5)（`97ca3be`〜`73c0ea4`）
+- **Cycle 41**: 体験ホットスポット即時改善 — Lv1-10 敵 HP 底上げ (41-1) / クエスト掲示板 受注済み除外 (41-2) / HUD 「次の解放」予告 (41-3) / オンボーディング 5 連鎖クエスト (41-4)（`9b5e950`〜`2b895ec`）
 
 ## 進行・次サイクル
 
@@ -90,11 +93,11 @@ ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **�
 
 ### Phase 1 — リセット & コアループ MVP (Cycle 40-42)
 
-| Cycle | 内容 |
-|---|---|
-| 40 | `legacy/c38-snapshot` ブランチで現状凍結 + main から `FEATURE_FREEZE_LIST` の「封印」分を route から外す (mastery / abyss / ascension / canon / siege / 闘技場 / レイド / オークション 等を一旦非表示)。Day1 体験に集中する状態にする |
-| 41 | コアループ最小 MVP: 戦闘濃度修正 (Lv1-10 敵 HP +100%、3-5 ターン継続) + 街段階開放 (`Town.unlockLevel`) + クエスト UI (受注済み除外) + 目標 HUD (次 Lv / 次解放) + オンボーディング quest 連鎖 |
-| 42 | 監督が実機テスト → `BUGS_FOUND.md` 記録 → 修正第二波 |
+| Cycle | 内容 | 状態 |
+|---|---|---|
+| 40 | `legacy/c38-snapshot` ブランチで現状凍結 + main から `FEATURE_FREEZE_LIST` の「封印」分を route から外す (mastery / abyss / ascension / canon / siege / 闘技場 / レイド / オークション 等を一旦非表示)。Day1 体験に集中する状態にする | ✅ 完了 |
+| 41 | コアループ最小 MVP: 戦闘濃度修正 (Lv1-10 敵 HP +100%、3-5 ターン継続) + 街段階開放 (`Town.unlockLevel`) + クエスト UI (受注済み除外) + 目標 HUD (次 Lv / 次解放) + オンボーディング quest 連鎖 | ✅ 完了 |
+| 42 | 監督が実機テスト → `BUGS_FOUND.md` 記録 → 修正第二波 | ⏳ 監督 playtest 待ち |
 
 ### Phase 2 — スキル 10,000 体制 (Cycle 43-N、長期)
 

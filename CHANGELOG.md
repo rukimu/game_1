@@ -7,6 +7,35 @@
 
 ---
 
+## Cycle 41 — 体験ホットスポット即時改善 (Day1) (2026-05-03)
+
+監督初回 playtest フィードバック (戦闘 1 ターン終了 / 全街即開放 / クエスト掲示板にゴミ残留 / どう楽しむか不明) への 4 連発即時改善。Phase 1 の屋台骨。
+
+- **41-1**: Lv1-10 の敵 HP 底上げ (`src/lib/generation/service.ts` の HP multiplier: Lv1-5 ×1.5 / Lv6-10 ×1.3 / Lv11+ ×1.0)
+- **41-2**: クエスト掲示板から受注済み / 完了済みを除外 (`src/app/town/page.tsx` で acceptedQuestIds 別 query)
+- **41-3**: HUD に「次の解放」予告 (Town.unlockLevel 最小 + NEXT_FEATURE_GATES 表で 🔒 街 / 🔓 機能を 1 行同時表示)
+- **41-4**: オンボーディング 5 連鎖クエスト (`src/lib/onboarding.ts` 新設、はじめの一戦 → 三度目の正直 → 戦利品を手に → 経験を積む → 風来の戦士、完了で次が自動受注、街ページ最上部に専用バナー)
+- 触ったファイル: `src/lib/onboarding.ts` (新規), `prisma/seed.ts`, `src/components/Hud.tsx`, `src/app/town/page.tsx`, `src/lib/battle.ts`
+
+## Cycle 40 — Phase 1 リセット (段階開放 + 機能封印) (2026-05-03)
+
+監督フィードバック「初日からどう楽しむか分からん」を受け、Q1.C 路線の Day1 集中体験へ全面再構築。
+
+- **40-2,3**: HudMenu 封印フラグ + 転職候補 curated only (auction/mastery/boss/pvp/siege/abyss/ascension/canon は hiddenInPhase1)
+- **40-4**: 街の段階開放 (`Town.unlockLevel` 追加、5 主要都市のみ Lv 1/5/10/25/40 で開放、procedural 110 街は default 999 で封印)
+- **40-5**: middleware による封印 route の /town redirect (直 URL 対策)
+- 触ったファイル: `prisma/schema.prisma`, `prisma/seed.ts`, `src/components/HudMenu.tsx`, `src/middleware.ts` (新規), `src/app/api/towns/[id]/move/route.ts`
+
+## Cycle 39 — Phase 0 体験設計図 (2026-05-03)
+
+監督の「ユーザー目線で何にどう気づいて楽しむかの設計が無い」指摘を受け、設計図 4 ファイル新設。
+
+- `docs/team/PLAYER_JOURNEY.md` (Day1/Week1/Month1/Endgame)
+- `docs/team/CORE_LOOP.md` (1 ターン決断 / 30s 決算 / 街選択肢)
+- `docs/team/SKILL_DESIGN.md` (10 ロール × 1000 職 = 10,000 スキル設計)
+- `docs/team/FEATURE_FREEZE_LIST.md` (4 階層 🟢🟡🔵🔴 機能判定)
+- 加えて CLAUDE.md §10 「自律型開発規律」を採用 (10 サブ節で完了条件 / 報告 / 禁止事項を明文化)
+
 ## Cycle 38 — アクセシビリティ + UX 細部 (2026-05-02)
 
 a11y 4 項目で軸 H ★★★★ → ★★★★★。

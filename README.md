@@ -144,6 +144,7 @@ npm start
 - **mystery 解明者の永続ボーナス**: シーズンの中心の謎を初解明したキャラに +20 maxHp / +10 maxMp の永続加算（既存 +1000G / +500EXP に追加）。称号が cosmetic でなくなる
 - **運用基盤**: `src/lib/rateLimit.ts`（5 named presets の in-memory sliding window）+ `src/lib/audit.ts`（`AuditLog` モデルへの薄ラッパ + 4 ヘルパ）+ `docs/team/PRODUCTION_OPS.md`（Postgres / Redis / Stripe / backup / 監視 / 公開前チェックリスト 8 セクション）
 - **アクセシビリティ**: WCAG AA コントラスト 5.2:1 / `:focus-visible` ring 全 interactive 要素 / 戦闘ホットキー [1]攻撃 [2]スキル [3]防御 / iPhone SE 380px モバイル padding 調整 / `prefers-reduced-motion` で button transition 停止
+- **Day1 体験設計 (Phase 1)**: 街の段階開放（5 主要都市が Lv 1/5/10/25/40、procedural 110 街は Day1 封印）/ 機能の段階開放（鍛冶 / 称号 / DM / 転職 / 呪い等は HudMenu と middleware で route gate）/ クエスト UI 整理（受注済み・完了済みは掲示板から除外）/ HUD に「次の解放」予告（🔒 街 / 🔓 機能を 1 行同時表示）/ オンボーディング 5 連鎖クエスト（はじめの一戦 → 三度目の正直 → 戦利品を手に → 経験を積む → 風来の戦士、完了で次が自動受注、街ページ最上部に専用バナー）
 - レスポンシブな昔のブラウザRPG風UI（テキスト+ボタン+ログ+チャット）
 - 街（複数街、街移動、街情報、街チャット）
 - 酒場（噂生成、クエスト生成、クエスト受注）
@@ -226,41 +227,31 @@ npm start
 
 ## 次に実装すべき優先事項
 
-詳細は `docs/team/ROADMAP.md` を参照。直近の戦略は:
+詳細は `docs/team/ROADMAP.md` を参照。直近の戦略 (2026-05-03 再構築):
 
-## 内部ベンチ完走 / 外形品質はこれから (2026-05-02 再評価)
+### Phase 0 — 体験設計図 (Cycle 39 ✅完了)
+`docs/team/PLAYER_JOURNEY.md` / `CORE_LOOP.md` / `SKILL_DESIGN.md` / `FEATURE_FREEZE_LIST.md` の 4 ファイル新設。
 
-ROADMAP_MAX の C27〜C38 全 12 サイクルは完走したが、これは **内部の自己評価フレームワーク** の達成度。
-専門 8 視点の外部評価で **平均 6.7/10**、特に運用 (4.5) と法務 (5.0) は商用公開不可。
-**監督 (ユーザー) が一度も実機で動作確認していない / バグチェックが体系化されていない** という根本ギャップも存在する。
+### Phase 1 — リセット & コアループ MVP (Cycle 40-42)
+- **Cycle 40 ✅**: `Town.unlockLevel` で 5 主要都市の段階開放、HudMenu の封印フラグ、middleware で封印 route の /town redirect
+- **Cycle 41 ✅**: 戦闘濃度修正 + クエスト UI 整理 + HUD 「次の解放」予告 + オンボーディング 5 連鎖クエスト
+- **Cycle 42 ⏳**: 監督が実機テスト → `BUGS_FOUND.md` 記録 → 修正第二波
 
-詳細は `docs/team/ROADMAP_MAX.md` 末尾の「外部評価結果」セクションと `docs/team/ROADMAP.md` の Phase A〜D を参照。
+### Phase 2 — スキル 10,000 体制 (Cycle 43-50、長期)
+curated 100 職 × 10 スキル = 1,000 を **手作り**。眼鏡戦士 (1 体) で先行サンプル済。残り 99 体を 8 サイクルで踏破。
 
-### 次の 6 サイクル (Phase A〜D)
+### Phase 3 — 体験レイヤー復活 (Phase 1 完了後の並行)
+封印した機能を体験設計に従って段階復活: 物語 (Month1) / ビルド (Week1) / マルチ (Endgame)。
 
-#### Phase A — 動作検証可能化 (最優先)
-- **Cycle 39**: 実機検証 §1-3 + デバッグツール + 致命バグ第一波
-- **Cycle 40**: エンドゲーム + 並行プレイ検証 + バグ第二波
+### Phase 4 — 公開準備 (最終)
+自動テスト (vitest + Playwright) / セキュリティ middleware 配備 / 法務 / Postgres + Redis + Stripe 本番検証。
 
-#### Phase B — 自動テスト被覆
-- **Cycle 41**: vitest 導入 + 純関数 unit test 30 本
-- **Cycle 42**: Playwright E2E + smoke 拡充
-
-#### Phase C — 致命項目の修正
-- **Cycle 43**: セキュリティ middleware 配備 (`withGuards`) + Mute enforcement 実装 + CSP/HSTS/CSRF
-- **Cycle 44**: ゲームバランス修正 (奈落 cap / ascension 増額 / PvP placement / 奈落 3 択ランダムイベント)
-
-#### Phase D — 公開準備
-- **Cycle 45**: 法務 4 点セット + 個情法 + 未成年課金規制 + 確率開示
-- **Cycle 46**: Postgres / Redis / Stripe 実機検証 + 本番インフラ
+### 内部ベンチ完走 / 外形品質はこれから
+ROADMAP_MAX の C27〜C38 は内部 8 軸★★★★★ 達成だが、外部 8 視点評価では平均 6.7/10。
+監督が一度も実機で動作確認していないギャップは Cycle 41 オンボーディング + Cycle 42 playtest で解消する設計。
 
 ### 監督向けチェックリスト
-`docs/team/MANUAL_TEST_PLAN.md` に「監督が実際に手で触って動作確認するための段階的 E2E シナリオ」を新設。Day 1〜5 で全機能を一巡する想定。
-
-### 評価軸の現状 (内部 vs 外部)
-- 内部 8 軸: 全 ★★★★★ (ROADMAP_MAX 完走)
-- 外部 8 視点: 平均 6.7/10 (運用 4.5 / 法務 5.0 が大きく沈める)
-- **「神ゲー」を名乗るには Phase A〜D を経て外形 8.5+/10 に到達する必要あり**
+`docs/team/MANUAL_TEST_PLAN.md` に段階的 E2E シナリオを記載。Cycle 42 でこのフローに沿って実機検証する。
 
 ---
 

@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 49 — Phase 2 heretic 12 職 × 10 スキル = 120 (2026-05-03)
+
+Phase 2 第 7 サイクル。heretic カテゴリ完了。
+
+- **49-a**: 禁書館の番人 / 元神官 / 双頭異端 (3 職 30 skills)
+- **49-b**: 不死研究 / 言語学者 / 解剖学者 (3 職 30 skills)
+- **49-c**: 元盗賊王 / 言葉狂い / 異界帰還 (3 職 30 skills)
+- **49-d**: 影使い / 自閉派 / 元魔導院追放 (3 職 30 skills)
+- 累計 **880 unique skills** (warrior+mage+rogue+cleric+craft+support+heretic)
+- 残り Phase 2: rare 12 = 12 職 × 10 = 120 スキル (Cycle 50 で完走 → 1,000 達成予定)
+
 ## Cycle 48 — Phase 2 support 12 職 × 10 スキル = 120 (2026-05-03)
 
 Phase 2 第 6 サイクル。support カテゴリ完了。

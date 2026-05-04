@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 46 — Phase 2 cleric 12 職 × 10 スキル = 120 (2026-05-03)
+
+Phase 2 第 4 サイクル。cleric カテゴリ完了。
+
+- **46-a**: 老師 / 歌う司祭 / 元戦士の司祭 (3 職 30 skills)
+- **46-b**: 沈黙派 / 童顔 / 雪国育ち (3 職 30 skills)
+- **46-c**: 元修道女 / 元軍医 / 双子の司祭 (3 職 30 skills)
+- **46-d**: 元司書 / 元葬儀屋 / 裸足 (3 職 30 skills)
+- 累計 **510 unique skills** (warrior 130 + mage 130 + rogue 130 + cleric 120)
+- 残り Phase 2: craft 13 + support 12 + heretic 12 + rare 12 = 49 職 × 10 = 490 スキル
+
 ## Cycle 45 — Phase 2 rogue 13 職 × 10 スキル = 130 (2026-05-03)
 
 Phase 2 第 3 サイクル。rogue カテゴリ完了。

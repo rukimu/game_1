@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 47 — Phase 2 craft 13 職 × 10 スキル = 130 (2026-05-03)
+
+Phase 2 第 5 サイクル。craft カテゴリ完了。
+
+- **47-a**: 鍛冶娘 / 蜂蜜屋 / 仕立屋 (3 職 30 skills)
+- **47-b**: 革職人 / 陶工 / 製本屋 (3 職 30 skills)
+- **47-c**: 楽器作り / 機械工 / 紙漉き (3 職 30 skills)
+- **47-d**: 染物屋 / 鈴職人 / 鑿師 / 元武器商人の鍛冶屋 (4 職 40 skills)
+- 累計 **640 unique skills** (warrior 130 + mage 130 + rogue 130 + cleric 120 + craft 130)
+- 残り Phase 2: support 12 + heretic 12 + rare 12 = 36 職 × 10 = 360 スキル
+
 ## Cycle 46 — Phase 2 cleric 12 職 × 10 スキル = 120 (2026-05-03)
 
 Phase 2 第 4 サイクル。cleric カテゴリ完了。

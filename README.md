@@ -237,8 +237,8 @@ npm start
 - **Cycle 41 ✅**: 戦闘濃度修正 + クエスト UI 整理 + HUD 「次の解放」予告 + オンボーディング 5 連鎖クエスト
 - **Cycle 42 ⏳**: 監督が実機テスト → `BUGS_FOUND.md` 記録 → 修正第二波
 
-### Phase 2 — スキル 10,000 体制 (Cycle 43-50、長期)
-curated 100 職 × 10 スキル = 1,000 を **手作り**。眼鏡戦士 (1 体) で先行サンプル済。残り 99 体を 8 サイクルで踏破。
+### Phase 2 — curated 100 職 × 10 スキル = 1,000 体制 ✅ 完走 (Cycle 43-50)
+監督方針 Q2 (全手作り) 達成。warrior/mage/rogue/cleric/craft/support/heretic/rare 8 カテゴリ × 計 100 職 × 10 スキル = **1,000 unique skills 全手作り完成**。SKILL_DESIGN.md §1 の 10 役割枠 (基本攻撃 / 必殺技 / 自バフ / 敵デバフ / 仲間援護 / AOE / 持続バフ / 連携 / 究極 / signature) を全 100 職で網羅。
 
 ### Phase 3 — 体験レイヤー復活 (Phase 1 完了後の並行)
 封印した機能を体験設計に従って段階復活: 物語 (Month1) / ビルド (Week1) / マルチ (Endgame)。

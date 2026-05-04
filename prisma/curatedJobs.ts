@@ -3596,8 +3596,31 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "美食家",
     signatureOutfit: "シェフの帽子 + 銀のカトラリーセット + ワインボトルの腰下げ",
     signatureBio: "美食のためなら王宮にも忍び込む者たち。匂いと味で食材の産地を当てる鋭い感覚を持ち、敵が食べた料理から動きを推測する。",
-    baseStats: { hp: 38, mp: 14, atk: 12, def: 6, mat: 6, mdf: 5, spd: 14 },
+    baseStats: { hp: 38, mp: 18, atk: 12, def: 6, mat: 6, mdf: 5, spd: 14 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 銀フォーク刺し。
+      {
+        name: "銀フォーク刺し",
+        description: "銀のフォークを短剣の代わりに使う。美食家盗賊の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 高級料理風一閃。
+      {
+        name: "高級料理風一閃",
+        description: "宮廷料理の所作で振るう必殺の一閃。銀のナイフが完璧な角度で敵を斬る。",
+        type: "attack",
+        element: null,
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 既存「毒見の心得」(C31 既存スキル維持)。
       {
         name: "毒見の心得",
         description: "敵 1 体の状態異常を吸収して自身の atk +20% 1 ターン。",
@@ -3607,6 +3630,83 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 9,
         cooldown: 3,
         targetType: "enemy",
+      },
+      // 4. 敵デバフ — 苦い香り。
+      {
+        name: "苦い香り",
+        description: "ワインの腐臭を嗅がせて敵 1 体を萎縮。命中 -25%・atk -15% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 美食の癒し。
+      {
+        name: "美食の癒し",
+        description: "腰のワインを開けて味方に振る舞う。HP 中回復 + atk +10% 2 ターン。",
+        type: "heal",
+        element: null,
+        power: 17,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 銀食器乱舞。
+      {
+        name: "銀食器乱舞",
+        description: "カトラリーセット全部を一気に投げる。敵全体に物理ダメージ。",
+        type: "attack",
+        element: null,
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 鋭敏な舌。
+      {
+        name: "鋭敏な舌",
+        description: "美食家の鋭い感覚で 4 ターン全攻撃のクリ率 +25% + 命中 +20%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 食通の連撃。
+      {
+        name: "食通の連撃",
+        description: "前段の動きを料理の手順に重ねる連撃。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 至高の一皿。
+      {
+        name: "至高の一皿",
+        description: "美食家としての究極の演出。銀の刃と毒香で敵全体を仕留める。",
+        type: "attack",
+        element: null,
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 王宮料理人の影。
+      {
+        name: "王宮料理人の影",
+        description: "宮廷の料理人として振る舞う。3 ターン全攻撃に毒・出血ランダム付与。美食家の代名詞。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 13,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -3620,6 +3720,84 @@ export const CURATED_JOBS: CuratedJob[] = [
     signatureBio: "村医者の助手から、より良い報酬を求めて闇商売に流れた者たち。痛みを止める知識を逆用して急所を狙う。",
     baseStats: { hp: 36, mp: 18, atk: 12, def: 5, mat: 8, mdf: 6, spd: 15 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 解剖刀。
+      {
+        name: "解剖刀",
+        description: "白手袋越しに解剖刀で素早く刺す。元医療助手の基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 12,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 急所穿ち。
+      {
+        name: "急所穿ち",
+        description: "解剖知識を活かした必殺の一突き。クリティカル率 +50% で敵の急所を貫く。",
+        type: "attack",
+        element: null,
+        power: 23,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 鎮痛草。
+      {
+        name: "鎮痛草",
+        description: "鎮痛草を口に含んで痛みを忘れる。1 ターン受けるダメージ -40% + atk +20%。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 7,
+        cooldown: 2,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 痛覚過敏。
+      {
+        name: "痛覚過敏",
+        description: "敵 1 体の痛覚を鋭くする逆作用の薬。被ダメ +25% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 9,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 鎮痛投与。
+      {
+        name: "鎮痛投与",
+        description: "鎮痛草を味方に投与。HP 中回復 + 毒 / 出血解除。",
+        type: "heal",
+        element: null,
+        power: 18,
+        cost: 11,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 解剖刀乱舞。
+      {
+        name: "解剖刀乱舞",
+        description: "解剖刀を素早く振り抜き敵全体に物理ダメージ + 出血 30% 付与。",
+        type: "attack",
+        element: null,
+        power: 13,
+        cost: 12,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 解剖知識の活用。
+      {
+        name: "解剖知識の活用",
+        description: "急所知識で 4 ターン全攻撃のクリ率 +30% + 急所無効化された敵に +50% ダメージ。",
+        type: "buff",
+        element: null,
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 既存「麻痺の一突」(C31 既存スキル維持、cost 9 で連携枠 8-10 内)。
       {
         name: "麻痺の一突",
         description: "敵 1 体に物理ダメージ + 60% で【スタン】付与。",
@@ -3629,6 +3807,28 @@ export const CURATED_JOBS: CuratedJob[] = [
         cost: 9,
         cooldown: 3,
         targetType: "enemy",
+      },
+      // 9. 究極 — 解剖の真理。
+      {
+        name: "解剖の真理",
+        description: "敵全体の解剖図を読み究極の急所狙い。各敵に応じた最適な突きを撃ち込む。",
+        type: "attack",
+        element: null,
+        power: 47,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 死の専門家。
+      {
+        name: "死の専門家",
+        description: "3 ターン全攻撃で 30% 即死率を持つ (HP 50% 以下の敵限定)。元医療助手の代名詞。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 14,
+        cooldown: 5,
+        targetType: "self",
       },
     ],
   },
@@ -3640,8 +3840,31 @@ export const CURATED_JOBS: CuratedJob[] = [
     quirk: "港育ち",
     signatureOutfit: "塩風で擦れた半袖 + 短刀 + 鈍く光る真鍮の指輪",
     signatureBio: "港の混雑の中で育ち、人波を縫って財布を抜く技を覚えた者たち。船員の方言を 5 つ操り、密航にも応じる。",
-    baseStats: { hp: 36, mp: 14, atk: 11, def: 5, mat: 6, mdf: 5, spd: 16 },
+    baseStats: { hp: 36, mp: 18, atk: 11, def: 5, mat: 6, mdf: 5, spd: 16 },
     uniqueSkills: [
+      // 1. 基本攻撃 — 短刀の路地斬り。
+      {
+        name: "路地斬り",
+        description: "港の路地裏で覚えた素早い短刀斬り。港育ちの基本攻撃。",
+        type: "attack",
+        element: null,
+        power: 11,
+        cost: 2,
+        cooldown: 0,
+        targetType: "enemy",
+      },
+      // 2. 必殺技 — 路地裏の襲撃。
+      {
+        name: "路地裏の襲撃",
+        description: "港の人波から一気に飛び出す必殺の連撃。短刀を 4 段で叩き込む。",
+        type: "attack",
+        element: null,
+        power: 22,
+        cost: 13,
+        cooldown: 4,
+        targetType: "enemy",
+      },
+      // 3. 自バフ — 既存「群衆抜け」(C31 既存スキル維持)。
       {
         name: "群衆抜け",
         description: "1 ターン回避率 +50%、敵から狙われない。",
@@ -3650,6 +3873,83 @@ export const CURATED_JOBS: CuratedJob[] = [
         power: 0,
         cost: 8,
         cooldown: 3,
+        targetType: "self",
+      },
+      // 4. 敵デバフ — 港言葉の罵倒。
+      {
+        name: "港言葉の罵倒",
+        description: "5 つの方言を混ぜた罵倒で敵を錯乱させる。命中 -25%・spd -15% 2 ターン。",
+        type: "debuff",
+        element: null,
+        power: 0,
+        cost: 8,
+        cooldown: 3,
+        targetType: "enemy",
+      },
+      // 5. 仲間援護 — 真鍮の指輪。
+      {
+        name: "真鍮の指輪",
+        description: "港の幸運の指輪を味方に貸す。HP 中回復 + 1 ターン回避率 +20%。",
+        type: "heal",
+        element: null,
+        power: 16,
+        cost: 10,
+        cooldown: 3,
+        targetType: "ally",
+      },
+      // 6. AOE — 港の風斬り。
+      {
+        name: "港の風斬り",
+        description: "塩風を切るように短刀を振り回す。敵全体に風属性ダメージ。",
+        type: "attack",
+        element: "wind",
+        power: 13,
+        cost: 11,
+        cooldown: 3,
+        targetType: "all_enemies",
+      },
+      // 7. 持続バフ — 塩風の身軽さ。
+      {
+        name: "塩風の身軽さ",
+        description: "港の塩風で鍛えた身軽さで 4 ターン spd +25% + 回避 +20%。",
+        type: "buff",
+        element: "wind",
+        power: 0,
+        cost: 11,
+        cooldown: 5,
+        targetType: "self",
+      },
+      // 8. 連携 — 人波の連撃。
+      {
+        name: "人波の連撃",
+        description: "前段の動きから人波を縫う動作で連撃。直前と異なる type の後で威力上昇。",
+        type: "attack",
+        element: null,
+        power: 15,
+        cost: 9,
+        cooldown: 2,
+        targetType: "enemy",
+      },
+      // 9. 究極 — 港の独立宣言。
+      {
+        name: "港の独立宣言",
+        description: "港の路地裏で覚えた全ての盗み技を結集する究極の連撃。敵全体を 5 段の短刀で斬る。",
+        type: "attack",
+        element: null,
+        power: 46,
+        cost: 28,
+        cooldown: 8,
+        targetType: "all_enemies",
+      },
+      // 10. signature — 密航の影。
+      {
+        name: "密航の影",
+        description: "港の影に潜む。3 ターン狙われ率 0% + 全攻撃クリ率 +30%。港育ちの代名詞。",
+        type: "buff",
+        element: "dark",
+        power: 0,
+        cost: 13,
+        cooldown: 5,
         targetType: "self",
       },
     ],

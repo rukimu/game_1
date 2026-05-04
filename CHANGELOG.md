@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 48 — Phase 2 support 12 職 × 10 スキル = 120 (2026-05-03)
+
+Phase 2 第 6 サイクル。support カテゴリ完了。
+
+- **48-a**: 旅芸人 / 子守歌 / 賭博師 (3 職 30 skills)
+- **48-b**: 占い師 / 通訳 / 動物使い (3 職 30 skills)
+- **48-c**: 観光案内 / 葬儀 / 産婆 (3 職 30 skills)
+- **48-d**: 公証人 / 仲介屋 / 酔いどれ (3 職 30 skills)
+- 累計 **760 unique skills** (warrior 130 + mage 130 + rogue 130 + cleric 120 + craft 130 + support 120)
+- 残り Phase 2: heretic 12 + rare 12 = 24 職 × 10 = 240 スキル
+
 ## Cycle 47 — Phase 2 craft 13 職 × 10 スキル = 130 (2026-05-03)
 
 Phase 2 第 5 サイクル。craft カテゴリ完了。

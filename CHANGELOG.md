@@ -7,6 +7,17 @@
 
 ---
 
+## Cycle 45 — Phase 2 rogue 13 職 × 10 スキル = 130 (2026-05-03)
+
+Phase 2 第 3 サイクル。rogue カテゴリ完了。
+
+- **45-a**: 甘党 / 影語り / 元道化師 (3 職 30 skills)
+- **45-b**: 美食家 / 元医療助手 / 港育ち (3 職 30 skills)
+- **45-c**: 双子 / 写真記憶 / 偽名常用 (3 職 30 skills)
+- **45-d**: 動物使い / 元軍楽隊 / 元郵便配達 / 元落書き屋 (4 職 40 skills)
+- 累計 **390 unique skills** (warrior 130 + mage 130 + rogue 130)
+- 残り Phase 2: cleric 12 + craft 13 + support 12 + heretic 12 + rare 12 = 61 職 × 10 = 610 スキル
+
 ## Cycle 44 — Phase 2 mage 13 職 × 10 スキル = 130 (2026-05-03)
 
 Phase 2 (curated 100 職 × 10 スキル = 1,000) 第 2 サイクル。mage カテゴリ完了。

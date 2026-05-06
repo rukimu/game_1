@@ -104,6 +104,22 @@
 
 ## DONE
 
+### Cycle 53 (2026-05-03) — Phase 3-a 世界設定 lore ページ
+- [x] `/lore` 新規 page (server component で docs/lore/*.md を fs.readFileSync で読み込み)
+- [x] 4 章 (世界観総覧 / 季節と中心の謎 / 5 大都市の歴史 / curated NPC 名簿) を <details> で折りたたみ表示
+- [x] HudMenu に「世界」リンク追加 (Phase 1 中も visible)
+
+### Cycle 52 (2026-05-03) — Phase 4-b withGuards 共通ガード middleware
+- [x] `src/lib/withGuards.ts` 新規 (withGuards / requireUserOrThrow / isUserMuted / applyRateLimitOrThrow 等)
+- [x] chat POST を withGuards でラップし、mute + rateLimit + audit を共通化 (Mute enforcement 達成)
+- [x] 残: 他 mutation endpoint (battle / forge / auction / trade) への配備 (順次 Phase 4-b 続)
+
+### Cycle 51 (2026-05-03) — Phase 4-a vitest 導入 + 純関数 unit test
+- [x] vitest 4 + vite-tsconfig-paths + vitest.config.ts セットアップ
+- [x] tests/rng.test.ts (8) / leveling.test.ts (6) / quiz.test.ts (4) / onboarding.test.ts (6) = 22 tests
+- [x] Cycle 42 自律代替で leveling.ts の stale comment 発見 → 実測値に書き換え
+- [x] npm scripts.test / test:watch 追加
+
 ### Cycle 50 (2026-05-03) ★ Phase 2 完走 — rare 12 職 × 10 スキル = 120
 - [x] **50-a**: 星詠み / 半妖精 / 龍の子 各 10 スキル (= 30) 設計
 - [x] **50-b**: 古竜の血 / 月光 / 星詠み二世 各 10 スキル (= 30) 設計

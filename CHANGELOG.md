@@ -7,6 +7,32 @@
 
 ---
 
+## Cycle 53 — Phase 3-a 世界設定 lore ページ (2026-05-03)
+
+Phase 3 (体験レイヤー復活) 着手。docs/lore/*.md の手作り内部資料 (432 行) をプレイヤーがゲーム内から閲覧できる `/lore` ページを新設。
+
+- `src/app/lore/page.tsx` (新規) — fs.readFileSync で 4 章を <details> で折りたたみ表示
+- HudMenu に「世界」リンク (Day1 から開放、Phase 1 中も visible)
+- 触ったファイル: `src/app/lore/page.tsx` (新規), `src/components/HudMenu.tsx`
+
+## Cycle 52 — Phase 4-b withGuards 共通ガード middleware (2026-05-03)
+
+API route に共通ガード (認証 / 管理者 / Mute / rateLimit / 監査ログ) を 1 行で適用できる高階関数 `withGuards` を実装。第一弾として chat POST に適用。
+
+- `src/lib/withGuards.ts` (新規) — withGuards / requireUserOrThrow / requireAdminOrThrow / isUserMuted / requireNotMutedOrThrow / applyRateLimitOrThrow
+- chat POST を withGuards ラップに置換 (mute + rateLimit + audit を共通化)
+- 触ったファイル: `src/lib/withGuards.ts` (新規), `src/app/api/chat/[channel]/route.ts`
+
+## Cycle 51 — Phase 4-a vitest 導入 + 純関数 unit test 22 本 (2026-05-03)
+
+Phase 4 (公開準備) 着手。vitest 単体テスト基盤を導入し、pure function 4 ファイル × 22 テストを green。
+
+- vitest + vite-tsconfig-paths を devDependencies に追加 + scripts.test
+- `vitest.config.ts` (新規) — tests/ pickup + tsconfig paths 解決
+- tests/rng.test.ts (8) / leveling.test.ts (6) / quiz.test.ts (4) / onboarding.test.ts (6) = 22 tests
+- Cycle 42 自律代替で発見した leveling.ts の stale comment (Lv29: 5,330 → 実測 4,150) を併せて修正
+- 触ったファイル: `package.json`, `vitest.config.ts` (新規), `tests/*.test.ts` (4 新規), `src/lib/leveling.ts`
+
 ## Cycle 50 — Phase 2 rare 12 職 × 10 スキル = 120 ★ Phase 2 完走 (2026-05-03)
 
 Phase 2 第 8 サイクル (最終)。rare カテゴリ完了 + Phase 2 全体完走 = **curated 100 職 × 10 スキル = 1,000 unique skills 全手作り達成**。

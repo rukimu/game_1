@@ -60,6 +60,9 @@
 - **Cycle 48**: Phase 2 support 12 職 × 10 スキル = 120 — 旅芸人 / 子守歌 / 賭博師 (48-a) + 占い師 / 通訳 / 動物使い (48-b) + 観光案内 / 葬儀 / 産婆 (48-c) + 公証人 / 仲介屋 / 酔いどれ (48-d)。累計 760 unique skills 完成（`0fc43ea`〜`c97857a`）
 - **Cycle 49**: Phase 2 heretic 12 職 × 10 スキル = 120 — 禁書館 / 元神官 / 双頭異端 (49-a) + 不死研究 / 言語学者 / 解剖学者 (49-b) + 元盗賊王 / 言葉狂い / 異界帰還 (49-c) + 影使い / 自閉派 / 元魔導院追放 (49-d)。累計 880 unique skills 完成（`944149b`〜`4040dc5`）
 - **Cycle 50** ★ Phase 2 完走: rare 12 職 × 10 = 120 — 星詠み / 半妖精 / 龍の子 (50-a) + 古竜の血 / 月光 / 星詠み二世 (50-b) + 風使い / 水脈読み / 竜眼 (50-c) + 妖精郷育ち / 不死者血族 / 彗星使者 (50-d)。**累計 1,000 unique skills 全手作り達成**（`bde846c`〜`9e8aaf7`）
+- **Cycle 51**: Phase 4-a vitest 導入 + 純関数 unit test 22 本 (rng / leveling / quiz / onboarding)。Cycle 42 自律代替で leveling.ts の stale comment を併せて修正（`ae709fe`）
+- **Cycle 52**: Phase 4-b withGuards 共通ガード middleware 実装 + chat POST に適用 (mute + rateLimit + audit 共通化)（`ffb7ef7`）
+- **Cycle 53**: Phase 3-a 世界設定 lore ページ新設 (`/lore`、docs/lore/*.md 4 章を折りたたみ表示) + HudMenu「世界」リンク（`cafad1b`）
 
 ## 進行・次サイクル
 

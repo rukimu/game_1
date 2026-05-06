@@ -243,8 +243,14 @@ npm start
 ### Phase 3 — 体験レイヤー復活 (Phase 1 完了後の並行)
 封印した機能を体験設計に従って段階復活: 物語 (Month1) / ビルド (Week1) / マルチ (Endgame)。
 
-### Phase 4 — 公開準備 (最終)
-自動テスト (vitest + Playwright) / セキュリティ middleware 配備 / 法務 / Postgres + Redis + Stripe 本番検証。
+### Phase 3 — 体験レイヤー復活 (一部 ✅)
+- **Cycle 53 ✅**: 世界設定 `/lore` ページ新設 (docs/lore/*.md 4 章、Day1 から開放)
+- 残: curated NPC 個別 story sequence / `/canon` 再開放 / `/mystery` 拡張
+
+### Phase 4 — 公開準備 (一部 ✅)
+- **Cycle 51 ✅**: vitest 単体テスト基盤 (rng / leveling / quiz / onboarding 22 tests)
+- **Cycle 52 ✅**: withGuards 共通ガード middleware (chat に適用済み、mute/rateLimit/audit 共通化)
+- 残: 残り mutation endpoint への withGuards 配備 / Playwright E2E / 法務 4 点セット / Postgres+Redis+Stripe 本番検証
 
 ### 内部ベンチ完走 / 外形品質はこれから
 ROADMAP_MAX の C27〜C38 は内部 8 軸★★★★★ 達成だが、外部 8 視点評価では平均 6.7/10。

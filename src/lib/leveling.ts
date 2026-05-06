@@ -7,7 +7,7 @@ export function expForLevel(level: number) {
   // Required exp to go from `level` to `level+1`.
   // Sub-quadratic curve (power 1.6) keeps Lv1→2 achievable in ~3 fights while
   // flattening the Lv9→10 cliff and Lv30→50 grind that earlier playtests hit.
-  // Lv1: 45 / Lv9: 727 / Lv29: 5,330 / Lv49: 8,520
+  // 実測値 (formula 結果): Lv1: 45 / Lv9: 774 / Lv29: 4,150 / Lv49: 9,062
   return Math.floor(15 * Math.pow(level, 1.6) + 30 * level);
 }
 

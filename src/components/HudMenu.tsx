@@ -42,6 +42,8 @@ const ITEMS: Item[] = [
   { href: "/ascension", label: "転生", group: "more", unlock: { kind: "level", min: 50, hint: "Lv50で開放" }, hiddenInPhase1: true },
   { href: "/canon", label: "年表", group: "more", hiddenInPhase1: true },
   { href: "/curse", label: "呪い", group: "more", unlock: { kind: "level", min: 10, hint: "Lv10で開放" } },
+  // Cycle 53 (Phase 3-a): 世界設定 lore ページ。Day1 から開放。
+  { href: "/lore", label: "世界", group: "more" },
   { href: "/achievements", label: "称号", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
   { href: "/characters", label: "選択", group: "more" },
 ];

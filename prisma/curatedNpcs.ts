@@ -16,6 +16,10 @@ export type CuratedNpc = {
   dialogue: string;   // default line shown if no archetype-specific line is generated
   bio: string;
   relations?: CuratedNpcRelation[];
+  // Cycle 56 (Phase 3-b): NPC の memory。bio が「育ち / 立場」を語るのに対し、
+  // memory は「直近の出来事 / 心の独白」を 50-100 字で添える。再訪時の景色
+  // を変える narrative 層。第一弾はアルダ 6 NPC + 主要都市各 1 = 計 10。
+  memory?: string;
 };
 
 // Two new curated-only towns added on top of the legacy 3.
@@ -69,6 +73,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
       { name: "村医ロサ", relation: "幼馴染", note: "娘の体調を任せている" },
       { name: "見習い騎士アル", relation: "息子のような存在" },
     ],
+    memory: "昨夜、店じまいの時に娘の影を一瞬見た気がした。気のせいだと自分に言い聞かせて棚を拭く。グラスが一つ多く出ていた。",
   },
   {
     townName: "始まりの街アルダ",
@@ -80,6 +85,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
       { name: "酒場の主人カイ", relation: "幼馴染" },
       { name: "司祭オリヴァ", relation: "週一の囲碁仲間" },
     ],
+    memory: "今朝、薬棚の奥から戦地の頃の包帯が出てきた。捨てようと手に取ったが、結局元の場所に戻した。捨てたら忘れる気がして。",
   },
   {
     townName: "始まりの街アルダ",
@@ -90,6 +96,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "村医ロサ", relation: "週一の囲碁仲間" },
     ],
+    memory: "墓地の奥に、まだ名を彫れていない墓碑が一つある。誰のものかは分かっているが、口に出すと現実になる気がして手が止まる。",
   },
   {
     townName: "始まりの街アルダ",
@@ -100,6 +107,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "酒場の主人カイ", relation: "酒呑み仲間" },
     ],
+    memory: "ふいご脇の革袋に、一度も使わなかった龍鱗の鎚先がある。注文主は若くして死んだ。鎚先だけがまだ自分の客を待っている。",
   },
   {
     townName: "始まりの街アルダ",
@@ -107,6 +115,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     role: "宿屋の女将",
     dialogue: "顔は忘れない。あんた、3 年前にもうちに泊まったろ？",
     bio: "元踊り子。一度泊めた客の顔と名前を全て記憶している。記録は紙ではなく頭の中。",
+    memory: "昔の踊りの仲間が一人、宿の名簿に載った。気付かないふりで部屋を案内した。彼女もこちらに気付いていたと思う。何も言わなかった。",
   },
   {
     townName: "始まりの街アルダ",
@@ -117,6 +126,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "酒場の主人カイ", relation: "師匠のような存在" },
     ],
+    memory: "昨日カイのおっちゃんが、初めて剣を握る時の話をしてくれた。盗賊だった頃の話だと気付いて、何も言えなかった。今度は俺から話そうと思う。",
   },
 
   // ============== 湖畔の街ミルレ — 商人・職人系 ==============
@@ -129,6 +139,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "両替商ゾロス", relation: "ライバル兼共犯" },
     ],
+    memory: "妹の手紙が今月届いていない。ライバルのゾロスに『書状が滞っているか』と聞こうかと思ったが、聞けば心配が露呈する。商人は表情を売り物にする。",
   },
   {
     townName: "湖畔の街ミルレ",
@@ -136,6 +147,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     role: "網元",
     dialogue: "湖の主は朝靄の中にしか出ん。お前さん、見たいなら 4 時に来な。",
     bio: "50 年湖で網を打ってきた漁師の長。湖の主と呼ばれる巨魚を一度だけ見たという。誰も信じないが、本人は確信している。",
+    memory: "今朝、湖面が一瞬だけ盛り上がった。50 年前と同じ朝靄、同じ角度。誰にも言わずに網を引き上げた。確信が深まった。明日も 4 時に行く。",
   },
   {
     townName: "湖畔の街ミルレ",
@@ -182,6 +194,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     role: "賭場の主",
     dialogue: "勝率は 6 割で十分。10 割を狙う奴から金を巻き上げるのが商売。",
     bio: "霧の街で最大の賭場を経営。貴族の借金証文を多数握っており、政治的にも無視できない存在。",
+    memory: "ある貴族の証文を、今夜燃やそうかと迷っている。利益にはならないが、その家の娘が病気だと聞いた。10 割は狙わないのが信条。",
   },
   {
     townName: "霧の街ヴェルナ",
@@ -235,6 +248,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "巫女のセラフィ", relation: "共に鐘を守る" },
     ],
+    memory: "今朝の鐘は妙に重かった。雨でもないのに。100 年触ってきたが、こんな響きは初めてだ。何かが街の地下で目覚めようとしている気がする。",
   },
   {
     townName: "鐘塔の都ベルクラート",
@@ -291,6 +305,7 @@ export const CURATED_NPCS: CuratedNpc[] = [
     relations: [
       { name: "元王宮魔導師ドラン", relation: "旧友" },
     ],
+    memory: "墓石の下から、昨夜またあの呟きが漏れ聞こえた。王の声か、王が殺した者の声か、もう判別がつかない。墓守を 40 年やっても答えは出ない。",
   },
   {
     townName: "古王国の都ヴェスペル",

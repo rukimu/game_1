@@ -300,6 +300,9 @@ model Npc {
   curated         Boolean   @default(false)
   bio             String?
   relationsJson   String?
+  // Cycle 56 (Phase 3-b): curated NPC の memory。bio が「育ち / 立場」を
+  // 語るのに対し、memory は「直近の出来事 / 心の独白」を 50-100 字で添える。
+  memory          String?
   createdAt   DateTime @default(now())
   town        Town    @relation(fields: [townId], references: [id], onDelete: Cascade)
 }

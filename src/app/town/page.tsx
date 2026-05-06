@@ -105,6 +105,8 @@ export default async function TownPage() {
             curated: n.curated,
             bio: n.bio,
             relations,
+            // Cycle 56 (Phase 3-b): memory 層 — bio とは別の「直近の独白」
+            memory: n.memory,
           };
         })
       )
@@ -287,6 +289,11 @@ export default async function TownPage() {
                           </summary>
                           {n.bio && (
                             <div className="mt-1 text-[11px] text-purple-100/85 leading-relaxed">{n.bio}</div>
+                          )}
+                          {n.memory && (
+                            <div className="mt-1 text-[11px] text-purple-100/70 leading-relaxed italic border-l-2 border-purple-700/40 pl-2">
+                              <span className="text-purple-300/80 not-italic mr-1">memo:</span>{n.memory}
+                            </div>
                           )}
                           {n.relations.length > 0 && (
                             <div className="mt-1 text-[10px] text-purple-200/80">

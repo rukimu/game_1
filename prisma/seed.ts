@@ -112,6 +112,8 @@ async function main() {
       curated: true,
       bio: cn.bio,
       relationsJson: cn.relations ? JSON.stringify(cn.relations) : null,
+      // Cycle 56 (Phase 3-b): memory 層
+      memory: cn.memory ?? null,
     };
     if (existing) {
       await prisma.npc.update({ where: { id: existing.id }, data: fields });

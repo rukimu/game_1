@@ -6,6 +6,8 @@ import { applyJobBaseStats } from "@/lib/leveling";
 import { sanitizeName } from "@/lib/sanitize";
 import { pickBio, scoreQuiz } from "@/lib/quiz";
 import { acceptFirstOnboardingQuest } from "@/lib/onboarding";
+import { applyRateLimitOrThrow } from "@/lib/withGuards";
+import { RATE_LIMITS } from "@/lib/rateLimit";
 
 const schema = z.object({
   name: z.string().min(2).max(24),
@@ -28,6 +30,14 @@ export async function GET() {
 export async function POST(req: Request) {
   const user = await requireUser().catch((r) => r);
   if (user instanceof Response) return user;
+  // Cycle 57 (Phase 4-b 続): キャラ作成は CHARACTER_CREATE preset (5 / 60s)
+  // で rate limit。ボット連続作成を防ぐ。
+  try {
+    applyRateLimitOrThrow(`CHARACTER_CREATE:${user.id}`, RATE_LIMITS.CHARACTER_CREATE);
+  } catch (resp) {
+    if (resp instanceof Response) return resp;
+    throw resp;
+  }
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "入力が不正です" }, { status: 400 });
   const name = sanitizeName(parsed.data.name);

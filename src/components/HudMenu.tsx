@@ -44,6 +44,8 @@ const ITEMS: Item[] = [
   { href: "/curse", label: "呪い", group: "more", unlock: { kind: "level", min: 10, hint: "Lv10で開放" } },
   // Cycle 53 (Phase 3-a): 世界設定 lore ページ。Day1 から開放。
   { href: "/lore", label: "世界", group: "more" },
+  // Cycle 55 (Phase 4-d): 法務 4 点セット。Day1 から開放。
+  { href: "/legal/terms", label: "規約", group: "more" },
   { href: "/achievements", label: "称号", group: "more", unlock: { kind: "level", min: 5, hint: "Lv5で開放" } },
   { href: "/characters", label: "選択", group: "more" },
 ];
